@@ -1,3 +1,4 @@
+import Link from "next/link";
 import SearchForm from "./search-form";
 
 export default function HomePage() {
@@ -10,6 +11,9 @@ export default function HomePage() {
       <div className="card">
         <SearchForm />
       </div>
+      <Link href="/admin" className="admin-link">
+        管理者
+      </Link>
     </main>
   );
 }

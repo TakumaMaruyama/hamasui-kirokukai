@@ -33,11 +33,17 @@ label {
   margin-bottom: 8px;
 }
 
-input, select, button, textarea {
+input,
+select,
+button,
+textarea {
   font: inherit;
 }
 
-input[type="text"], input[type="password"], input[type="file"], select {
+input[type="text"],
+input[type="password"],
+input[type="file"],
+select {
   width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
@@ -78,4 +84,53 @@ button.secondary {
 .notice {
   font-size: 0.9rem;
   color: #5b6170;
+}
+
+.admin-link {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-decoration: none;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.admin-link:hover {
+  opacity: 1;
+  color: #6b7280;
+}
+
+.admin-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.admin-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+  background: #f7f7fb;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #1b1b1f;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.admin-menu-item:hover {
+  background: #eef0f5;
+  transform: translateY(-2px);
+}
+
+.admin-menu-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.admin-menu-label {
+  font-weight: 600;
+  font-size: 0.95rem;
 }

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AdminLoginForm() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,7 +28,8 @@ export default function AdminLoginForm() {
         return;
       }
 
-      setMessage("ログインしました。各メニューへ移動してください。");
+      // ログイン成功時はダッシュボードへリダイレクト
+      router.push("/admin/dashboard");
     } catch (error) {
       setMessage("通信に失敗しました。");
     } finally {
