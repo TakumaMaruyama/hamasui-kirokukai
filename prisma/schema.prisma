@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Program {
+  swimming
+  school
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+model Athlete {
+  id             String   @id @default(cuid())
+  fullName       String
+  grade          Int
+  gender         Gender
+  publishConsent Boolean  @default(false)
+  publishUntil   DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  results Result[]
+
+  @@index([fullName])
+}
+
+model Meet {
+  id        String   @id @default(cuid())
+  program   Program
+  heldOn    DateTime
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  results Result[]
+
+  @@unique([program, heldOn, title])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  title     String
+  distanceM Int
+  style     String
+  grade     Int
+  gender    Gender
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  results Result[]
+
+  @@index([grade, gender])
+}
+
+model Result {
+  id         String   @id @default(cuid())
+  athleteId  String
+  meetId     String
+  eventId    String
+  lane       Int?
+  timeText   String
+  timeMs     Int
+  rank       Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  athlete Athlete @relation(fields: [athleteId], references: [id])
+  meet    Meet    @relation(fields: [meetId], references: [id])
+  event   Event   @relation(fields: [eventId], references: [id])
+
+  @@unique([athleteId, meetId, eventId])
+}
+
+model GeneratedDoc {
+  id         String   @id @default(cuid())
+  program    Program
+  kind       String
+  storageKey String
+  createdAt  DateTime @default(now())
+}
+
+model SearchLog {
+  id        String   @id @default(cuid())
+  fullName  String
+  ipAddress String
+  userAgent String
+  createdAt DateTime @default(now())
+}
