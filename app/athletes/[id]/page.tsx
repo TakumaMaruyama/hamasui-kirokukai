@@ -62,11 +62,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
     }
   });
 
-  if (!athlete || !athlete.publishConsent) {
-    notFound();
-  }
-
-  if (athlete.publishUntil && athlete.publishUntil < new Date()) {
+  if (!athlete) {
     notFound();
   }
 

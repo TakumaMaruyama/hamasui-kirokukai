@@ -15,11 +15,7 @@ export async function GET(
     }
   });
 
-  if (!athlete || !athlete.publishConsent) {
-    return NextResponse.json({ message: "Not found" }, { status: 404 });
-  }
-
-  if (athlete.publishUntil && athlete.publishUntil < new Date()) {
+  if (!athlete) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 

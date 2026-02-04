@@ -20,10 +20,6 @@ export default function AdminDashboard() {
                         <span className="admin-menu-icon">🏫</span>
                         <span className="admin-menu-label">学校名インポート</span>
                     </Link>
-                    <Link href="/admin/consents" className="admin-menu-item">
-                        <span className="admin-menu-icon">✅</span>
-                        <span className="admin-menu-label">同意管理</span>
-                    </Link>
                     <Link href="/admin/docs/swimming" className="admin-menu-item">
                         <span className="admin-menu-icon">📄</span>
                         <span className="admin-menu-label">水泳証明書</span>

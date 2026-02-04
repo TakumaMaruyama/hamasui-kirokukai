@@ -32,12 +32,9 @@ export async function POST(request: Request) {
     }
   });
 
-  const now = new Date();
   const athletes = await prisma.athlete.findMany({
     where: {
       fullName: parsed.data.fullName,
-      publishConsent: true,
-      OR: [{ publishUntil: null }, { publishUntil: { gte: now } }],
       results: { some: { meet: { program: "swimming" } } }
     },
     select: {

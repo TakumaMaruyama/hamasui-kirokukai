@@ -14,13 +14,7 @@ export type ImportRow = {
   distance_m: string;
   lane?: string;
   time_text: string;
-  publish_consent: string;
-  publish_until?: string;
 };
-
-function parseBoolean(value: string): boolean {
-  return value.trim().toLowerCase() === "true";
-}
 
 function parseDate(value: string): Date {
   const parsed = new Date(value);
@@ -38,7 +32,6 @@ export async function importRows(program: Program, rows: ImportRow[]) {
     const distanceM = Number(row.distance_m);
     const timeMs = parseTimeToMs(row.time_text);
     const heldOn = parseDate(row.held_on);
-    const publishUntil = row.publish_until ? parseDate(row.publish_until) : null;
 
     if (Number.isNaN(grade) || Number.isNaN(distanceM)) {
       throw new Error("Invalid numeric values");
@@ -53,22 +46,13 @@ export async function importRows(program: Program, rows: ImportRow[]) {
     });
 
     const athlete = existingAthlete
-      ? await prisma.athlete.update({
-          where: { id: existingAthlete.id },
-          data: {
-            publishConsent: parseBoolean(row.publish_consent),
-            publishUntil
-          }
-        })
-      : await prisma.athlete.create({
-          data: {
-            fullName: row.full_name,
-            grade,
-            gender: row.gender as Prisma.AthleteUncheckedCreateInput["gender"],
-            publishConsent: parseBoolean(row.publish_consent),
-            publishUntil
-          }
-        });
+      ?? await prisma.athlete.create({
+        data: {
+          fullName: row.full_name,
+          grade,
+          gender: row.gender as Prisma.AthleteUncheckedCreateInput["gender"]
+        }
+      });
 
     const meet = await prisma.meet.upsert({
       where: {

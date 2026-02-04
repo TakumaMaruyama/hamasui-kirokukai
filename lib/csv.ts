@@ -11,8 +11,6 @@ export type CsvRow = {
   distance_m: string;
   lane?: string;
   time_text: string;
-  publish_consent: string;
-  publish_until?: string;
 };
 
 export function parseCsv(content: string): CsvRow[] {

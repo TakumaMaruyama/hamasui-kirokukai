@@ -1,4 +1,4 @@
-meet_title,held_on,full_name,grade,gender,event_title,style,distance_m,lane,time_text,publish_consent,publish_until
-第1回記録会,2024-06-01,山田太郎,4,male,50m自由形,free,50,2,0:35.12,true,2025-03-31
-第1回記録会,2024-06-01,山田太郎,4,male,100m自由形,free,100,5,1:20.55,true,2025-03-31
-第1回記録会,2024-06-01,佐藤花子,3,female,50m背泳ぎ,back,50,1,0:40.01,false,
+meet_title,held_on,full_name,grade,gender,event_title,style,distance_m,lane,time_text
+第1回記録会,2024-06-01,山田太郎,4,male,50m自由形,free,50,2,0:35.12
+第1回記録会,2024-06-01,山田太郎,4,male,100m自由形,free,100,5,1:20.55
+第1回記録会,2024-06-01,佐藤花子,3,female,50m背泳ぎ,back,50,1,0:40.01
