@@ -2,9 +2,9 @@
   "name": "hamasui-kirokukai",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "next dev -H 0.0.0.0 -p 5000",
+    "build": "prisma generate && next build",
+    "start": "next start -H 0.0.0.0 -p 5000",
     "lint": "next lint",
     "test": "vitest run"
   },
