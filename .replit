@@ -2,9 +2,10 @@ run = "npm run dev"
 entrypoint = "app/page.tsx"
 
 hidden = [".next", "node_modules"]
+modules = ["nodejs-20", "web", "nix"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-25_05"
 
 [deployment]
 run = ["sh", "-c", "npm run build && npm run start"]
@@ -12,3 +13,6 @@ run = ["sh", "-c", "npm run build && npm run start"]
 [[ports]]
 localPort = 3000
 externalPort = 80
+
+[agent]
+expertMode = true
