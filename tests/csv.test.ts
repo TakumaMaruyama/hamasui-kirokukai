@@ -103,4 +103,18 @@ describe("parseCsv", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].full_name).toBe("横手 岳");
   });
+
+  it("skips rows when name is empty even if time exists", () => {
+    const content =
+      "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +
+      "15ｍ板キック,1,,,男,,1,19.46,\n" +
+      "15ｍ板キック,1,,横手 岳,男,よこて がく,年長,36.32,\n";
+
+    const rows = parseCsv(content, {
+      meetContext: { year: 2026, month: 2, weekday: "木曜" }
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].full_name).toBe("横手 岳");
+  });
 });
