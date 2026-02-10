@@ -301,8 +301,12 @@ function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRo
       continue;
     }
 
-    // 出欠簿ルール: 名前があるのに種目が空の場合は欠席として取り込み対象外にする
+    // 出欠簿ルール: 名前があるのに種目が空、またはタイムが空の場合は欠席として取り込み対象外にする
     if (fullName && !eventTitle) {
+      continue;
+    }
+
+    if (fullName && !timeText) {
       continue;
     }
 

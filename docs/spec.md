@@ -27,6 +27,7 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - `/admin` 管理者ログイン
 - `/admin/import/swimming` スイミング取込
 - `/admin/import/school` 学校委託取込
+- `/admin/publish` 公開期限管理
 - `/admin/docs/swimming` スイミングPDF生成
 - `/admin/docs/school` 学校委託PDF生成
 - `/admin/logs` 検索ログ閲覧
@@ -45,7 +46,7 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - `GET /api/admin/logs`
 
 ## DBスキーマ要約
-- athletes: 氏名・学年・性別
+- athletes: 氏名・学年・性別・公開期限
 - meets: (program, held_on, title) ユニーク
 - events: 種目情報（学年/性別別）
 - results: タイムと順位（DENSE_RANK）
@@ -56,6 +57,7 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - 検索はフルネーム完全一致のみ。
 - 検索APIはIP単位でレート制限をかける（1分あたり10回想定）。
 - 検索実行時に `search_logs` に保存。
+- 公開期限が未設定または期限切れの選手は検索・個人ページで非表示。
 
 ## PDF生成/ZIP
 - 記録証・賞状はHTMLテンプレからPDF生成しZIPにまとめる。

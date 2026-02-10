@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatMeetLabel } from "@/lib/meet-context";
+import { formatPublishUntil, isPublicNow } from "@/lib/publish";
 
 type ResultWithMeetEvent = {
   id: string;
@@ -67,6 +68,10 @@ export default async function AthletePage({ params }: { params: { id: string } }
     notFound();
   }
 
+  if (!isPublicNow(athlete.publishUntil)) {
+    notFound();
+  }
+
   const groupedResults = groupByMeet(athlete.results);
   const bestTimes = getBestTimes(athlete.results);
 
@@ -79,6 +84,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
         <p className="notice">
           {athlete.grade}年 / {genderLabel}
         </p>
+        <p className="notice">公開期限: {formatPublishUntil(athlete.publishUntil)}</p>
       </header>
 
       {/* ベストタイム */}

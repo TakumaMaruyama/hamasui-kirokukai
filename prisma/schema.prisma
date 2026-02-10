@@ -19,12 +19,13 @@ enum Gender {
 }
 
 model Athlete {
-  id        String   @id @default(cuid())
-  fullName  String
-  grade     Int
-  gender    Gender
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  fullName     String
+  grade        Int
+  gender       Gender
+  publishUntil DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   results Result[]
 
