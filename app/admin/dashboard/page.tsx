@@ -22,7 +22,7 @@ export default function AdminDashboard() {
                     </Link>
                     <Link href="/admin/publish" className="admin-menu-item">
                         <span className="admin-menu-icon">🔓</span>
-                        <span className="admin-menu-label">公開期限管理</span>
+                        <span className="admin-menu-label">公開期間表示管理</span>
                     </Link>
                     <Link href="/admin/docs/swimming" className="admin-menu-item">
                         <span className="admin-menu-icon">📄</span>

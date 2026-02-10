@@ -42,10 +42,8 @@ export async function POST(request: Request) {
     }
   });
 
-  const now = new Date();
   const athletes = await prisma.athlete.findMany({
     where: {
-      publishUntil: { gte: now },
       results: { some: { meet: { program: "swimming" } } }
     },
     select: {

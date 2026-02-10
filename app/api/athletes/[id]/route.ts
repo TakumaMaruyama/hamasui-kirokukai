@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isPublicNow } from "@/lib/publish";
 
 export async function GET(
   request: Request,
@@ -17,10 +16,6 @@ export async function GET(
   });
 
   if (!athlete) {
-    return NextResponse.json({ message: "Not found" }, { status: 404 });
-  }
-
-  if (!isPublicNow(athlete.publishUntil)) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 

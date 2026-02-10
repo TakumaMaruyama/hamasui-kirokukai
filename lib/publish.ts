@@ -1,6 +1,6 @@
 const DATE_INPUT_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-export function parsePublishUntilInput(value: string): Date | null {
+export function parsePublishDateInput(value: string, mode: "start" | "end"): Date | null {
   const trimmed = value.trim();
 
   if (!trimmed) {
@@ -9,41 +9,55 @@ export function parsePublishUntilInput(value: string): Date | null {
 
   const match = trimmed.match(DATE_INPUT_PATTERN);
   if (!match) {
-    throw new Error("公開期限は YYYY-MM-DD 形式で入力してください");
+    throw new Error("公開期間は YYYY-MM-DD 形式で入力してください");
   }
 
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  const endOfDayUtc = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+  const utcDate =
+    mode === "start"
+      ? new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+      : new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
   if (
-    endOfDayUtc.getUTCFullYear() !== year ||
-    endOfDayUtc.getUTCMonth() !== month - 1 ||
-    endOfDayUtc.getUTCDate() !== day
+    utcDate.getUTCFullYear() !== year ||
+    utcDate.getUTCMonth() !== month - 1 ||
+    utcDate.getUTCDate() !== day
   ) {
-    throw new Error("公開期限の日付が不正です");
+    throw new Error("公開期間の日付が不正です");
   }
 
-  return endOfDayUtc;
+  return utcDate;
 }
 
-export function isPublicNow(publishUntil: Date | null | undefined, now = new Date()): boolean {
-  return Boolean(publishUntil && publishUntil.getTime() >= now.getTime());
-}
-
-export function toDateInputValue(publishUntil: Date | null | undefined): string {
-  if (!publishUntil) {
+export function toDateInputValue(value: Date | null | undefined): string {
+  if (!value) {
     return "";
   }
 
-  return publishUntil.toISOString().slice(0, 10);
+  return value.toISOString().slice(0, 10);
 }
 
-export function formatPublishUntil(publishUntil: Date | null | undefined): string {
-  if (!publishUntil) {
-    return "未設定";
+function formatMonthDay(value: Date): string {
+  return `${value.getUTCMonth() + 1}月${value.getUTCDate()}日`;
+}
+
+export function formatPublishRange(
+  publishFrom: Date | null | undefined,
+  publishUntil: Date | null | undefined
+): string {
+  if (publishFrom && publishUntil) {
+    return `公開期限は${formatMonthDay(publishFrom)}～${formatMonthDay(publishUntil)}です`;
   }
 
-  return publishUntil.toISOString().slice(0, 10);
+  if (publishFrom) {
+    return `公開期限は${formatMonthDay(publishFrom)}からです`;
+  }
+
+  if (publishUntil) {
+    return `公開期限は${formatMonthDay(publishUntil)}までです`;
+  }
+
+  return "公開期限は未設定です";
 }

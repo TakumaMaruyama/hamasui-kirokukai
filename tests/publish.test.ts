@@ -1,31 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { formatPublishUntil, isPublicNow, parsePublishUntilInput, toDateInputValue } from "../lib/publish";
+import { formatPublishRange, parsePublishDateInput, toDateInputValue } from "../lib/publish";
 
 describe("publish helpers", () => {
-  it("parses date input as end-of-day UTC", () => {
-    const parsed = parsePublishUntilInput("2026-02-10");
+  it("parses start date input as start-of-day UTC", () => {
+    const parsed = parsePublishDateInput("2026-02-10", "start");
+
+    expect(parsed?.toISOString()).toBe("2026-02-10T00:00:00.000Z");
+  });
+
+  it("parses end date input as end-of-day UTC", () => {
+    const parsed = parsePublishDateInput("2026-02-10", "end");
 
     expect(parsed?.toISOString()).toBe("2026-02-10T23:59:59.999Z");
   });
 
   it("returns null for empty input", () => {
-    expect(parsePublishUntilInput("")).toBeNull();
+    expect(parsePublishDateInput("", "start")).toBeNull();
+    expect(parsePublishDateInput("", "end")).toBeNull();
   });
 
-  it("checks publication status against now", () => {
-    const now = new Date("2026-02-10T12:00:00.000Z");
-    const before = new Date("2026-02-10T11:59:59.000Z");
-    const after = new Date("2026-02-10T12:00:01.000Z");
+  it("formats publish range for UI", () => {
+    const from = new Date("2026-02-01T00:00:00.000Z");
+    const until = new Date("2026-02-10T23:59:59.999Z");
 
-    expect(isPublicNow(before, now)).toBe(false);
-    expect(isPublicNow(after, now)).toBe(true);
-    expect(isPublicNow(null, now)).toBe(false);
-  });
-
-  it("formats publish date for UI", () => {
-    const value = new Date("2026-02-10T23:59:59.999Z");
-    expect(toDateInputValue(value)).toBe("2026-02-10");
-    expect(formatPublishUntil(value)).toBe("2026-02-10");
-    expect(formatPublishUntil(null)).toBe("未設定");
+    expect(toDateInputValue(from)).toBe("2026-02-01");
+    expect(toDateInputValue(until)).toBe("2026-02-10");
+    expect(formatPublishRange(from, until)).toBe("公開期限は2月1日～2月10日です");
+    expect(formatPublishRange(from, null)).toBe("公開期限は2月1日からです");
+    expect(formatPublishRange(null, until)).toBe("公開期限は2月10日までです");
+    expect(formatPublishRange(null, null)).toBe("公開期限は未設定です");
   });
 });

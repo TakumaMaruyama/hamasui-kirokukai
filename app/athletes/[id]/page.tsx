@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatMeetLabel } from "@/lib/meet-context";
-import { formatPublishUntil, isPublicNow } from "@/lib/publish";
+import { formatPublishRange } from "@/lib/publish";
 
 type ResultWithMeetEvent = {
   id: string;
@@ -48,6 +48,19 @@ function getBestTimes(results: ResultWithMeetEvent[]) {
 }
 
 export default async function AthletePage({ params }: { params: { id: string } }) {
+  let publishWindow: { publishFrom: Date | null; publishUntil: Date | null } | null = null;
+  try {
+    publishWindow = await prisma.publishWindow.findUnique({
+      where: { id: "default" },
+      select: {
+        publishFrom: true,
+        publishUntil: true
+      }
+    });
+  } catch {
+    publishWindow = null;
+  }
+
   const athlete = await prisma.athlete.findUnique({
     where: { id: params.id },
     include: {
@@ -68,10 +81,6 @@ export default async function AthletePage({ params }: { params: { id: string } }
     notFound();
   }
 
-  if (!isPublicNow(athlete.publishUntil)) {
-    notFound();
-  }
-
   const groupedResults = groupByMeet(athlete.results);
   const bestTimes = getBestTimes(athlete.results);
 
@@ -84,7 +93,9 @@ export default async function AthletePage({ params }: { params: { id: string } }
         <p className="notice">
           {athlete.grade}年 / {genderLabel}
         </p>
-        <p className="notice">公開期限: {formatPublishUntil(athlete.publishUntil)}</p>
+        <p className="notice">
+          {formatPublishRange(publishWindow?.publishFrom, publishWindow?.publishUntil)}
+        </p>
       </header>
 
       {/* ベストタイム */}
