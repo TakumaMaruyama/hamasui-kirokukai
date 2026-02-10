@@ -39,6 +39,10 @@ function parseRequiredText(value: string | undefined, fieldName: string): string
   return normalized;
 }
 
+function normalizeFullName(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
 function parseRequiredInt(value: string | undefined, fieldName: string): number {
   const normalized = parseRequiredText(value, fieldName);
   const parsed = Number(normalized);
@@ -100,7 +104,7 @@ export async function importRows(program: Program, rows: ImportRow[]) {
     try {
       const meetTitle = parseRequiredText(row.meet_title, "meet_title");
       const heldOn = parseDate(row.held_on, "held_on");
-      const fullName = parseRequiredText(row.full_name, "full_name");
+      const fullName = normalizeFullName(parseRequiredText(row.full_name, "full_name"));
       const grade = parseRequiredInt(row.grade, "grade");
       const gender = parseGender(row.gender);
       const eventTitle = parseRequiredText(row.event_title, "event_title");

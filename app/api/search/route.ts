@@ -7,6 +7,14 @@ const schema = z.object({
   fullName: z.string().min(1)
 });
 
+function normalizeFullName(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function nameSearchKey(value: string): string {
+  return normalizeFullName(value).replace(/\s/g, "");
+}
+
 export async function POST(request: Request) {
   const body = await request.json();
   const parsed = schema.safeParse(body);
@@ -24,9 +32,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "アクセスが集中しています" }, { status: 429 });
   }
 
+  const normalizedFullName = normalizeFullName(parsed.data.fullName);
+
   await prisma.searchLog.create({
     data: {
-      fullName: parsed.data.fullName,
+      fullName: normalizedFullName,
       ipAddress,
       userAgent: request.headers.get("user-agent") ?? ""
     }
@@ -34,7 +44,6 @@ export async function POST(request: Request) {
 
   const athletes = await prisma.athlete.findMany({
     where: {
-      fullName: parsed.data.fullName,
       results: { some: { meet: { program: "swimming" } } }
     },
     select: {
@@ -45,5 +54,8 @@ export async function POST(request: Request) {
     }
   });
 
-  return NextResponse.json({ results: athletes });
+  const key = nameSearchKey(normalizedFullName);
+  const results = athletes.filter((athlete) => nameSearchKey(athlete.fullName) === key);
+
+  return NextResponse.json({ results });
 }
