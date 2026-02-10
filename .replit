@@ -50,4 +50,4 @@ outputType = "webview"
 [userenv]
 
 [userenv.shared]
-ADMIN_PASSWORD = "changeme"
+ADMIN_PASSWORD = "admin0909"
