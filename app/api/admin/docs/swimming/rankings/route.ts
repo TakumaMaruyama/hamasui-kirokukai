@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { recordTemplate } from "@/lib/templates";
+import { rankingTemplate } from "@/lib/templates";
 import { renderPdfFromHtml } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
+import { buildMeetRankingGroups } from "@/lib/ranking-report";
 
 export async function POST(request: Request) {
   if (!isAdminAuthenticated()) {
@@ -25,12 +26,12 @@ export async function POST(request: Request) {
     const filter = parsedFilter.value;
     const meets = filter.hasMonthFilter
       ? await prisma.meet.findMany({
-          where: buildMeetWhere("school", filter),
+          where: buildMeetWhere("swimming", filter),
           orderBy: [{ heldOn: "asc" }, { title: "asc" }]
         })
       : await prisma.meet
           .findFirst({
-            where: { program: "school" },
+            where: { program: "swimming" },
             orderBy: { heldOn: "desc" }
           })
           .then((meet) => (meet ? [meet] : []));
@@ -42,47 +43,40 @@ export async function POST(request: Request) {
     const files = [] as { name: string; buffer: Buffer }[];
 
     for (const meet of meets) {
-      const athletes = await prisma.athlete.findMany({
+      const results = await prisma.result.findMany({
         where: {
-          ...(filter.fullName ? { fullName: filter.fullName } : {}),
-          results: {
-            some: {
-              meetId: meet.id
-            }
-          }
+          meetId: meet.id,
+          rank: { lte: 3 }
         },
-        orderBy: [{ fullName: "asc" }, { grade: "asc" }]
+        include: {
+          athlete: true,
+          event: true
+        }
       });
 
-      for (const athlete of athletes) {
-        const results = await prisma.result.findMany({
-          where: { athleteId: athlete.id, meetId: meet.id },
-          include: { event: true }
-        });
-
-        if (results.length === 0) {
-          continue;
-        }
-
-        const html = recordTemplate({ athlete, meet, results });
-        const buffer = await renderPdfFromHtml(html);
-        const name = `${athlete.fullName}_${meet.title}_record.pdf`;
-        const storageKey = await saveBuffer(`school/records/${name}`, buffer);
-
-        await prisma.generatedDoc.create({
-          data: {
-            program: "school",
-            kind: "record",
-            storageKey
-          }
-        });
-
-        files.push({ name, buffer });
+      const groups = buildMeetRankingGroups(results);
+      if (groups.length === 0) {
+        continue;
       }
+
+      const html = rankingTemplate({ meet, groups });
+      const buffer = await renderPdfFromHtml(html);
+      const name = `${meet.title}_ranking.pdf`;
+      const storageKey = await saveBuffer(`swimming/rankings/${name}`, buffer);
+
+      await prisma.generatedDoc.create({
+        data: {
+          program: "swimming",
+          kind: "ranking",
+          storageKey
+        }
+      });
+
+      files.push({ name, buffer });
     }
 
     if (files.length === 0) {
-      return NextResponse.json({ message: "条件に一致する記録がありません" }, { status: 400 });
+      return NextResponse.json({ message: "条件に一致するランキングデータがありません" }, { status: 400 });
     }
 
     const zip = await zipBuffers(files);
@@ -90,7 +84,7 @@ export async function POST(request: Request) {
     return new NextResponse(zip, {
       headers: {
         "Content-Type": "application/zip",
-        "Content-Disposition": "attachment; filename=school_records.zip"
+        "Content-Disposition": "attachment; filename=swimming_rankings.zip"
       }
     });
   } catch (error) {

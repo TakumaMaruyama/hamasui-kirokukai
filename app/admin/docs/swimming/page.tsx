@@ -5,6 +5,9 @@ export default function SwimmingDocsPage() {
     <main>
       <header>
         <h1>スイミングPDF生成</h1>
+        <p className="notice">
+          年・月・曜日で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
+        </p>
       </header>
       <div className="card">
         <DocsAction
@@ -16,6 +19,12 @@ export default function SwimmingDocsPage() {
           title="賞状PDFを一括生成"
           endpoint="/api/admin/docs/swimming/certificates"
           filename="swimming_certificates.zip"
+        />
+        <DocsAction
+          title="ランキングPDFを生成（記録会ごと）"
+          endpoint="/api/admin/docs/swimming/rankings"
+          filename="swimming_rankings.zip"
+          allowFullName={false}
         />
       </div>
     </main>

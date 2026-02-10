@@ -42,8 +42,15 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - `POST /api/admin/import/school/confirm`
 - `POST /api/admin/docs/swimming/records`
 - `POST /api/admin/docs/swimming/certificates`
+- `POST /api/admin/docs/swimming/rankings`
 - `POST /api/admin/docs/school/records`
 - `GET /api/admin/logs`
+
+### PDF出力APIの条件指定
+- `POST /api/admin/docs/*` はJSONで条件指定できる（任意）。
+- `year` + `month` + `weekday` で「指定年月の曜日ごと」に出力可能。
+- `year` + `month` + `fullName` で「特定の子どもの指定年月」を出力可能（`weekday` 併用可）。
+- ランキングPDF（`/api/admin/docs/swimming/rankings`）は、記録会ごとに1ファイル生成する（種目ごとの別ファイルは作らない）。
 
 ## DBスキーマ要約
 - athletes: 氏名・学年・性別

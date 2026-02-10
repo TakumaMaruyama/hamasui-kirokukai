@@ -5,6 +5,9 @@ export default function SchoolDocsPage() {
     <main>
       <header>
         <h1>学校委託PDF生成</h1>
+        <p className="notice">
+          年・月・曜日で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
+        </p>
       </header>
       <div className="card">
         <DocsAction
