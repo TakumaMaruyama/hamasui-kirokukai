@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "浜水記録会",
+  title: "はまスイ記録会",
   description: "スイミング記録会の記録閲覧",
   robots: { index: false, follow: false }
 };

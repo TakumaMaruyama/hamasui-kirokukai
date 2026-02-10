@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignDenseRanks } from "@/lib/rank";
+import { assignDenseRanks } from "../lib/rank";
 
 describe("assignDenseRanks", () => {
   it("assigns dense ranks", () => {

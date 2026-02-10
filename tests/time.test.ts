@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseTimeToMs } from "@/lib/time";
+import { parseTimeToMs } from "../lib/time";
 
 describe("parseTimeToMs", () => {
   it("parses minutes and seconds", () => {

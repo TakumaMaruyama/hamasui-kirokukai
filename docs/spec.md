@@ -14,6 +14,13 @@
 
 CSVの program 列は存在しない。取込時の画面/APIパスで program を固定する。
 
+### 名簿CSV（簡易形式）の取り込み
+- 画面で `年 / 月 / 曜日` を指定してからプレビューする。
+- 名簿CSVのように `meet_title` / `held_on` が無い場合は、指定した `年 / 月 / 曜日` から内部値を補完する。
+- 補完時:
+  - `meet_title`: `YYYY年M月X曜`
+  - `held_on`: `YYYY-MM-01`
+
 ## 画面一覧
 - `/` トップ（検索フォーム）
 - `/athletes/[id]` 個人ページ（記録推移・種目別順位）
@@ -28,8 +35,10 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - `POST /api/search` 検索（レート制限・検索ログ保存）
 - `GET /api/athletes/:id` 個人表示
 - `POST /api/admin/login`
-- `POST /api/admin/import/swimming`
-- `POST /api/admin/import/school`
+- `POST /api/admin/import/swimming/preview`
+- `POST /api/admin/import/swimming/confirm`
+- `POST /api/admin/import/school/preview`
+- `POST /api/admin/import/school/confirm`
 - `POST /api/admin/docs/swimming/records`
 - `POST /api/admin/docs/swimming/certificates`
 - `POST /api/admin/docs/school/records`

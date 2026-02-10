@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { formatMeetLabel } from "@/lib/meet-context";
 
 async function deleteMeet(formData: FormData) {
     "use server";
@@ -30,8 +31,7 @@ export default async function MeetsPage() {
                 <table className="table">
                     <thead>
                         <tr>
-                            <th>開催日</th>
-                            <th>記録会名</th>
+                            <th>開催区分</th>
                             <th>記録数</th>
                             <th>操作</th>
                         </tr>
@@ -39,15 +39,14 @@ export default async function MeetsPage() {
                     <tbody>
                         {meets.length === 0 ? (
                             <tr>
-                                <td colSpan={4} style={{ textAlign: "center", color: "#888" }}>
+                                <td colSpan={3} style={{ textAlign: "center", color: "#888" }}>
                                     記録会がありません
                                 </td>
                             </tr>
                         ) : (
                             meets.map((meet) => (
                                 <tr key={meet.id}>
-                                    <td>{meet.heldOn.toISOString().slice(0, 10)}</td>
-                                    <td>{meet.title}</td>
+                                    <td>{formatMeetLabel(meet)}</td>
                                     <td>{meet._count.results}件</td>
                                     <td>
                                         <form action={deleteMeet} style={{ display: "inline" }}>
@@ -57,7 +56,7 @@ export default async function MeetsPage() {
                                                 className="secondary"
                                                 style={{ fontSize: "0.85rem", padding: "6px 12px" }}
                                                 onClick={(e) => {
-                                                    if (!confirm(`「${meet.title}」を削除しますか？関連する全ての記録も削除されます。`)) {
+                                                    if (!confirm(`「${formatMeetLabel(meet)}」を削除しますか？関連する全ての記録も削除されます。`)) {
                                                         e.preventDefault();
                                                     }
                                                 }}

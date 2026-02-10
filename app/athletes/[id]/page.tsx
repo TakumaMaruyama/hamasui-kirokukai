@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { formatMeetLabel } from "@/lib/meet-context";
 
 type ResultWithMeetEvent = {
   id: string;
@@ -91,7 +92,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
               <tr>
                 <th>種目</th>
                 <th>ベストタイム</th>
-                <th>記録日</th>
+                <th>開催区分</th>
               </tr>
             </thead>
             <tbody>
@@ -99,7 +100,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
                 <tr key={result.id}>
                   <td>{result.event.title}</td>
                   <td style={{ fontWeight: 600 }}>{result.timeText}</td>
-                  <td className="notice">{result.meet.heldOn.toISOString().slice(0, 10)}</td>
+                  <td className="notice">{formatMeetLabel(result.meet)}</td>
                 </tr>
               ))}
             </tbody>
@@ -115,12 +116,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
         ) : (
           groupedResults.map((group) => (
             <div key={group.meet.id} style={{ marginBottom: 24 }}>
-              <h3 style={{ fontSize: "1rem", marginBottom: 8 }}>
-                {group.meet.title}
-                <span className="notice" style={{ marginLeft: 8 }}>
-                  ({group.meet.heldOn.toISOString().slice(0, 10)})
-                </span>
-              </h3>
+              <h3 style={{ fontSize: "1rem", marginBottom: 8 }}>{formatMeetLabel(group.meet)}</h3>
               <table className="table">
                 <thead>
                   <tr>
