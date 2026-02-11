@@ -1,11 +1,19 @@
+import fs from "node:fs";
+import path from "node:path";
 import { Athlete, Event, Meet, Result } from "@prisma/client";
-import { Document, Font, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
 import { RankingGroup } from "./ranking-report";
 
 const FONT_FAMILY = "NotoSansJP";
 const NOTO_SANS_JP_FONT_URL = "https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Regular.otf";
+const A4_WIDTH = 595.28;
+const A4_HEIGHT = 841.89;
+const RECORD_TEMPLATE_FILE = "record-certificate.png";
+const FIRST_PRIZE_TEMPLATE_FILE = "first-prize-certificate.png";
+const TEMPLATE_DIRECTORY = path.join(process.cwd(), "public", "pdf-templates");
 
+const templateCache = new Map<string, string | null>();
 let fontRegistered = false;
 
 function ensureFontRegistered() {
@@ -35,6 +43,59 @@ function genderLabel(gender: "male" | "female" | "other"): string {
   }
 
   return "その他";
+}
+
+function getMimeType(fileName: string): string {
+  const extension = path.extname(fileName).toLowerCase();
+  if (extension === ".png") {
+    return "image/png";
+  }
+
+  if (extension === ".jpg" || extension === ".jpeg") {
+    return "image/jpeg";
+  }
+
+  if (extension === ".webp") {
+    return "image/webp";
+  }
+
+  return "application/octet-stream";
+}
+
+function getTemplateDataUri(fileName: string): string | null {
+  const cached = templateCache.get(fileName);
+  if (typeof cached !== "undefined") {
+    return cached;
+  }
+
+  const filePath = path.join(TEMPLATE_DIRECTORY, fileName);
+  if (!fs.existsSync(filePath)) {
+    templateCache.set(fileName, null);
+    return null;
+  }
+
+  const mimeType = getMimeType(fileName);
+  const base64 = fs.readFileSync(filePath).toString("base64");
+  const dataUri = `data:${mimeType};base64,${base64}`;
+
+  templateCache.set(fileName, dataUri);
+  return dataUri;
+}
+
+function buildRecordLines(results: Array<Result & { event: Event }>) {
+  const visibleResults = results.slice(0, 6);
+  const eventLines = visibleResults.map((result) => result.event.title);
+  const timeLines = visibleResults.map((result) => `${result.timeText} (${result.rank}位)`);
+
+  if (results.length > visibleResults.length) {
+    eventLines.push("...");
+    timeLines.push("...");
+  }
+
+  return {
+    events: eventLines.join("\n"),
+    times: timeLines.join("\n")
+  };
 }
 
 const styles = StyleSheet.create({
@@ -81,23 +142,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     fontWeight: 700
   },
-  certificatePage: {
-    fontFamily: FONT_FAMILY,
-    padding: 60,
-    textAlign: "center"
-  },
-  certificateTitle: {
-    fontSize: 36,
-    marginBottom: 36
-  },
-  certificateLine: {
-    fontSize: 16,
-    marginBottom: 12
-  },
-  certificateName: {
-    fontSize: 26,
-    marginVertical: 20
-  },
   rankingGroup: {
     marginTop: 14
   },
@@ -109,6 +153,99 @@ const styles = StyleSheet.create({
     marginTop: 24,
     textAlign: "center",
     color: "#666666"
+  },
+  templatePage: {
+    position: "relative",
+    width: A4_WIDTH,
+    height: A4_HEIGHT,
+    fontFamily: FONT_FAMILY
+  },
+  templateBackground: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: A4_WIDTH,
+    height: A4_HEIGHT
+  },
+  recordMeetTitle: {
+    position: "absolute",
+    top: 76,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 24
+  },
+  recordNameValue: {
+    position: "absolute",
+    top: 250,
+    left: 120,
+    width: 260,
+    fontSize: 30
+  },
+  recordGradeValue: {
+    position: "absolute",
+    top: 250,
+    left: 392,
+    width: 96,
+    textAlign: "center",
+    fontSize: 30
+  },
+  recordEventValue: {
+    position: "absolute",
+    top: 358,
+    left: 154,
+    width: 210,
+    fontSize: 20,
+    lineHeight: 1.5
+  },
+  recordTimeValue: {
+    position: "absolute",
+    top: 358,
+    left: 364,
+    width: 188,
+    fontSize: 20,
+    lineHeight: 1.5
+  },
+  recordFooter: {
+    position: "absolute",
+    top: 740,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 16
+  },
+  prizeName: {
+    position: "absolute",
+    top: 360,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 54
+  },
+  prizeEvent: {
+    position: "absolute",
+    top: 448,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 32
+  },
+  prizeTime: {
+    position: "absolute",
+    top: 504,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 30
+  },
+  prizeMeta: {
+    position: "absolute",
+    top: 696,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 20,
+    lineHeight: 1.5
   }
 });
 
@@ -126,7 +263,37 @@ async function renderPdfDocument(document: ReactElement): Promise<Buffer> {
   }
 }
 
-export async function renderRecordPdf({
+function buildRecordTemplateDocument({
+  athlete,
+  meet,
+  results,
+  templateDataUri
+}: {
+  athlete: Athlete;
+  meet: Meet;
+  results: Array<Result & { event: Event }>;
+  templateDataUri: string;
+}): ReactElement {
+  const lines = buildRecordLines(results);
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.templatePage}>
+        <Image style={styles.templateBackground} src={templateDataUri} />
+        <Text style={styles.recordMeetTitle}>{meet.title}</Text>
+        <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
+        <Text style={styles.recordGradeValue}>{athlete.grade}年</Text>
+        <Text style={styles.recordEventValue}>{lines.events}</Text>
+        <Text style={styles.recordTimeValue}>{lines.times}</Text>
+        <Text style={styles.recordFooter}>
+          {`開催日 ${formatDate(meet.heldOn)}\nはまだスイミングスクール`}
+        </Text>
+      </Page>
+    </Document>
+  );
+}
+
+function buildRecordFallbackDocument({
   athlete,
   meet,
   results
@@ -134,8 +301,8 @@ export async function renderRecordPdf({
   athlete: Athlete;
   meet: Meet;
   results: Array<Result & { event: Event }>;
-}): Promise<Buffer> {
-  return renderPdfDocument(
+}): ReactElement {
+  return (
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>{meet.title} 記録証</Text>
@@ -164,6 +331,72 @@ export async function renderRecordPdf({
   );
 }
 
+function buildFirstPrizeTemplateDocument({
+  athlete,
+  meet,
+  result,
+  templateDataUri
+}: {
+  athlete: Athlete;
+  meet: Meet;
+  result: Result & { event: Event };
+  templateDataUri: string;
+}): ReactElement {
+  return (
+    <Document>
+      <Page size="A4" style={styles.templatePage}>
+        <Image style={styles.templateBackground} src={templateDataUri} />
+        <Text style={styles.prizeName}>{athlete.fullName}</Text>
+        <Text style={styles.prizeEvent}>{result.event.title}</Text>
+        <Text style={styles.prizeTime}>記録 {result.timeText}</Text>
+        <Text style={styles.prizeMeta}>
+          {`${meet.title}\n開催日 ${formatDate(meet.heldOn)}\nはまだスイミングスクール`}
+        </Text>
+      </Page>
+    </Document>
+  );
+}
+
+function buildFirstPrizeFallbackDocument({
+  athlete,
+  meet,
+  result
+}: {
+  athlete: Athlete;
+  meet: Meet;
+  result: Result & { event: Event };
+}): ReactElement {
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.title}>賞状</Text>
+        <Text style={styles.meta}>{meet.title}</Text>
+        <Text style={styles.meta}>{result.event.title}</Text>
+        <Text style={styles.meta}>{result.rank}位</Text>
+        <Text style={styles.meta}>{athlete.fullName} 様</Text>
+        <Text style={styles.meta}>記録: {result.timeText}</Text>
+      </Page>
+    </Document>
+  );
+}
+
+export async function renderRecordPdf({
+  athlete,
+  meet,
+  results
+}: {
+  athlete: Athlete;
+  meet: Meet;
+  results: Array<Result & { event: Event }>;
+}): Promise<Buffer> {
+  const templateDataUri = getTemplateDataUri(RECORD_TEMPLATE_FILE);
+  if (templateDataUri) {
+    return renderPdfDocument(buildRecordTemplateDocument({ athlete, meet, results, templateDataUri }));
+  }
+
+  return renderPdfDocument(buildRecordFallbackDocument({ athlete, meet, results }));
+}
+
 export async function renderCertificatePdf({
   athlete,
   meet,
@@ -173,18 +406,12 @@ export async function renderCertificatePdf({
   meet: Meet;
   result: Result & { event: Event };
 }): Promise<Buffer> {
-  return renderPdfDocument(
-    <Document>
-      <Page size="A4" style={styles.certificatePage}>
-        <Text style={styles.certificateTitle}>賞状</Text>
-        <Text style={styles.certificateLine}>{meet.title}</Text>
-        <Text style={styles.certificateLine}>{result.event.title}</Text>
-        <Text style={styles.certificateLine}>{result.rank}位</Text>
-        <Text style={styles.certificateName}>{athlete.fullName} 様</Text>
-        <Text style={styles.certificateLine}>記録: {result.timeText}</Text>
-      </Page>
-    </Document>
-  );
+  const templateDataUri = getTemplateDataUri(FIRST_PRIZE_TEMPLATE_FILE);
+  if (templateDataUri) {
+    return renderPdfDocument(buildFirstPrizeTemplateDocument({ athlete, meet, result, templateDataUri }));
+  }
+
+  return renderPdfDocument(buildFirstPrizeFallbackDocument({ athlete, meet, result }));
 }
 
 export async function renderRankingPdf({

@@ -45,3 +45,10 @@ npm run dev
 
 `@react-pdf/renderer` を使ってサーバー側でPDFを直接生成します。  
 Playwright / Chromium の追加インストールは不要です。
+
+台紙デザインを使う場合は、以下の画像を配置してください。
+
+- `public/pdf-templates/record-certificate.png`（記録証）
+- `public/pdf-templates/first-prize-certificate.png`（1位賞状）
+
+画像が未配置の場合はシンプルなフォールバックレイアウトで生成されます。
