@@ -4,8 +4,9 @@ import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { renderRankingPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
-import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
+import { parseDocsFilterInput } from "@/lib/docs-filter";
 import { buildMeetRankingGroups } from "@/lib/ranking-report";
+import { assignMonthlyRanks } from "@/lib/monthly-rank";
 
 export async function POST(request: Request) {
   if (!isAdminAuthenticated()) {
@@ -23,61 +24,68 @@ export async function POST(request: Request) {
 
   try {
     const filter = parsedFilter.value;
-    const meets = filter.hasMonthFilter
-      ? await prisma.meet.findMany({
-          where: buildMeetWhere("swimming", filter),
-          orderBy: [{ heldOn: "asc" }, { title: "asc" }]
-        })
-      : await prisma.meet
-          .findFirst({
-            where: { program: "swimming" },
-            orderBy: { heldOn: "desc" }
-          })
-          .then((meet) => (meet ? [meet] : []));
-
-    if (meets.length === 0) {
-      return NextResponse.json({ message: "条件に一致する記録会がありません" }, { status: 400 });
+    if (!filter.hasMonthFilter || !filter.monthStart || !filter.monthEnd || !filter.year || !filter.month) {
+      return NextResponse.json({ message: "ランキング出力には年・月の指定が必要です" }, { status: 400 });
     }
 
-    const files = [] as { name: string; buffer: Buffer }[];
-
-    for (const meet of meets) {
-      const results = await prisma.result.findMany({
-        where: {
-          meetId: meet.id,
-          rank: { lte: 3 }
-        },
-        include: {
-          athlete: true,
-          event: true
-        }
-      });
-
-      const groups = buildMeetRankingGroups(results);
-      if (groups.length === 0) {
-        continue;
-      }
-
-      const buffer = await renderRankingPdf({ meet, groups });
-      const name = `${meet.title}_ranking.pdf`;
-      const storageKey = await saveBuffer(`swimming/rankings/${name}`, buffer);
-
-      await prisma.generatedDoc.create({
-        data: {
+    const rows = await prisma.result.findMany({
+      where: {
+        meet: {
           program: "swimming",
-          kind: "ranking",
-          storageKey
+          heldOn: {
+            gte: filter.monthStart,
+            lt: filter.monthEnd
+          }
         }
-      });
+      },
+      include: {
+        athlete: true,
+        event: true,
+        meet: {
+          select: { heldOn: true }
+        }
+      }
+    });
 
-      files.push({ name, buffer });
-    }
-
-    if (files.length === 0) {
+    if (rows.length === 0) {
       return NextResponse.json({ message: "条件に一致するランキングデータがありません" }, { status: 400 });
     }
 
-    const zip = await zipBuffers(files);
+    const monthlyRanks = assignMonthlyRanks(
+      rows.map((row) => ({
+        id: row.id,
+        eventId: row.eventId,
+        heldOn: row.meet.heldOn,
+        timeMs: row.timeMs
+      }))
+    );
+
+    const rankedRows = rows
+      .map((row) => ({
+        ...row,
+        rank: monthlyRanks.get(row.id) ?? 0
+      }))
+      .filter((row) => row.rank > 0 && row.rank <= 3);
+
+    const groups = buildMeetRankingGroups(rankedRows);
+    if (groups.length === 0) {
+      return NextResponse.json({ message: "条件に一致するランキングデータがありません" }, { status: 400 });
+    }
+
+    const periodLabel = `${filter.year}年${filter.month}月`;
+    const buffer = await renderRankingPdf({ periodLabel, groups });
+    const name = `${periodLabel}_ranking.pdf`;
+    const storageKey = await saveBuffer(`swimming/rankings/${name}`, buffer);
+
+    await prisma.generatedDoc.create({
+      data: {
+        program: "swimming",
+        kind: "ranking",
+        storageKey
+      }
+    });
+
+    const zip = await zipBuffers([{ name, buffer }]);
 
     return new NextResponse(zip, {
       headers: {

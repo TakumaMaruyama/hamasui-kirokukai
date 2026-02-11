@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Athlete, Event, Meet, Result } from "@prisma/client";
+import { Athlete } from "@prisma/client";
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
 import { RankingGroup } from "./ranking-report";
@@ -16,6 +16,16 @@ const TEMPLATE_DIRECTORY = path.join(process.cwd(), "public", "pdf-templates");
 const templateCache = new Map<string, string | null>();
 let fontRegistered = false;
 
+export type RecordPdfEntry = {
+  eventTitle: string;
+  timeText: string;
+};
+
+export type CertificatePdfEntry = {
+  eventTitle: string;
+  timeText: string;
+};
+
 function ensureFontRegistered() {
   if (fontRegistered) {
     return;
@@ -27,10 +37,6 @@ function ensureFontRegistered() {
   });
 
   fontRegistered = true;
-}
-
-function formatDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
 }
 
 function genderLabel(gender: "male" | "female" | "other"): string {
@@ -82,12 +88,12 @@ function getTemplateDataUri(fileName: string): string | null {
   return dataUri;
 }
 
-function buildRecordLines(results: Array<Result & { event: Event }>) {
-  const visibleResults = results.slice(0, 6);
-  const eventLines = visibleResults.map((result) => result.event.title);
-  const timeLines = visibleResults.map((result) => `${result.timeText} (${result.rank}位)`);
+function buildRecordLines(entries: RecordPdfEntry[]) {
+  const visibleEntries = entries.slice(0, 6);
+  const eventLines = visibleEntries.map((entry) => entry.eventTitle);
+  const timeLines = visibleEntries.map((entry) => entry.timeText);
 
-  if (results.length > visibleResults.length) {
+  if (entries.length > visibleEntries.length) {
     eventLines.push("...");
     timeLines.push("...");
   }
@@ -167,14 +173,6 @@ const styles = StyleSheet.create({
     width: A4_WIDTH,
     height: A4_HEIGHT
   },
-  recordMeetTitle: {
-    position: "absolute",
-    top: 76,
-    left: 0,
-    width: A4_WIDTH,
-    textAlign: "center",
-    fontSize: 24
-  },
   recordNameValue: {
     position: "absolute",
     top: 250,
@@ -206,14 +204,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 1.5
   },
-  recordFooter: {
-    position: "absolute",
-    top: 740,
-    left: 0,
-    width: A4_WIDTH,
-    textAlign: "center",
-    fontSize: 16
-  },
   prizeName: {
     position: "absolute",
     top: 360,
@@ -224,28 +214,29 @@ const styles = StyleSheet.create({
   },
   prizeEvent: {
     position: "absolute",
-    top: 448,
+    top: 484,
     left: 0,
     width: A4_WIDTH,
     textAlign: "center",
-    fontSize: 32
+    fontSize: 30,
+    lineHeight: 1.4
   },
   prizeTime: {
     position: "absolute",
-    top: 504,
+    top: 564,
     left: 0,
     width: A4_WIDTH,
     textAlign: "center",
-    fontSize: 30
+    fontSize: 28,
+    lineHeight: 1.4
   },
   prizeMeta: {
     position: "absolute",
-    top: 696,
+    top: 438,
     left: 0,
     width: A4_WIDTH,
     textAlign: "center",
-    fontSize: 20,
-    lineHeight: 1.5
+    fontSize: 24
   }
 });
 
@@ -265,29 +256,23 @@ async function renderPdfDocument(document: ReactElement): Promise<Buffer> {
 
 function buildRecordTemplateDocument({
   athlete,
-  meet,
-  results,
+  entries,
   templateDataUri
 }: {
   athlete: Athlete;
-  meet: Meet;
-  results: Array<Result & { event: Event }>;
+  entries: RecordPdfEntry[];
   templateDataUri: string;
 }): ReactElement {
-  const lines = buildRecordLines(results);
+  const lines = buildRecordLines(entries);
 
   return (
     <Document>
       <Page size="A4" style={styles.templatePage}>
         <Image style={styles.templateBackground} src={templateDataUri} />
-        <Text style={styles.recordMeetTitle}>{meet.title}</Text>
         <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
         <Text style={styles.recordGradeValue}>{athlete.grade}年</Text>
         <Text style={styles.recordEventValue}>{lines.events}</Text>
         <Text style={styles.recordTimeValue}>{lines.times}</Text>
-        <Text style={styles.recordFooter}>
-          {`開催日 ${formatDate(meet.heldOn)}\nはまだスイミングスクール`}
-        </Text>
       </Page>
     </Document>
   );
@@ -295,34 +280,27 @@ function buildRecordTemplateDocument({
 
 function buildRecordFallbackDocument({
   athlete,
-  meet,
-  results
+  entries
 }: {
   athlete: Athlete;
-  meet: Meet;
-  results: Array<Result & { event: Event }>;
+  entries: RecordPdfEntry[];
 }): ReactElement {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>{meet.title} 記録証</Text>
+        <Text style={styles.title}>記録証</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
-        <Text style={styles.meta}>
-          学年: {athlete.grade}年 / 性別: {genderLabel(athlete.gender)}
-        </Text>
-        <Text style={styles.meta}>開催日: {formatDate(meet.heldOn)}</Text>
+        <Text style={styles.meta}>学年: {athlete.grade}年</Text>
 
         <View style={styles.table}>
           <View style={styles.row}>
             <Text style={[styles.cell, styles.cellEvent, styles.headerCell]}>種目</Text>
             <Text style={[styles.cell, styles.cellTime, styles.headerCell]}>記録</Text>
-            <Text style={[styles.cell, styles.cellRank, styles.headerCell]}>順位</Text>
           </View>
-          {results.map((result, index) => (
-            <View key={`${result.id}-${index}`} style={index === results.length - 1 ? [styles.row, styles.rowLast] : styles.row}>
-              <Text style={[styles.cell, styles.cellEvent]}>{result.event.title}</Text>
-              <Text style={[styles.cell, styles.cellTime]}>{result.timeText}</Text>
-              <Text style={[styles.cell, styles.cellRank]}>{result.rank}位</Text>
+          {entries.map((entry, index) => (
+            <View key={`${entry.eventTitle}-${entry.timeText}-${index}`} style={index === entries.length - 1 ? [styles.row, styles.rowLast] : styles.row}>
+              <Text style={[styles.cell, styles.cellEvent]}>{entry.eventTitle}</Text>
+              <Text style={[styles.cell, styles.cellTime]}>{entry.timeText}</Text>
             </View>
           ))}
         </View>
@@ -333,25 +311,25 @@ function buildRecordFallbackDocument({
 
 function buildFirstPrizeTemplateDocument({
   athlete,
-  meet,
-  result,
+  entries,
   templateDataUri
 }: {
   athlete: Athlete;
-  meet: Meet;
-  result: Result & { event: Event };
+  entries: CertificatePdfEntry[];
   templateDataUri: string;
 }): ReactElement {
+  const visibleEntries = entries.slice(0, 5);
+  const eventLines = visibleEntries.map((entry) => entry.eventTitle).join("\n");
+  const timeLines = visibleEntries.map((entry) => entry.timeText).join("\n");
+
   return (
     <Document>
       <Page size="A4" style={styles.templatePage}>
         <Image style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.prizeName}>{athlete.fullName}</Text>
-        <Text style={styles.prizeEvent}>{result.event.title}</Text>
-        <Text style={styles.prizeTime}>記録 {result.timeText}</Text>
-        <Text style={styles.prizeMeta}>
-          {`${meet.title}\n開催日 ${formatDate(meet.heldOn)}\nはまだスイミングスクール`}
-        </Text>
+        <Text style={styles.prizeMeta}>{`${athlete.grade}年 / ${genderLabel(athlete.gender)}`}</Text>
+        <Text style={styles.prizeEvent}>{eventLines}</Text>
+        <Text style={styles.prizeTime}>{timeLines}</Text>
       </Page>
     </Document>
   );
@@ -359,22 +337,32 @@ function buildFirstPrizeTemplateDocument({
 
 function buildFirstPrizeFallbackDocument({
   athlete,
-  meet,
-  result
+  entries
 }: {
   athlete: Athlete;
-  meet: Meet;
-  result: Result & { event: Event };
+  entries: CertificatePdfEntry[];
 }): ReactElement {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>賞状</Text>
-        <Text style={styles.meta}>{meet.title}</Text>
-        <Text style={styles.meta}>{result.event.title}</Text>
-        <Text style={styles.meta}>{result.rank}位</Text>
-        <Text style={styles.meta}>{athlete.fullName} 様</Text>
-        <Text style={styles.meta}>記録: {result.timeText}</Text>
+        <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
+        <Text style={styles.meta}>
+          学年: {athlete.grade}年 / 性別: {genderLabel(athlete.gender)}
+        </Text>
+
+        <View style={styles.table}>
+          <View style={styles.row}>
+            <Text style={[styles.cell, styles.cellEvent, styles.headerCell]}>種目</Text>
+            <Text style={[styles.cell, styles.cellTime, styles.headerCell]}>記録</Text>
+          </View>
+          {entries.map((entry, index) => (
+            <View key={`${entry.eventTitle}-${entry.timeText}-${index}`} style={index === entries.length - 1 ? [styles.row, styles.rowLast] : styles.row}>
+              <Text style={[styles.cell, styles.cellEvent]}>{entry.eventTitle}</Text>
+              <Text style={[styles.cell, styles.cellTime]}>{entry.timeText}</Text>
+            </View>
+          ))}
+        </View>
       </Page>
     </Document>
   );
@@ -382,50 +370,45 @@ function buildFirstPrizeFallbackDocument({
 
 export async function renderRecordPdf({
   athlete,
-  meet,
-  results
+  entries
 }: {
   athlete: Athlete;
-  meet: Meet;
-  results: Array<Result & { event: Event }>;
+  entries: RecordPdfEntry[];
 }): Promise<Buffer> {
   const templateDataUri = getTemplateDataUri(RECORD_TEMPLATE_FILE);
   if (templateDataUri) {
-    return renderPdfDocument(buildRecordTemplateDocument({ athlete, meet, results, templateDataUri }));
+    return renderPdfDocument(buildRecordTemplateDocument({ athlete, entries, templateDataUri }));
   }
 
-  return renderPdfDocument(buildRecordFallbackDocument({ athlete, meet, results }));
+  return renderPdfDocument(buildRecordFallbackDocument({ athlete, entries }));
 }
 
 export async function renderCertificatePdf({
   athlete,
-  meet,
-  result
+  entries
 }: {
   athlete: Athlete;
-  meet: Meet;
-  result: Result & { event: Event };
+  entries: CertificatePdfEntry[];
 }): Promise<Buffer> {
   const templateDataUri = getTemplateDataUri(FIRST_PRIZE_TEMPLATE_FILE);
   if (templateDataUri) {
-    return renderPdfDocument(buildFirstPrizeTemplateDocument({ athlete, meet, result, templateDataUri }));
+    return renderPdfDocument(buildFirstPrizeTemplateDocument({ athlete, entries, templateDataUri }));
   }
 
-  return renderPdfDocument(buildFirstPrizeFallbackDocument({ athlete, meet, result }));
+  return renderPdfDocument(buildFirstPrizeFallbackDocument({ athlete, entries }));
 }
 
 export async function renderRankingPdf({
-  meet,
+  periodLabel,
   groups
 }: {
-  meet: Meet;
+  periodLabel: string;
   groups: RankingGroup[];
 }): Promise<Buffer> {
   return renderPdfDocument(
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>{meet.title} ランキング</Text>
-        <Text style={styles.meta}>開催日: {formatDate(meet.heldOn)}</Text>
+        <Text style={styles.title}>{periodLabel} ランキング</Text>
         {groups.length === 0 ? (
           <Text style={styles.empty}>ランキング対象（1〜3位）のデータがありません。</Text>
         ) : (

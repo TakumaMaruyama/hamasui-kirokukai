@@ -8,6 +8,7 @@ type Props = {
   endpoint: string;
   filename: string;
   allowFullName?: boolean;
+  allowWeekday?: boolean;
 };
 
 type ApiPayload = {
@@ -32,7 +33,7 @@ async function readApiPayload(response: Response): Promise<ApiPayload | null> {
   }
 }
 
-export default function DocsAction({ title, endpoint, filename, allowFullName = true }: Props) {
+export default function DocsAction({ title, endpoint, filename, allowFullName = true, allowWeekday = true }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [year, setYear] = useState("");
@@ -50,7 +51,7 @@ export default function DocsAction({ title, endpoint, filename, allowFullName = 
         body: JSON.stringify({
           year: year || undefined,
           month: month || undefined,
-          weekday: weekday || undefined,
+          weekday: allowWeekday ? weekday || undefined : undefined,
           fullName: allowFullName ? fullName.trim() || undefined : undefined
         })
       });
@@ -80,7 +81,11 @@ export default function DocsAction({ title, endpoint, filename, allowFullName = 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: allowFullName ? "repeat(4, minmax(120px, 1fr))" : "repeat(3, minmax(120px, 1fr))",
+          gridTemplateColumns: allowFullName && allowWeekday
+            ? "repeat(4, minmax(120px, 1fr))"
+            : allowFullName || allowWeekday
+              ? "repeat(3, minmax(120px, 1fr))"
+              : "repeat(2, minmax(120px, 1fr))",
           gap: 12,
           marginBottom: 10
         }}
@@ -109,21 +114,23 @@ export default function DocsAction({ title, endpoint, filename, allowFullName = 
             placeholder="例: 9"
           />
         </div>
-        <div>
-          <label htmlFor={`${endpoint}-weekday`}>曜日</label>
-          <select
-            id={`${endpoint}-weekday`}
-            value={weekday}
-            onChange={(event) => setWeekday(event.target.value as MeetWeekday | "")}
-          >
-            <option value="">指定なし</option>
-            {WEEKDAY_VALUES.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
+        {allowWeekday && (
+          <div>
+            <label htmlFor={`${endpoint}-weekday`}>曜日</label>
+            <select
+              id={`${endpoint}-weekday`}
+              value={weekday}
+              onChange={(event) => setWeekday(event.target.value as MeetWeekday | "")}
+            >
+              <option value="">指定なし</option>
+              {WEEKDAY_VALUES.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {allowFullName && (
           <div>
             <label htmlFor={`${endpoint}-fullName`}>氏名（任意）</label>

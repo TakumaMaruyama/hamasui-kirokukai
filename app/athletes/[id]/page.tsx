@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatMeetLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
+import { assignMonthlyRanks } from "@/lib/monthly-rank";
 
 type ResultWithMeetEvent = {
   id: string;
@@ -81,6 +82,55 @@ export default async function AthletePage({ params }: { params: { id: string } }
     notFound();
   }
 
+  const monthRanges = new Map<string, { start: Date; end: Date }>();
+  const eventIds = new Set<string>();
+
+  for (const result of athlete.results) {
+    const heldOn = result.meet.heldOn;
+    const key = `${heldOn.getUTCFullYear()}-${heldOn.getUTCMonth() + 1}`;
+    if (!monthRanges.has(key)) {
+      const start = new Date(Date.UTC(heldOn.getUTCFullYear(), heldOn.getUTCMonth(), 1));
+      const end = new Date(Date.UTC(heldOn.getUTCFullYear(), heldOn.getUTCMonth() + 1, 1));
+      monthRanges.set(key, { start, end });
+    }
+
+    eventIds.add(result.eventId);
+  }
+
+  const monthlyRankScope = eventIds.size === 0
+    ? []
+    : await prisma.result.findMany({
+        where: {
+          eventId: { in: Array.from(eventIds) },
+          meet: {
+            program: "swimming",
+            OR: Array.from(monthRanges.values()).map((range) => ({
+              heldOn: {
+                gte: range.start,
+                lt: range.end
+              }
+            }))
+          }
+        },
+        select: {
+          id: true,
+          eventId: true,
+          timeMs: true,
+          meet: {
+            select: { heldOn: true }
+          }
+        }
+      });
+
+  const monthlyRanks = assignMonthlyRanks(
+    monthlyRankScope.map((result) => ({
+      id: result.id,
+      eventId: result.eventId,
+      heldOn: result.meet.heldOn,
+      timeMs: result.timeMs
+    }))
+  );
+
   const groupedResults = groupByMeet(athlete.results);
   const bestTimes = getBestTimes(athlete.results);
 
@@ -147,7 +197,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
                     <tr key={result.id}>
                       <td>{result.event.title}</td>
                       <td>{result.timeText}</td>
-                      <td>{result.rank}位</td>
+                      <td>{monthlyRanks.get(result.id) ?? result.rank}位</td>
                     </tr>
                   ))}
                 </tbody>

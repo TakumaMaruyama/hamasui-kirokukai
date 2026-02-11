@@ -6,6 +6,8 @@ import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
 
+type BestEntry = { eventTitle: string; timeText: string; timeMs: number };
+
 export async function POST(request: Request) {
   if (!isAdminAuthenticated()) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -22,61 +24,84 @@ export async function POST(request: Request) {
 
   try {
     const filter = parsedFilter.value;
-    const meets = filter.hasMonthFilter
-      ? await prisma.meet.findMany({
-          where: buildMeetWhere("swimming", filter),
-          orderBy: [{ heldOn: "asc" }, { title: "asc" }]
-        })
-      : await prisma.meet
-          .findFirst({
-            where: { program: "swimming" },
-            orderBy: { heldOn: "desc" }
-          })
-          .then((meet) => (meet ? [meet] : []));
+    const latestMeet = filter.hasMonthFilter
+      ? null
+      : await prisma.meet.findFirst({
+          where: { program: "swimming" },
+          orderBy: { heldOn: "desc" }
+        });
 
-    if (meets.length === 0) {
+    if (!filter.hasMonthFilter && !latestMeet) {
       return NextResponse.json({ message: "条件に一致する記録会がありません" }, { status: 400 });
     }
 
-    const files = [] as { name: string; buffer: Buffer }[];
+    const meetWhere = filter.hasMonthFilter
+      ? buildMeetWhere("swimming", filter)
+      : { id: latestMeet!.id };
+    const periodLabel = filter.hasMonthFilter && filter.year && filter.month
+      ? `${filter.year}年${filter.month}月`
+      : latestMeet!.title;
 
-    for (const meet of meets) {
-      const athletes = await prisma.athlete.findMany({
-        where: {
-          ...(filter.fullName ? { fullName: filter.fullName } : {}),
-          results: {
-            some: {
-              meetId: meet.id
-            }
-          }
-        },
-        orderBy: [{ fullName: "asc" }, { grade: "asc" }]
+    const rows = await prisma.result.findMany({
+      where: {
+        meet: meetWhere,
+        ...(filter.fullName ? { athlete: { fullName: filter.fullName } } : {})
+      },
+      include: {
+        athlete: true,
+        event: true
+      },
+      orderBy: [{ athlete: { fullName: "asc" } }, { event: { title: "asc" } }, { timeMs: "asc" }]
+    });
+
+    if (rows.length === 0) {
+      return NextResponse.json({ message: "条件に一致する記録がありません" }, { status: 400 });
+    }
+
+    const files = [] as { name: string; buffer: Buffer }[];
+    const grouped = new Map<string, { athlete: (typeof rows)[number]["athlete"]; bestByEvent: Map<string, BestEntry> }>();
+
+    for (const row of rows) {
+      if (!grouped.has(row.athleteId)) {
+        grouped.set(row.athleteId, {
+          athlete: row.athlete,
+          bestByEvent: new Map<string, BestEntry>()
+        });
+      }
+
+      const athleteGroup = grouped.get(row.athleteId)!;
+      const current = athleteGroup.bestByEvent.get(row.eventId);
+      if (!current || row.timeMs < current.timeMs) {
+        athleteGroup.bestByEvent.set(row.eventId, {
+          eventTitle: row.event.title,
+          timeText: row.timeText,
+          timeMs: row.timeMs
+        });
+      }
+    }
+
+    for (const { athlete, bestByEvent } of grouped.values()) {
+      const entries = Array.from(bestByEvent.values())
+        .sort((a, b) => a.eventTitle.localeCompare(b.eventTitle, "ja"))
+        .map((entry) => ({ eventTitle: entry.eventTitle, timeText: entry.timeText }));
+
+      if (entries.length === 0) {
+        continue;
+      }
+
+      const buffer = await renderRecordPdf({ athlete, entries });
+      const name = `${athlete.fullName}_${periodLabel}_record.pdf`;
+      const storageKey = await saveBuffer(`swimming/records/${name}`, buffer);
+
+      await prisma.generatedDoc.create({
+        data: {
+          program: "swimming",
+          kind: "record",
+          storageKey
+        }
       });
 
-      for (const athlete of athletes) {
-        const results = await prisma.result.findMany({
-          where: { athleteId: athlete.id, meetId: meet.id },
-          include: { event: true }
-        });
-
-        if (results.length === 0) {
-          continue;
-        }
-
-        const buffer = await renderRecordPdf({ athlete, meet, results });
-        const name = `${athlete.fullName}_${meet.title}_record.pdf`;
-        const storageKey = await saveBuffer(`swimming/records/${name}`, buffer);
-
-        await prisma.generatedDoc.create({
-          data: {
-            program: "swimming",
-            kind: "record",
-            storageKey
-          }
-        });
-
-        files.push({ name, buffer });
-      }
+      files.push({ name, buffer });
     }
 
     if (files.length === 0) {
