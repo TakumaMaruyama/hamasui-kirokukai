@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { rankingTemplate } from "@/lib/templates";
-import { renderPdfFromHtml } from "@/lib/pdf";
+import { renderRankingPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
@@ -59,8 +58,7 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const html = rankingTemplate({ meet, groups });
-      const buffer = await renderPdfFromHtml(html);
+      const buffer = await renderRankingPdf({ meet, groups });
       const name = `${meet.title}_ranking.pdf`;
       const storageKey = await saveBuffer(`swimming/rankings/${name}`, buffer);
 

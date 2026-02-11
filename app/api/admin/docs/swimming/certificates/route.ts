@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { certificateTemplate } from "@/lib/templates";
-import { renderPdfFromHtml } from "@/lib/pdf";
+import { renderCertificatePdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
@@ -55,12 +54,11 @@ export async function POST(request: Request) {
       });
 
       for (const result of topResults) {
-        const html = certificateTemplate({
+        const buffer = await renderCertificatePdf({
           athlete: result.athlete,
           meet,
           result
         });
-        const buffer = await renderPdfFromHtml(html);
         const name = `${meet.title}_${result.event.title}_${result.athlete.fullName}.pdf`;
         const storageKey = await saveBuffer(`swimming/certificates/${name}`, buffer);
 

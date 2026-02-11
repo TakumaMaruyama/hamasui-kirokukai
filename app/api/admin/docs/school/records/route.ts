@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { recordTemplate } from "@/lib/templates";
-import { renderPdfFromHtml } from "@/lib/pdf";
+import { renderRecordPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
@@ -64,8 +63,7 @@ export async function POST(request: Request) {
           continue;
         }
 
-        const html = recordTemplate({ athlete, meet, results });
-        const buffer = await renderPdfFromHtml(html);
+        const buffer = await renderRecordPdf({ athlete, meet, results });
         const name = `${athlete.fullName}_${meet.title}_record.pdf`;
         const storageKey = await saveBuffer(`school/records/${name}`, buffer);
 

@@ -7,7 +7,7 @@ A record search and admin PDF generation app for swimming meets. Built with Next
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Database**: PostgreSQL via Prisma ORM
-- **PDF Generation**: Playwright (Chromium)
+- **PDF Generation**: @react-pdf/renderer
 - **Styling**: CSS (globals.css)
 
 ## Project Structure

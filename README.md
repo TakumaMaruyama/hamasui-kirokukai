@@ -43,8 +43,5 @@ npm run dev
 
 ## PDF生成について
 
-Playwright を使ってPDFを生成します。初回はブラウザバイナリのインストールが必要です。
-
-```bash
-npx playwright install chromium
-```
+`@react-pdf/renderer` を使ってサーバー側でPDFを直接生成します。  
+Playwright / Chromium の追加インストールは不要です。
