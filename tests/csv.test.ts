@@ -48,6 +48,7 @@ describe("parseCsv", () => {
       meet_title: "25.09名簿 - 月",
       held_on: "2025-09-01",
       full_name: "満留 一智",
+      full_name_kana: "みつどめ いち",
       grade: "2",
       gender: "male",
       event_title: "15ｍ板キック",

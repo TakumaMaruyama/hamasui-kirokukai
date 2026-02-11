@@ -4,6 +4,7 @@ import { Athlete } from "@prisma/client";
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
 import { RankingGroup } from "./ranking-report";
+import { formatTimeForDocument } from "./display-time";
 
 const FONT_FAMILY = "NotoSansJP";
 const NOTO_SANS_JP_FONT_URL = "https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Regular.otf";
@@ -19,11 +20,13 @@ let fontRegistered = false;
 export type RecordPdfEntry = {
   eventTitle: string;
   timeText: string;
+  timeMs?: number;
 };
 
 export type CertificatePdfEntry = {
   eventTitle: string;
   timeText: string;
+  timeMs?: number;
 };
 
 function ensureFontRegistered() {
@@ -91,7 +94,7 @@ function getTemplateDataUri(fileName: string): string | null {
 function buildRecordLines(entries: RecordPdfEntry[]) {
   const visibleEntries = entries.slice(0, 6);
   const eventLines = visibleEntries.map((entry) => entry.eventTitle);
-  const timeLines = visibleEntries.map((entry) => entry.timeText);
+  const timeLines = visibleEntries.map((entry) => formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs }));
 
   if (entries.length > visibleEntries.length) {
     eventLines.push("...");
@@ -180,6 +183,13 @@ const styles = StyleSheet.create({
     width: 260,
     fontSize: 30
   },
+  recordNameKanaValue: {
+    position: "absolute",
+    top: 226,
+    left: 120,
+    width: 260,
+    fontSize: 14
+  },
   recordGradeValue: {
     position: "absolute",
     top: 250,
@@ -211,6 +221,14 @@ const styles = StyleSheet.create({
     width: A4_WIDTH,
     textAlign: "center",
     fontSize: 54
+  },
+  prizeNameKana: {
+    position: "absolute",
+    top: 332,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 20
   },
   prizeEvent: {
     position: "absolute",
@@ -264,11 +282,13 @@ function buildRecordTemplateDocument({
   templateDataUri: string;
 }): ReactElement {
   const lines = buildRecordLines(entries);
+  const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
 
   return (
     <Document>
       <Page size="A4" style={styles.templatePage}>
         <Image style={styles.templateBackground} src={templateDataUri} />
+        <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
         <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
         <Text style={styles.recordGradeValue}>{athlete.grade}年</Text>
         <Text style={styles.recordEventValue}>{lines.events}</Text>
@@ -289,6 +309,7 @@ function buildRecordFallbackDocument({
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>記録証</Text>
+        <Text style={styles.meta}>ふりがな: {athlete.fullNameKana || athlete.fullName}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
         <Text style={styles.meta}>学年: {athlete.grade}年</Text>
 
@@ -300,7 +321,7 @@ function buildRecordFallbackDocument({
           {entries.map((entry, index) => (
             <View key={`${entry.eventTitle}-${entry.timeText}-${index}`} style={index === entries.length - 1 ? [styles.row, styles.rowLast] : styles.row}>
               <Text style={[styles.cell, styles.cellEvent]}>{entry.eventTitle}</Text>
-              <Text style={[styles.cell, styles.cellTime]}>{entry.timeText}</Text>
+              <Text style={[styles.cell, styles.cellTime]}>{formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs })}</Text>
             </View>
           ))}
         </View>
@@ -320,12 +341,16 @@ function buildFirstPrizeTemplateDocument({
 }): ReactElement {
   const visibleEntries = entries.slice(0, 5);
   const eventLines = visibleEntries.map((entry) => entry.eventTitle).join("\n");
-  const timeLines = visibleEntries.map((entry) => entry.timeText).join("\n");
+  const timeLines = visibleEntries
+    .map((entry) => formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs }))
+    .join("\n");
+  const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
 
   return (
     <Document>
       <Page size="A4" style={styles.templatePage}>
         <Image style={styles.templateBackground} src={templateDataUri} />
+        <Text style={styles.prizeNameKana}>{nameKana}</Text>
         <Text style={styles.prizeName}>{athlete.fullName}</Text>
         <Text style={styles.prizeMeta}>{`${athlete.grade}年 / ${genderLabel(athlete.gender)}`}</Text>
         <Text style={styles.prizeEvent}>{eventLines}</Text>
@@ -346,6 +371,7 @@ function buildFirstPrizeFallbackDocument({
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>賞状</Text>
+        <Text style={styles.meta}>ふりがな: {athlete.fullNameKana || athlete.fullName}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
         <Text style={styles.meta}>
           学年: {athlete.grade}年 / 性別: {genderLabel(athlete.gender)}
@@ -359,7 +385,7 @@ function buildFirstPrizeFallbackDocument({
           {entries.map((entry, index) => (
             <View key={`${entry.eventTitle}-${entry.timeText}-${index}`} style={index === entries.length - 1 ? [styles.row, styles.rowLast] : styles.row}>
               <Text style={[styles.cell, styles.cellEvent]}>{entry.eventTitle}</Text>
-              <Text style={[styles.cell, styles.cellTime]}>{entry.timeText}</Text>
+              <Text style={[styles.cell, styles.cellTime]}>{formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs })}</Text>
             </View>
           ))}
         </View>

@@ -5,6 +5,7 @@ export type CsvRow = {
   meet_title: string;
   held_on: string;
   full_name: string;
+  full_name_kana?: string;
   grade: string;
   gender: string;
   event_title: string;
@@ -43,6 +44,10 @@ const HEADER_ALIASES: Record<string, keyof CsvRow> = {
   "開催日": "held_on",
   full_name: "full_name",
   "氏名": "full_name",
+  full_name_kana: "full_name_kana",
+  "ふりがな": "full_name_kana",
+  "フリガナ": "full_name_kana",
+  "かな": "full_name_kana",
   grade: "grade",
   "学年": "grade",
   gender: "gender",
@@ -265,6 +270,7 @@ function normalizeCanonicalRows(rows: RawCsvRow[]): CsvRow[] {
     meet_title: pickCellValue(row.meet_title),
     held_on: pickCellValue(row.held_on),
     full_name: pickCellValue(row.full_name),
+    full_name_kana: pickCellValue(row.full_name_kana) || undefined,
     grade: pickCellValue(row.grade),
     gender: pickCellValue(row.gender),
     event_title: pickCellValue(row.event_title),
@@ -292,6 +298,7 @@ function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRo
   for (const [index, row] of rows.entries()) {
     const eventTitle = pickCellValue(row.event_title);
     const fullName = pickCellValue(row.full_name).replace(/\s+/g, " ").trim();
+    const fullNameKana = pickCellValue(row.full_name_kana).replace(/\s+/g, " ").trim();
     const gender = normalizeGender(pickCellValue(row.gender));
     const grade = normalizeGrade(pickCellValue(row.grade));
     const timeText = pickCellValue(row.time_text).replace(/\s+/g, "");
@@ -328,6 +335,7 @@ function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRo
       meet_title: meetTitle,
       held_on: heldOn,
       full_name: fullName,
+      full_name_kana: fullNameKana || undefined,
       grade,
       gender,
       event_title: eventTitle,

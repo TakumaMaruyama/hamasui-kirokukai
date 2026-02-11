@@ -7,6 +7,7 @@ export type ImportRow = {
   meet_title: string;
   held_on: string;
   full_name: string;
+  full_name_kana?: string;
   grade: string;
   gender: string;
   event_title: string;
@@ -41,6 +42,11 @@ function parseRequiredText(value: string | undefined, fieldName: string): string
 
 function normalizeFullName(value: string): string {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function normalizeOptionalFullNameKana(value: string | undefined): string | undefined {
+  const normalized = value?.replace(/\s+/g, " ").trim();
+  return normalized ? normalized : undefined;
 }
 
 function parseRequiredInt(value: string | undefined, fieldName: string): number {
@@ -105,6 +111,7 @@ export async function importRows(program: Program, rows: ImportRow[]) {
       const meetTitle = parseRequiredText(row.meet_title, "meet_title");
       const heldOn = parseDate(row.held_on, "held_on");
       const fullName = normalizeFullName(parseRequiredText(row.full_name, "full_name"));
+      const fullNameKana = normalizeOptionalFullNameKana(row.full_name_kana);
       const grade = parseRequiredInt(row.grade, "grade");
       const gender = parseGender(row.gender);
       const eventTitle = parseRequiredText(row.event_title, "event_title");
@@ -127,10 +134,18 @@ export async function importRows(program: Program, rows: ImportRow[]) {
         (await prisma.athlete.create({
           data: {
             fullName,
+            fullNameKana,
             grade,
             gender
           }
         }));
+
+      if (existingAthlete && fullNameKana && existingAthlete.fullNameKana !== fullNameKana) {
+        await prisma.athlete.update({
+          where: { id: existingAthlete.id },
+          data: { fullNameKana }
+        });
+      }
 
       const meet = await prisma.meet.upsert({
         where: {

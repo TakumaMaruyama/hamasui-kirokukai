@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     for (const { athlete, bestByEvent } of grouped.values()) {
       const entries = Array.from(bestByEvent.values())
         .sort((a, b) => a.eventTitle.localeCompare(b.eventTitle, "ja"))
-        .map((entry) => ({ eventTitle: entry.eventTitle, timeText: entry.timeText }));
+        .map((entry) => ({ eventTitle: entry.eventTitle, timeText: entry.timeText, timeMs: entry.timeMs }));
 
       if (entries.length === 0) {
         continue;

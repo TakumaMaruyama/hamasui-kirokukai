@@ -21,6 +21,7 @@ enum Gender {
 model Athlete {
   id        String   @id @default(cuid())
   fullName  String
+  fullNameKana String?
   grade     Int
   gender    Gender
   createdAt DateTime @default(now())
