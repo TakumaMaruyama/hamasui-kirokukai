@@ -118,10 +118,18 @@ export default async function AthletePage({ params }: { params: { id: string } }
         },
         select: {
           id: true,
-          eventId: true,
           timeMs: true,
           meet: {
             select: { heldOn: true }
+          },
+          event: {
+            select: {
+              title: true,
+              distanceM: true,
+              style: true,
+              grade: true,
+              gender: true
+            }
           }
         }
       });
@@ -129,9 +137,15 @@ export default async function AthletePage({ params }: { params: { id: string } }
   const monthlyRanks = assignMonthlyRanks(
     monthlyRankScope.map((result) => ({
       id: result.id,
-      eventId: result.eventId,
       heldOn: result.meet.heldOn,
-      timeMs: result.timeMs
+      timeMs: result.timeMs,
+      event: {
+        title: result.event.title,
+        distanceM: result.event.distanceM,
+        style: result.event.style,
+        grade: result.event.grade,
+        gender: result.event.gender
+      }
     }))
   );
 

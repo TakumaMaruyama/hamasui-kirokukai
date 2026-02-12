@@ -60,9 +60,15 @@ export async function POST(request: Request) {
     const monthlyRanks = assignMonthlyRanks(
       rows.map((row) => ({
         id: row.id,
-        eventId: row.eventId,
         heldOn: row.meet.heldOn,
-        timeMs: row.timeMs
+        timeMs: row.timeMs,
+        event: {
+          title: row.event.title,
+          distanceM: row.event.distanceM,
+          style: row.event.style,
+          grade: row.event.grade,
+          gender: row.event.gender
+        }
       }))
     );
 
