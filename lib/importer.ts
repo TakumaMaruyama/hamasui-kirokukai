@@ -49,6 +49,11 @@ function normalizeOptionalFullNameKana(value: string | undefined): string | unde
   return normalized ? normalized : undefined;
 }
 
+function isMissingFullNameKanaColumnError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : "";
+  return /Athlete\.fullNameKana|column .*fullNameKana.* does not exist/i.test(message);
+}
+
 function parseRequiredInt(value: string | undefined, fieldName: string): number {
   const normalized = parseRequiredText(value, fieldName);
   const parsed = Number(normalized);
@@ -126,25 +131,54 @@ export async function importRows(program: Program, rows: ImportRow[]) {
           fullName,
           grade,
           gender
+        },
+        select: {
+          id: true
         }
       });
 
-      const athlete =
-        existingAthlete ??
-        (await prisma.athlete.create({
-          data: {
-            fullName,
-            fullNameKana,
-            grade,
-            gender
+      const athlete = existingAthlete ?? await (async () => {
+        try {
+          return await prisma.athlete.create({
+            data: {
+              fullName,
+              fullNameKana,
+              grade,
+              gender
+            },
+            select: {
+              id: true
+            }
+          });
+        } catch (error) {
+          if (!fullNameKana || !isMissingFullNameKanaColumnError(error)) {
+            throw error;
           }
-        }));
 
-      if (existingAthlete && fullNameKana && existingAthlete.fullNameKana !== fullNameKana) {
-        await prisma.athlete.update({
-          where: { id: existingAthlete.id },
-          data: { fullNameKana }
-        });
+          return prisma.athlete.create({
+            data: {
+              fullName,
+              grade,
+              gender
+            },
+            select: {
+              id: true
+            }
+          });
+        }
+      })();
+
+      if (existingAthlete && fullNameKana) {
+        try {
+          await prisma.athlete.update({
+            where: { id: existingAthlete.id },
+            data: { fullNameKana }
+          });
+        } catch (error) {
+          if (!isMissingFullNameKanaColumnError(error)) {
+            throw error;
+          }
+        }
       }
 
       const meet = await prisma.meet.upsert({

@@ -41,7 +41,11 @@ export async function POST(request: Request) {
         }
       },
       include: {
-        athlete: true,
+        athlete: {
+          select: {
+            fullName: true
+          }
+        },
         event: true,
         meet: {
           select: { heldOn: true }
