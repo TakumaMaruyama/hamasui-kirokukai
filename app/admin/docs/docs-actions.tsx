@@ -7,6 +7,7 @@ type Props = {
   title: string;
   endpoint: string;
   filename: string;
+  allowYearMonth?: boolean;
   allowFullName?: boolean;
   allowWeekday?: boolean;
 };
@@ -33,13 +34,21 @@ async function readApiPayload(response: Response): Promise<ApiPayload | null> {
   }
 }
 
-export default function DocsAction({ title, endpoint, filename, allowFullName = true, allowWeekday = true }: Props) {
+export default function DocsAction({
+  title,
+  endpoint,
+  filename,
+  allowYearMonth = true,
+  allowFullName = true,
+  allowWeekday = true
+}: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [year, setYear] = useState("");
   const [month, setMonth] = useState("");
   const [weekday, setWeekday] = useState<MeetWeekday | "">("");
   const [fullName, setFullName] = useState("");
+  const hasFilters = allowYearMonth || allowWeekday || allowFullName;
 
   const handleClick = async () => {
     setLoading(true);
@@ -49,8 +58,8 @@ export default function DocsAction({ title, endpoint, filename, allowFullName = 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          year: year || undefined,
-          month: month || undefined,
+          year: allowYearMonth ? year || undefined : undefined,
+          month: allowYearMonth ? month || undefined : undefined,
           weekday: allowWeekday ? weekday || undefined : undefined,
           fullName: allowFullName ? fullName.trim() || undefined : undefined
         })
@@ -78,72 +87,74 @@ export default function DocsAction({ title, endpoint, filename, allowFullName = 
 
   return (
     <div style={{ marginBottom: 16 }}>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: allowFullName && allowWeekday
-            ? "repeat(4, minmax(120px, 1fr))"
-            : allowFullName || allowWeekday
-              ? "repeat(3, minmax(120px, 1fr))"
-              : "repeat(2, minmax(120px, 1fr))",
-          gap: 12,
-          marginBottom: 10
-        }}
-      >
-        <div>
-          <label htmlFor={`${endpoint}-year`}>年</label>
-          <input
-            id={`${endpoint}-year`}
-            type="number"
-            min={2000}
-            max={2100}
-            value={year}
-            onChange={(event) => setYear(event.target.value)}
-            placeholder="例: 2025"
-          />
+      {hasFilters && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${Math.max(1, (allowYearMonth ? 2 : 0) + (allowWeekday ? 1 : 0) + (allowFullName ? 1 : 0))}, minmax(120px, 1fr))`,
+            gap: 12,
+            marginBottom: 10
+          }}
+        >
+          {allowYearMonth && (
+            <>
+              <div>
+                <label htmlFor={`${endpoint}-year`}>年</label>
+                <input
+                  id={`${endpoint}-year`}
+                  type="number"
+                  min={2000}
+                  max={2100}
+                  value={year}
+                  onChange={(event) => setYear(event.target.value)}
+                  placeholder="例: 2025"
+                />
+              </div>
+              <div>
+                <label htmlFor={`${endpoint}-month`}>月</label>
+                <input
+                  id={`${endpoint}-month`}
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={month}
+                  onChange={(event) => setMonth(event.target.value)}
+                  placeholder="例: 9"
+                />
+              </div>
+            </>
+          )}
+          {allowWeekday && (
+            <div>
+              <label htmlFor={`${endpoint}-weekday`}>曜日</label>
+              <select
+                id={`${endpoint}-weekday`}
+                value={weekday}
+                onChange={(event) => setWeekday(event.target.value as MeetWeekday | "")}
+              >
+                <option value="">指定なし</option>
+                {WEEKDAY_VALUES.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {allowFullName && (
+            <div>
+              <label htmlFor={`${endpoint}-fullName`}>氏名（任意）</label>
+              <input
+                id={`${endpoint}-fullName`}
+                type="text"
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                placeholder="例: 山田 太郎"
+              />
+            </div>
+          )}
         </div>
-        <div>
-          <label htmlFor={`${endpoint}-month`}>月</label>
-          <input
-            id={`${endpoint}-month`}
-            type="number"
-            min={1}
-            max={12}
-            value={month}
-            onChange={(event) => setMonth(event.target.value)}
-            placeholder="例: 9"
-          />
-        </div>
-        {allowWeekday && (
-          <div>
-            <label htmlFor={`${endpoint}-weekday`}>曜日</label>
-            <select
-              id={`${endpoint}-weekday`}
-              value={weekday}
-              onChange={(event) => setWeekday(event.target.value as MeetWeekday | "")}
-            >
-              <option value="">指定なし</option>
-              {WEEKDAY_VALUES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        {allowFullName && (
-          <div>
-            <label htmlFor={`${endpoint}-fullName`}>氏名（任意）</label>
-            <input
-              id={`${endpoint}-fullName`}
-              type="text"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              placeholder="例: 山田 太郎"
-            />
-          </div>
-        )}
-      </div>
+      )}
       <button onClick={handleClick} disabled={loading}>
         {loading ? "生成中..." : title}
       </button>

@@ -159,7 +159,10 @@ const styles = StyleSheet.create({
     fontWeight: 700
   },
   rankingGroup: {
-    marginTop: 14
+    marginTop: 14,
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8
   },
   rankingGroupTitle: {
     fontSize: 13,
@@ -264,6 +267,30 @@ const styles = StyleSheet.create({
     fontSize: 24
   }
 });
+
+function rankingPalette(gender: Gender): { border: string; header: string; title: string } {
+  if (gender === "male") {
+    return {
+      border: "#7aa9ff",
+      header: "#eaf2ff",
+      title: "#1f4fa7"
+    };
+  }
+
+  if (gender === "female") {
+    return {
+      border: "#f2a8c6",
+      header: "#ffeff6",
+      title: "#b23870"
+    };
+  }
+
+  return {
+    border: "#c3c7d4",
+    header: "#f5f6fa",
+    title: "#4d5564"
+  };
+}
 
 async function renderPdfDocument(document: ReactElement): Promise<Buffer> {
   ensureFontRegistered();
@@ -445,30 +472,42 @@ export async function renderRankingPdf({
         {groups.length === 0 ? (
           <Text style={styles.empty}>ランキング対象（1〜3位）のデータがありません。</Text>
         ) : (
-          groups.map((group) => (
-            <View key={group.eventId} style={styles.rankingGroup} wrap={false}>
-              <Text style={styles.rankingGroupTitle}>
-                {group.eventTitle} / {group.grade}年 / {genderLabel(group.gender)}
-              </Text>
-              <View style={styles.table}>
-                <View style={styles.row}>
-                  <Text style={[styles.cell, styles.cellRank, styles.headerCell]}>順位</Text>
-                  <Text style={[styles.cell, styles.cellEvent, styles.headerCell]}>氏名</Text>
-                  <Text style={[styles.cell, styles.cellTime, styles.headerCell]}>記録</Text>
-                </View>
-                {group.entries.map((entry, index) => (
-                  <View
-                    key={`${group.eventId}-${entry.fullName}-${index}`}
-                    style={index === group.entries.length - 1 ? [styles.row, styles.rowLast] : styles.row}
-                  >
-                    <Text style={[styles.cell, styles.cellRank]}>{entry.rank}位</Text>
-                    <Text style={[styles.cell, styles.cellEvent]}>{entry.fullName}</Text>
-                    <Text style={[styles.cell, styles.cellTime]}>{entry.timeText}</Text>
+          groups.map((group) => {
+            const palette = rankingPalette(group.gender);
+
+            return (
+              <View
+                key={group.eventId}
+                style={[styles.rankingGroup, { borderColor: palette.border }]}
+                wrap={false}
+              >
+                <Text style={[styles.rankingGroupTitle, { color: palette.title }]}>
+                  {group.eventTitle} / {group.grade}年 / {genderLabel(group.gender)}
+                </Text>
+                <View style={[styles.table, { borderColor: palette.border }]}>
+                  <View style={[styles.row, { borderColor: palette.border }]}>
+                    <Text style={[styles.cell, styles.cellRank, styles.headerCell, { backgroundColor: palette.header }]}>順位</Text>
+                    <Text style={[styles.cell, styles.cellEvent, styles.headerCell, { backgroundColor: palette.header }]}>氏名</Text>
+                    <Text style={[styles.cell, styles.cellTime, styles.headerCell, { backgroundColor: palette.header }]}>記録</Text>
                   </View>
-                ))}
+                  {group.entries.map((entry, index) => (
+                    <View
+                      key={`${group.eventId}-${entry.fullName}-${index}`}
+                      style={
+                        index === group.entries.length - 1
+                          ? [styles.row, { borderColor: palette.border }, styles.rowLast]
+                          : [styles.row, { borderColor: palette.border }]
+                      }
+                    >
+                      <Text style={[styles.cell, styles.cellRank]}>{entry.rank}位</Text>
+                      <Text style={[styles.cell, styles.cellEvent]}>{entry.fullName}</Text>
+                      <Text style={[styles.cell, styles.cellTime]}>{entry.timeText}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-          ))
+            );
+          })
         )}
       </Page>
     </Document>

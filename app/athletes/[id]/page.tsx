@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
+import type { Gender } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatMeetLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
-import { assignMonthlyRanks } from "@/lib/monthly-rank";
+import { assignAllTimeClassRanks, assignMonthlyOverallRanks, assignMonthlyRanks } from "@/lib/monthly-rank";
 
 type ResultWithMeetEvent = {
   id: string;
@@ -11,8 +12,47 @@ type ResultWithMeetEvent = {
   timeMs: number;
   rank: number;
   meet: { id: string; heldOn: Date; title: string };
-  event: { id: string; title: string };
+  event: { id: string; title: string; distanceM: number; style: string; grade: number; gender: Gender };
 };
+
+type EventBaseFilter = {
+  title: string;
+  distanceM: number;
+  style: string;
+};
+
+type EventClassFilter = EventBaseFilter & {
+  grade: number;
+  gender: Gender;
+};
+
+function toEventBaseKey(event: EventBaseFilter): string {
+  return [event.title, event.distanceM, event.style].join(":");
+}
+
+function toEventClassKey(event: EventClassFilter): string {
+  return [toEventBaseKey(event), event.grade, event.gender].join(":");
+}
+
+function toRankSource(result: {
+  id: string;
+  timeMs: number;
+  meet: { heldOn: Date };
+  event: { title: string; distanceM: number; style: string; grade: number; gender: Gender };
+}) {
+  return {
+    id: result.id,
+    heldOn: result.meet.heldOn,
+    timeMs: result.timeMs,
+    event: {
+      title: result.event.title,
+      distanceM: result.event.distanceM,
+      style: result.event.style,
+      grade: result.event.grade,
+      gender: result.event.gender
+    }
+  };
+}
 
 // 記録会ごとにグループ化
 function groupByMeet(results: ResultWithMeetEvent[]) {
@@ -87,7 +127,8 @@ export default async function AthletePage({ params }: { params: { id: string } }
   }
 
   const monthRanges = new Map<string, { start: Date; end: Date }>();
-  const eventIds = new Set<string>();
+  const eventBaseByKey = new Map<string, EventBaseFilter>();
+  const eventClassByKey = new Map<string, EventClassFilter>();
 
   for (const result of athlete.results) {
     const heldOn = result.meet.heldOn;
@@ -98,23 +139,53 @@ export default async function AthletePage({ params }: { params: { id: string } }
       monthRanges.set(key, { start, end });
     }
 
-    eventIds.add(result.eventId);
+    const eventBase = {
+      title: result.event.title,
+      distanceM: result.event.distanceM,
+      style: result.event.style
+    };
+    eventBaseByKey.set(toEventBaseKey(eventBase), eventBase);
+
+    const eventClass = {
+      ...eventBase,
+      grade: result.event.grade,
+      gender: result.event.gender
+    };
+    eventClassByKey.set(toEventClassKey(eventClass), eventClass);
   }
 
-  const monthlyRankScope = eventIds.size === 0
+  const monthlyMeetScopes = Array.from(monthRanges.values()).map((range) => ({
+    heldOn: {
+      gte: range.start,
+      lt: range.end
+    }
+  }));
+  const eventBaseScopes = Array.from(eventBaseByKey.values()).map((event) => ({
+    event: {
+      title: event.title,
+      distanceM: event.distanceM,
+      style: event.style
+    }
+  }));
+  const eventClassScopes = Array.from(eventClassByKey.values()).map((event) => ({
+    event: {
+      title: event.title,
+      distanceM: event.distanceM,
+      style: event.style,
+      grade: event.grade,
+      gender: event.gender
+    }
+  }));
+
+  const monthlyScope = monthlyMeetScopes.length === 0 || eventBaseScopes.length === 0
     ? []
     : await prisma.result.findMany({
         where: {
-          eventId: { in: Array.from(eventIds) },
           meet: {
             program: "swimming",
-            OR: Array.from(monthRanges.values()).map((range) => ({
-              heldOn: {
-                gte: range.start,
-                lt: range.end
-              }
-            }))
-          }
+            OR: monthlyMeetScopes
+          },
+          OR: eventBaseScopes
         },
         select: {
           id: true,
@@ -134,20 +205,34 @@ export default async function AthletePage({ params }: { params: { id: string } }
         }
       });
 
-  const monthlyRanks = assignMonthlyRanks(
-    monthlyRankScope.map((result) => ({
-      id: result.id,
-      heldOn: result.meet.heldOn,
-      timeMs: result.timeMs,
-      event: {
-        title: result.event.title,
-        distanceM: result.event.distanceM,
-        style: result.event.style,
-        grade: result.event.grade,
-        gender: result.event.gender
-      }
-    }))
-  );
+  const allTimeClassScope = eventClassScopes.length === 0
+    ? []
+    : await prisma.result.findMany({
+        where: {
+          meet: { program: "swimming" },
+          OR: eventClassScopes
+        },
+        select: {
+          id: true,
+          timeMs: true,
+          meet: {
+            select: { heldOn: true }
+          },
+          event: {
+            select: {
+              title: true,
+              distanceM: true,
+              style: true,
+              grade: true,
+              gender: true
+            }
+          }
+        }
+      });
+
+  const monthlyClassRanks = assignMonthlyRanks(monthlyScope.map(toRankSource));
+  const monthlyOverallRanks = assignMonthlyOverallRanks(monthlyScope.map(toRankSource));
+  const allTimeClassRanks = assignAllTimeClassRanks(allTimeClassScope.map(toRankSource));
 
   const groupedResults = groupByMeet(athlete.results);
   const bestTimes = getBestTimes(athlete.results);
@@ -196,30 +281,46 @@ export default async function AthletePage({ params }: { params: { id: string } }
       {/* 記録会ごとの記録 */}
       <section className="card">
         <h2>📊 記録会別履歴</h2>
+        <p className="notice" style={{ marginBottom: 12 }}>
+          同月 学年/性別: 同種目・同学年・同性別での月内順位 / 同月 全体: 同種目で学年・性別をまたいだ月内順位 / 歴代 学年/性別:
+          全記録での同種目・同学年・同性別順位
+        </p>
         {groupedResults.length === 0 ? (
           <p className="notice">記録がありません</p>
         ) : (
           groupedResults.map((group) => (
             <div key={group.meet.id} style={{ marginBottom: 24 }}>
               <h3 style={{ fontSize: "1rem", marginBottom: 8 }}>{formatMeetLabel(group.meet)}</h3>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>種目</th>
-                    <th>タイム</th>
-                    <th>順位</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {group.results.map((result) => (
-                    <tr key={result.id}>
-                      <td>{result.event.title}</td>
-                      <td>{result.timeText}</td>
-                      <td>{monthlyRanks.get(result.id) ?? result.rank}位</td>
+              <div className="table-scroll">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>種目</th>
+                      <th>タイム</th>
+                      <th>同月 学年/性別</th>
+                      <th>同月 全体</th>
+                      <th>歴代 学年/性別</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {group.results.map((result) => {
+                      const monthlyClassRank = monthlyClassRanks.get(result.id);
+                      const monthlyOverallRank = monthlyOverallRanks.get(result.id);
+                      const allTimeClassRank = allTimeClassRanks.get(result.id);
+
+                      return (
+                        <tr key={result.id}>
+                          <td>{result.event.title}</td>
+                          <td>{result.timeText}</td>
+                          <td>{typeof monthlyClassRank === "number" ? `${monthlyClassRank}位` : "-"}</td>
+                          <td>{typeof monthlyOverallRank === "number" ? `${monthlyOverallRank}位` : "-"}</td>
+                          <td>{typeof allTimeClassRank === "number" ? `${allTimeClassRank}位` : "-"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ))
         )}
