@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Athlete } from "@prisma/client";
+import { Gender } from "@prisma/client";
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
 import { RankingGroup } from "./ranking-report";
@@ -27,6 +27,13 @@ export type CertificatePdfEntry = {
   eventTitle: string;
   timeText: string;
   timeMs?: number;
+};
+
+type PdfAthlete = {
+  fullName: string;
+  fullNameKana?: string | null;
+  grade: number;
+  gender: Gender;
 };
 
 function ensureFontRegistered() {
@@ -277,7 +284,7 @@ function buildRecordTemplateDocument({
   entries,
   templateDataUri
 }: {
-  athlete: Athlete;
+  athlete: PdfAthlete;
   entries: RecordPdfEntry[];
   templateDataUri: string;
 }): ReactElement {
@@ -302,7 +309,7 @@ function buildRecordFallbackDocument({
   athlete,
   entries
 }: {
-  athlete: Athlete;
+  athlete: PdfAthlete;
   entries: RecordPdfEntry[];
 }): ReactElement {
   return (
@@ -335,7 +342,7 @@ function buildFirstPrizeTemplateDocument({
   entries,
   templateDataUri
 }: {
-  athlete: Athlete;
+  athlete: PdfAthlete;
   entries: CertificatePdfEntry[];
   templateDataUri: string;
 }): ReactElement {
@@ -364,7 +371,7 @@ function buildFirstPrizeFallbackDocument({
   athlete,
   entries
 }: {
-  athlete: Athlete;
+  athlete: PdfAthlete;
   entries: CertificatePdfEntry[];
 }): ReactElement {
   return (
@@ -398,7 +405,7 @@ export async function renderRecordPdf({
   athlete,
   entries
 }: {
-  athlete: Athlete;
+  athlete: PdfAthlete;
   entries: RecordPdfEntry[];
 }): Promise<Buffer> {
   const templateDataUri = getTemplateDataUri(RECORD_TEMPLATE_FILE);
@@ -413,7 +420,7 @@ export async function renderCertificatePdf({
   athlete,
   entries
 }: {
-  athlete: Athlete;
+  athlete: PdfAthlete;
   entries: CertificatePdfEntry[];
 }): Promise<Buffer> {
   const templateDataUri = getTemplateDataUri(FIRST_PRIZE_TEMPLATE_FILE);

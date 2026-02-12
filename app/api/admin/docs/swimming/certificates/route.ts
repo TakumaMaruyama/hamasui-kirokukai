@@ -50,7 +50,14 @@ export async function POST(request: Request) {
         ...(filter.fullName ? { athlete: { fullName: filter.fullName } } : {})
       },
       include: {
-        athlete: true,
+        athlete: {
+          select: {
+            id: true,
+            fullName: true,
+            grade: true,
+            gender: true
+          }
+        },
         event: true
       },
       orderBy: [{ athlete: { fullName: "asc" } }, { event: { title: "asc" } }, { timeMs: "asc" }]

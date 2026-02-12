@@ -7,7 +7,13 @@ export async function GET(
 ) {
   const athlete = await prisma.athlete.findUnique({
     where: { id: params.id },
-    include: {
+    select: {
+      id: true,
+      fullName: true,
+      grade: true,
+      gender: true,
+      createdAt: true,
+      updatedAt: true,
       results: {
         where: { meet: { program: "swimming" } },
         include: { meet: true, event: true }

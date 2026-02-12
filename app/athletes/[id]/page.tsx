@@ -64,7 +64,11 @@ export default async function AthletePage({ params }: { params: { id: string } }
 
   const athlete = await prisma.athlete.findUnique({
     where: { id: params.id },
-    include: {
+    select: {
+      id: true,
+      fullName: true,
+      grade: true,
+      gender: true,
       results: {
         where: {
           meet: { program: "swimming" }
