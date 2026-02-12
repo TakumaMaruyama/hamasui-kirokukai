@@ -1,21 +1,33 @@
 import { assignDenseRanks } from "./rank";
+import type { Gender } from "@prisma/client";
 
 export type MonthlyRankSource = {
   id: string;
-  eventId: string;
   heldOn: Date;
   timeMs: number;
+  event: {
+    title: string;
+    distanceM: number;
+    style: string;
+    grade: number;
+    gender: Gender;
+  };
 };
 
 function toMonthKey(date: Date): string {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+function toEventClassKey(source: MonthlyRankSource): string {
+  const { title, distanceM, style, grade, gender } = source.event;
+  return [title, distanceM, style, grade, gender].join(":");
+}
+
 export function assignMonthlyRanks(results: MonthlyRankSource[]): Map<string, number> {
   const grouped = new Map<string, Array<{ id: string; timeMs: number }>>();
 
   for (const result of results) {
-    const key = `${toMonthKey(result.heldOn)}:${result.eventId}`;
+    const key = `${toMonthKey(result.heldOn)}:${toEventClassKey(result)}`;
     if (!grouped.has(key)) {
       grouped.set(key, []);
     }
