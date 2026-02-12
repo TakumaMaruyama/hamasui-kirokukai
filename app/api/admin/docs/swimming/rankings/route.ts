@@ -8,6 +8,8 @@ import { parseDocsFilterInput } from "@/lib/docs-filter";
 import { buildMeetRankingGroups } from "@/lib/ranking-report";
 import { assignMonthlyRanks } from "@/lib/monthly-rank";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   if (!isAdminAuthenticated()) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });

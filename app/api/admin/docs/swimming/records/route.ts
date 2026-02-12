@@ -7,6 +7,7 @@ import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
 
 type BestEntry = { eventTitle: string; timeText: string; timeMs: number };
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   if (!isAdminAuthenticated()) {
