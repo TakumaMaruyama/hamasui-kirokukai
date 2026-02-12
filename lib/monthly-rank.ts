@@ -18,16 +18,24 @@ function toMonthKey(date: Date): string {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function toEventClassKey(source: MonthlyRankSource): string {
-  const { title, distanceM, style, grade, gender } = source.event;
-  return [title, distanceM, style, grade, gender].join(":");
+function toEventBaseKey(source: MonthlyRankSource): string {
+  const { title, distanceM, style } = source.event;
+  return [title, distanceM, style].join(":");
 }
 
-export function assignMonthlyRanks(results: MonthlyRankSource[]): Map<string, number> {
+function toEventClassKey(source: MonthlyRankSource): string {
+  const { grade, gender } = source.event;
+  return `${toEventBaseKey(source)}:${grade}:${gender}`;
+}
+
+function assignGroupedRanks(
+  results: MonthlyRankSource[],
+  toGroupKey: (source: MonthlyRankSource) => string
+): Map<string, number> {
   const grouped = new Map<string, Array<{ id: string; timeMs: number }>>();
 
   for (const result of results) {
-    const key = `${toMonthKey(result.heldOn)}:${toEventClassKey(result)}`;
+    const key = toGroupKey(result);
     if (!grouped.has(key)) {
       grouped.set(key, []);
     }
@@ -44,4 +52,16 @@ export function assignMonthlyRanks(results: MonthlyRankSource[]): Map<string, nu
   }
 
   return ranks;
+}
+
+export function assignMonthlyRanks(results: MonthlyRankSource[]): Map<string, number> {
+  return assignGroupedRanks(results, (result) => `${toMonthKey(result.heldOn)}:${toEventClassKey(result)}`);
+}
+
+export function assignMonthlyOverallRanks(results: MonthlyRankSource[]): Map<string, number> {
+  return assignGroupedRanks(results, (result) => `${toMonthKey(result.heldOn)}:${toEventBaseKey(result)}`);
+}
+
+export function assignAllTimeClassRanks(results: MonthlyRankSource[]): Map<string, number> {
+  return assignGroupedRanks(results, toEventClassKey);
 }

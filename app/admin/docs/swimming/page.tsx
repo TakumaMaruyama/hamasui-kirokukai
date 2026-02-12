@@ -27,6 +27,14 @@ export default function SwimmingDocsPage() {
           allowFullName={false}
           allowWeekday={false}
         />
+        <DocsAction
+          title="歴代1位記録一覧PDFを生成"
+          endpoint="/api/admin/docs/swimming/historical-firsts"
+          filename="swimming_historical_firsts.zip"
+          allowYearMonth={false}
+          allowFullName={false}
+          allowWeekday={false}
+        />
       </div>
     </main>
   );

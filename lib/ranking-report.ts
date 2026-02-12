@@ -12,6 +12,22 @@ export type RankingSourceResult = {
   };
 };
 
+export type HistoricalFirstSourceResult = {
+  timeMs: number;
+  timeText: string;
+  athlete: { fullName: string };
+  event: {
+    title: string;
+    distanceM: number;
+    style: string;
+    grade: number;
+    gender: Gender;
+  };
+  meet: {
+    heldOn: Date;
+  };
+};
+
 export type RankingEntry = {
   rank: number;
   fullName: string;
@@ -77,4 +93,69 @@ export function buildMeetRankingGroups(results: RankingSourceResult[]): RankingG
 
       return GENDER_ORDER[a.gender] - GENDER_ORDER[b.gender];
     });
+}
+
+function toEventClassKey(result: HistoricalFirstSourceResult): string {
+  return [
+    result.event.title,
+    result.event.distanceM,
+    result.event.style,
+    result.event.grade,
+    result.event.gender
+  ].join(":");
+}
+
+export function buildHistoricalFirstRankingGroups(results: HistoricalFirstSourceResult[]): RankingGroup[] {
+  const byEventClass = new Map<string, HistoricalFirstSourceResult[]>();
+
+  for (const result of results) {
+    const key = toEventClassKey(result);
+    if (!byEventClass.has(key)) {
+      byEventClass.set(key, []);
+    }
+
+    byEventClass.get(key)!.push(result);
+  }
+
+  const topRows: RankingSourceResult[] = [];
+
+  for (const [eventKey, entries] of byEventClass.entries()) {
+    const sorted = [...entries].sort((a, b) => {
+      if (a.timeMs !== b.timeMs) {
+        return a.timeMs - b.timeMs;
+      }
+
+      const dateDiff = a.meet.heldOn.getTime() - b.meet.heldOn.getTime();
+      if (dateDiff !== 0) {
+        return dateDiff;
+      }
+
+      return a.athlete.fullName.localeCompare(b.athlete.fullName, "ja");
+    });
+
+    const firstTime = sorted[0]?.timeMs;
+    if (typeof firstTime !== "number") {
+      continue;
+    }
+
+    for (const entry of sorted) {
+      if (entry.timeMs !== firstTime) {
+        break;
+      }
+
+      topRows.push({
+        rank: 1,
+        timeText: entry.timeText,
+        athlete: { fullName: entry.athlete.fullName },
+        event: {
+          id: eventKey,
+          title: entry.event.title,
+          grade: entry.event.grade,
+          gender: entry.event.gender
+        }
+      });
+    }
+  }
+
+  return buildMeetRankingGroups(topRows);
 }
