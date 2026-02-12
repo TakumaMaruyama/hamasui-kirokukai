@@ -281,10 +281,12 @@ export default async function AthletePage({ params }: { params: { id: string } }
       {/* 記録会ごとの記録 */}
       <section className="card">
         <h2>📊 記録会別履歴</h2>
-        <p className="notice" style={{ marginBottom: 12 }}>
-          同月 学年/性別: 同種目・同学年・同性別での月内順位 / 同月 全体: 同種目で学年・性別をまたいだ月内順位 / 歴代 学年/性別:
-          全記録での同種目・同学年・同性別順位
-        </p>
+        <div className="notice" style={{ marginBottom: 12, lineHeight: 1.6 }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>順位の見方</div>
+          <div>同月 学年/性別: 同じ月の、同じ種目・同じ学年・同じ性別の中での順位です。</div>
+          <div>同月 全体: 同じ月の、同じ種目に出た全員の中での順位です（学年・性別をまたぎます）。</div>
+          <div>歴代 学年/性別: これまでの全記録で、同じ種目・同じ学年・同じ性別の中での順位です。</div>
+        </div>
         {groupedResults.length === 0 ? (
           <p className="notice">記録がありません</p>
         ) : (

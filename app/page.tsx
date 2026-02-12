@@ -29,6 +29,16 @@ export default async function HomePage() {
       <div className="card">
         <SearchForm />
       </div>
+      <p className="notice" style={{ marginTop: 16 }}>
+        バグ・不具合の報告はこちら:{" "}
+        <a
+          href="https://docs.google.com/forms/d/e/1FAIpQLScWJuJ-f8NQ43nRAGKbaMdcNpNZjENEKo9fdjd2_OLqFD8Tvw/viewform?usp=publish-editor"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Googleフォーム
+        </a>
+      </p>
       <Link href="/admin" className="admin-link">
         管理者
       </Link>
