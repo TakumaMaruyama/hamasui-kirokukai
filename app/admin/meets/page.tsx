@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatMeetLabel } from "@/lib/meet-context";
+import DeleteMeetButton from "./DeleteMeetButton";
 
 async function deleteMeet(formData: FormData) {
     "use server";
@@ -51,18 +52,7 @@ export default async function MeetsPage() {
                                     <td>
                                         <form action={deleteMeet} style={{ display: "inline" }}>
                                             <input type="hidden" name="id" value={meet.id} />
-                                            <button
-                                                type="submit"
-                                                className="secondary"
-                                                style={{ fontSize: "0.85rem", padding: "6px 12px" }}
-                                                onClick={(e) => {
-                                                    if (!confirm(`「${formatMeetLabel(meet)}」を削除しますか？関連する全ての記録も削除されます。`)) {
-                                                        e.preventDefault();
-                                                    }
-                                                }}
-                                            >
-                                                削除
-                                            </button>
+                                            <DeleteMeetButton meetLabel={formatMeetLabel(meet)} />
                                         </form>
                                     </td>
                                 </tr>
