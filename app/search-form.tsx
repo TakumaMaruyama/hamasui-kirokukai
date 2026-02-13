@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatGradeLabel } from "@/lib/grade";
 
 type SearchResult = {
   id: string;
@@ -69,7 +70,7 @@ export default function SearchForm() {
             {results.map((result) => (
               <li key={result.id}>
                 <a href={`/athletes/${result.id}`}>
-                  {result.fullName}（{result.grade}年）
+                  {result.fullName}（{formatGradeLabel(result.grade)}）
                 </a>
               </li>
             ))}

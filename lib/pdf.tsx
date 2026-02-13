@@ -5,6 +5,7 @@ import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } f
 import type { ReactElement } from "react";
 import { RankingGroup } from "./ranking-report";
 import { formatTimeForDocument } from "./display-time";
+import { formatGradeLabel, formatGradeShortLabel } from "./grade";
 
 const FONT_FAMILY = "NotoSansJP";
 const NOTO_SANS_JP_FONT_URL = "https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Regular.otf";
@@ -324,7 +325,7 @@ function buildRecordTemplateDocument({
         <Image style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
         <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
-        <Text style={styles.recordGradeValue}>{athlete.grade}年</Text>
+        <Text style={styles.recordGradeValue}>{formatGradeShortLabel(athlete.grade)}</Text>
         <Text style={styles.recordEventValue}>{lines.events}</Text>
         <Text style={styles.recordTimeValue}>{lines.times}</Text>
       </Page>
@@ -345,7 +346,7 @@ function buildRecordFallbackDocument({
         <Text style={styles.title}>記録証</Text>
         <Text style={styles.meta}>ふりがな: {athlete.fullNameKana || athlete.fullName}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
-        <Text style={styles.meta}>学年: {athlete.grade}年</Text>
+        <Text style={styles.meta}>学年: {formatGradeLabel(athlete.grade)}</Text>
 
         <View style={styles.table}>
           <View style={styles.row}>
@@ -386,7 +387,7 @@ function buildFirstPrizeTemplateDocument({
         <Image style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.prizeNameKana}>{nameKana}</Text>
         <Text style={styles.prizeName}>{athlete.fullName}</Text>
-        <Text style={styles.prizeMeta}>{`${athlete.grade}年 / ${genderLabel(athlete.gender)}`}</Text>
+        <Text style={styles.prizeMeta}>{`${formatGradeLabel(athlete.grade)} / ${genderLabel(athlete.gender)}`}</Text>
         <Text style={styles.prizeEvent}>{eventLines}</Text>
         <Text style={styles.prizeTime}>{timeLines}</Text>
       </Page>
@@ -408,7 +409,7 @@ function buildFirstPrizeFallbackDocument({
         <Text style={styles.meta}>ふりがな: {athlete.fullNameKana || athlete.fullName}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
         <Text style={styles.meta}>
-          学年: {athlete.grade}年 / 性別: {genderLabel(athlete.gender)}
+          学年: {formatGradeLabel(athlete.grade)} / 性別: {genderLabel(athlete.gender)}
         </Text>
 
         <View style={styles.table}>
@@ -482,7 +483,7 @@ export async function renderRankingPdf({
                 wrap={false}
               >
                 <Text style={[styles.rankingGroupTitle, { color: palette.title }]}>
-                  {group.eventTitle} / {group.grade}年 / {genderLabel(group.gender)}
+                  {group.eventTitle} / {formatGradeLabel(group.grade)} / {genderLabel(group.gender)}
                 </Text>
                 <View style={[styles.table, { borderColor: palette.border }]}>
                   <View style={[styles.row, { borderColor: palette.border }]}>
