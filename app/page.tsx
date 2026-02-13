@@ -30,13 +30,15 @@ export default async function HomePage() {
         <SearchForm />
       </div>
       <p className="notice" style={{ marginTop: 16 }}>
-        バグ・不具合の報告はこちら:{" "}
+        不具合を見つけた場合は、こちらのフォームからご報告ください。
+        <br />
+        <br />
         <a
           href="https://docs.google.com/forms/d/e/1FAIpQLScWJuJ-f8NQ43nRAGKbaMdcNpNZjENEKo9fdjd2_OLqFD8Tvw/viewform?usp=publish-editor"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Googleフォーム
+          バグ報告フォームを開く
         </a>
       </p>
       <Link href="/admin" className="admin-link">
