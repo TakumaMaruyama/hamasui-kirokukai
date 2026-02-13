@@ -104,18 +104,54 @@ const GRADE_ALIASES: Record<string, string> = {
   "年少": "1",
   "年中": "2",
   "年長": "3",
-  "小1": "1",
-  "小2": "2",
-  "小3": "3",
-  "小4": "4",
-  "小5": "5",
-  "小6": "6",
-  "中1": "7",
-  "中2": "8",
-  "中3": "9",
-  "高1": "10",
-  "高2": "11",
-  "高3": "12"
+  "小1": "4",
+  "小2": "5",
+  "小3": "6",
+  "小4": "7",
+  "小5": "8",
+  "小6": "9",
+  "小学1": "4",
+  "小学2": "5",
+  "小学3": "6",
+  "小学4": "7",
+  "小学5": "8",
+  "小学6": "9",
+  "小学1年": "4",
+  "小学2年": "5",
+  "小学3年": "6",
+  "小学4年": "7",
+  "小学5年": "8",
+  "小学6年": "9",
+  "小学1年生": "4",
+  "小学2年生": "5",
+  "小学3年生": "6",
+  "小学4年生": "7",
+  "小学5年生": "8",
+  "小学6年生": "9",
+  "中1": "10",
+  "中2": "11",
+  "中3": "12",
+  "中学1": "10",
+  "中学2": "11",
+  "中学3": "12",
+  "中学1年": "10",
+  "中学2年": "11",
+  "中学3年": "12",
+  "中学1年生": "10",
+  "中学2年生": "11",
+  "中学3年生": "12",
+  "高1": "13",
+  "高2": "14",
+  "高3": "15",
+  "高校1": "13",
+  "高校2": "14",
+  "高校3": "15",
+  "高校1年": "13",
+  "高校2年": "14",
+  "高校3年": "15",
+  "高校1年生": "13",
+  "高校2年生": "14",
+  "高校3年生": "15"
 };
 
 function normalizeGrade(rawGrade: string): string {
@@ -132,19 +168,19 @@ function normalizeGrade(rawGrade: string): string {
     return GRADE_ALIASES[trimmed];
   }
 
-  const elementaryMatch = trimmed.match(/^小\s*(\d+)$/);
+  const elementaryMatch = trimmed.match(/^(?:小|小学)\s*(\d+)(?:年|年生)?$/);
   if (elementaryMatch) {
-    return elementaryMatch[1];
+    return String(3 + Number(elementaryMatch[1]));
   }
 
-  const middleMatch = trimmed.match(/^中\s*(\d+)$/);
+  const middleMatch = trimmed.match(/^(?:中|中学)\s*(\d+)(?:年|年生)?$/);
   if (middleMatch) {
-    return String(6 + Number(middleMatch[1]));
+    return String(9 + Number(middleMatch[1]));
   }
 
-  const highMatch = trimmed.match(/^高\s*(\d+)$/);
+  const highMatch = trimmed.match(/^(?:高|高校)\s*(\d+)(?:年|年生)?$/);
   if (highMatch) {
-    return String(9 + Number(highMatch[1]));
+    return String(12 + Number(highMatch[1]));
   }
 
   return trimmed;
@@ -271,7 +307,7 @@ function normalizeCanonicalRows(rows: RawCsvRow[]): CsvRow[] {
     held_on: pickCellValue(row.held_on),
     full_name: pickCellValue(row.full_name),
     full_name_kana: pickCellValue(row.full_name_kana) || undefined,
-    grade: pickCellValue(row.grade),
+    grade: normalizeGrade(pickCellValue(row.grade)),
     gender: pickCellValue(row.gender),
     event_title: pickCellValue(row.event_title),
     style: pickCellValue(row.style),

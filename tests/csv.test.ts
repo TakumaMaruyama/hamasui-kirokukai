@@ -77,6 +77,21 @@ describe("parseCsv", () => {
     });
   });
 
+  it("normalizes elementary and middle school grades without overlap", () => {
+    const content =
+      "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +
+      "25mクロール,1,,小学生 太郎,男,しょうがくせい たろう,小2,45.00,\n" +
+      "25mクロール,1,,中学生 花子,女,ちゅうがくせい はなこ,中学3年生,43.00,\n";
+
+    const rows = parseCsv(content, {
+      meetContext: { year: 2026, month: 2, weekday: "木曜" }
+    });
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.grade).toBe("5");
+    expect(rows[1]?.grade).toBe("12");
+  });
+
   it("skips absentees when name exists but event is empty", () => {
     const content =
       "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +
