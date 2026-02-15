@@ -17,6 +17,7 @@ export default async function LogsPage() {
             <tr>
               <th>日時</th>
               <th>氏名</th>
+              <th>同意版</th>
               <th>IP</th>
               <th>User-Agent</th>
             </tr>
@@ -26,6 +27,7 @@ export default async function LogsPage() {
               <tr key={log.id}>
                 <td>{log.createdAt.toISOString()}</td>
                 <td>{log.fullName}</td>
+                <td>{log.consentVersion ?? "-"}</td>
                 <td>{log.ipAddress}</td>
                 <td>{log.userAgent}</td>
               </tr>

@@ -89,11 +89,12 @@ model GeneratedDoc {
 }
 
 model SearchLog {
-  id        String   @id @default(cuid())
-  fullName  String
-  ipAddress String
-  userAgent String
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  fullName       String
+  ipAddress      String
+  userAgent      String
+  consentVersion String?
+  createdAt      DateTime @default(now())
 }
 
 model PublishWindow {
