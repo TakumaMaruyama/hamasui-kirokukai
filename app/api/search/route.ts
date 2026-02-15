@@ -1,26 +1,14 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
-
-const schema = z.object({
-  fullName: z.string().min(1)
-});
-
-function normalizeFullName(value: string): string {
-  return value.replace(/\s+/g, " ").trim();
-}
-
-function nameSearchKey(value: string): string {
-  return normalizeFullName(value).replace(/\s/g, "");
-}
+import { nameSearchKey, parseSearchRequestInput } from "@/lib/search-request";
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const parsed = schema.safeParse(body);
+  const body = await request.json().catch(() => null);
+  const parsed = parseSearchRequestInput(body);
 
-  if (!parsed.success) {
-    return NextResponse.json({ message: "入力が不正です" }, { status: 400 });
+  if (!parsed.ok) {
+    return NextResponse.json({ message: parsed.message }, { status: 400 });
   }
 
   const ipAddress =
@@ -32,13 +20,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "アクセスが集中しています" }, { status: 429 });
   }
 
-  const normalizedFullName = normalizeFullName(parsed.data.fullName);
+  const normalizedFullName = parsed.value.fullName;
 
   await prisma.searchLog.create({
     data: {
       fullName: normalizedFullName,
       ipAddress,
-      userAgent: request.headers.get("user-agent") ?? ""
+      userAgent: request.headers.get("user-agent") ?? "",
+      consentVersion: parsed.value.consentVersion
     }
   });
 

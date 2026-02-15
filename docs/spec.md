@@ -51,6 +51,12 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - `POST /api/admin/docs/challenge/rankings`
 - `GET /api/admin/logs`
 
+### 検索APIの同意仕様
+- `POST /api/search` は毎回同意必須。
+- リクエストは `{ fullName, consentAccepted, consentVersion }`。
+- `consentAccepted` が `true` でない場合は検索できない。
+- `consentVersion` がサーバー定義と不一致の場合は再同意を求める。
+
 ### PDF出力APIの条件指定
 - `POST /api/admin/docs/*` はJSONで条件指定できる（任意）。
 - `year` + `month` + `weekday` で「指定年月の曜日ごと」に出力可能。
@@ -65,13 +71,15 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - events: 種目情報（学年/性別別）
 - results: タイムと順位（DENSE_RANK）
 - generated_docs: 生成物の保存キー
-- search_logs: 検索ログ
+- search_logs: 検索ログ（検索名、IP、User-Agent、同意バージョン）
 - publish_windows: ユーザー画面に表示する公開期間（開始日/終了日）
 
 ## ログ/レート制限仕様
 - 検索はフルネーム完全一致のみ。
 - 検索APIはIP単位でレート制限をかける（1分あたり10回想定）。
+- 検索時に毎回同意チェックを必須にする。
 - 検索実行時に `search_logs` に保存。
+- `search_logs` には `consentVersion` も保存する。
 - 公開期限はユーザー画面の案内表示専用（自動非公開は行わない）。
 
 ## PDF生成/ZIP
