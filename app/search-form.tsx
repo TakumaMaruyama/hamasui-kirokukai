@@ -62,10 +62,27 @@ export default function SearchForm() {
         onChange={(event) => setFullName(event.target.value)}
         required
       />
-      <div style={{ marginTop: 16, padding: 12, background: "#f7f8fb", borderRadius: 8 }}>
-        <div style={{ fontWeight: 600, marginBottom: 8 }}>検索利用時の同意事項</div>
+      <div
+        style={{
+          marginTop: 16,
+          padding: 12,
+          background: "#f7f8fb",
+          borderRadius: 8,
+          border: "1px solid #d5dce8"
+        }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: 8, color: "#1b1b1f" }}>検索利用時の同意事項</div>
         {SEARCH_CONSENT_ITEMS.map((item) => (
-          <div key={item} className="notice" style={{ marginBottom: 4 }}>
+          <div
+            key={item}
+            style={{
+              marginBottom: 4,
+              color: "#1f2937",
+              fontSize: "0.95rem",
+              lineHeight: 1.55,
+              fontWeight: 500
+            }}
+          >
             {item}
           </div>
         ))}
@@ -77,7 +94,9 @@ export default function SearchForm() {
             required
             style={{ width: 16, height: 16, marginTop: 2 }}
           />
-          <span>上記に同意して検索します</span>
+          <span style={{ color: "#6b7280", fontSize: "0.9rem", fontWeight: 400 }}>
+            上記に同意して検索します
+          </span>
         </label>
       </div>
       <div style={{ marginTop: 16 }}>
