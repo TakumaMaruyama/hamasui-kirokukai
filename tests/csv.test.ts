@@ -92,6 +92,19 @@ describe("parseCsv", () => {
     expect(rows[1]?.grade).toBe("12");
   });
 
+  it("normalizes numeric elementary grades in legacy roster CSV to canonical grades", () => {
+    const content =
+      "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +
+      "25mクロール,1,,小学生 太郎,男,しょうがくせい たろう,5,45.00,\n";
+
+    const rows = parseCsv(content, {
+      meetContext: { year: 2026, month: 2, weekday: "木曜" }
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.grade).toBe("8");
+  });
+
   it("skips absentees when name exists but event is empty", () => {
     const content =
       "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +

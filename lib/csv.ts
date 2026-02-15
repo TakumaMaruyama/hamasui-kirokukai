@@ -154,13 +154,20 @@ const GRADE_ALIASES: Record<string, string> = {
   "高校3年生": "15"
 };
 
-function normalizeGrade(rawGrade: string): string {
+function normalizeGrade(rawGrade: string, options?: { legacyNumericElementary?: boolean }): string {
   const trimmed = toHalfWidthDigits(rawGrade.trim());
   if (!trimmed) {
     return "";
   }
 
   if (/^\d+$/.test(trimmed)) {
+    if (options?.legacyNumericElementary) {
+      const grade = Number(trimmed);
+      if (grade >= 1 && grade <= 6) {
+        return String(grade + 3);
+      }
+    }
+
     return trimmed;
   }
 
@@ -336,7 +343,7 @@ function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRo
     const fullName = pickCellValue(row.full_name).replace(/\s+/g, " ").trim();
     const fullNameKana = pickCellValue(row.full_name_kana).replace(/\s+/g, " ").trim();
     const gender = normalizeGender(pickCellValue(row.gender));
-    const grade = normalizeGrade(pickCellValue(row.grade));
+    const grade = normalizeGrade(pickCellValue(row.grade), { legacyNumericElementary: true });
     const timeText = pickCellValue(row.time_text).replace(/\s+/g, "");
     const lane = pickCellValue(row.lane);
 
