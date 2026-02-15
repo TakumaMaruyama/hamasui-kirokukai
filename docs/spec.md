@@ -27,9 +27,11 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - `/admin` 管理者ログイン
 - `/admin/import/swimming` スイミング取込
 - `/admin/import/school` 学校委託取込
+- `/admin/import/challenge` チャレンジコース取込
 - `/admin/publish` 公開期間表示管理
 - `/admin/docs/swimming` スイミングPDF生成
 - `/admin/docs/school` 学校委託PDF生成
+- `/admin/docs/challenge` チャレンジコースランキングPDF生成
 - `/admin/logs` 検索ログ閲覧
 
 ## API一覧
@@ -40,10 +42,13 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - `POST /api/admin/import/swimming/confirm`
 - `POST /api/admin/import/school/preview`
 - `POST /api/admin/import/school/confirm`
+- `POST /api/admin/import/challenge/preview`
+- `POST /api/admin/import/challenge/confirm`
 - `POST /api/admin/docs/swimming/records`
 - `POST /api/admin/docs/swimming/certificates`
 - `POST /api/admin/docs/swimming/rankings`
 - `POST /api/admin/docs/school/records`
+- `POST /api/admin/docs/challenge/rankings`
 - `GET /api/admin/logs`
 
 ### PDF出力APIの条件指定
@@ -51,10 +56,12 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - `year` + `month` + `weekday` で「指定年月の曜日ごと」に出力可能。
 - `year` + `month` + `fullName` で「特定の子どもの指定年月」を出力可能（`weekday` 併用可）。
 - ランキングPDF（`/api/admin/docs/swimming/rankings`）は、記録会ごとに1ファイル生成する（種目ごとの別ファイルは作らない）。
+- チャレンジランキングPDF（`/api/admin/docs/challenge/rankings`）は年月指定必須で、同月・同種目・同学年・同性別の全順位を生成する。
+- チャレンジCSV取り込みは学年 `1..15`（年少〜高校3年生）のみを有効とし、範囲外はスキップして件数を通知する。
 
 ## DBスキーマ要約
 - athletes: 氏名・学年・性別
-- meets: (program, held_on, title) ユニーク
+- meets: (program, held_on, title) ユニーク（program: `swimming` / `school` / `challenge`）
 - events: 種目情報（学年/性別別）
 - results: タイムと順位（DENSE_RANK）
 - generated_docs: 生成物の保存キー

@@ -20,6 +20,10 @@ export default function AdminDashboard() {
                         <span className="admin-menu-icon">🏫</span>
                         <span className="admin-menu-label">学校名インポート</span>
                     </Link>
+                    <Link href="/admin/import/challenge" className="admin-menu-item">
+                        <span className="admin-menu-icon">🚀</span>
+                        <span className="admin-menu-label">チャレンジCSV取り込み</span>
+                    </Link>
                     <Link href="/admin/publish" className="admin-menu-item">
                         <span className="admin-menu-icon">🔓</span>
                         <span className="admin-menu-label">公開期間表示管理</span>
@@ -31,6 +35,10 @@ export default function AdminDashboard() {
                     <Link href="/admin/docs/school" className="admin-menu-item">
                         <span className="admin-menu-icon">📋</span>
                         <span className="admin-menu-label">学校証明書</span>
+                    </Link>
+                    <Link href="/admin/docs/challenge" className="admin-menu-item">
+                        <span className="admin-menu-icon">📈</span>
+                        <span className="admin-menu-label">チャレンジランキング</span>
                     </Link>
                     <Link href="/admin/logs" className="admin-menu-item">
                         <span className="admin-menu-icon">📝</span>

@@ -77,4 +77,25 @@ describe("docs filter", () => {
       }
     });
   });
+
+  it("builds meet where for challenge program", () => {
+    const parsed = parseDocsFilterInput({
+      year: 2026,
+      month: 2
+    });
+    expect(parsed.ok).toBe(true);
+
+    if (!parsed.ok) {
+      return;
+    }
+
+    const where = buildMeetWhere("challenge", parsed.value);
+    expect(where).toEqual({
+      program: "challenge",
+      heldOn: {
+        gte: new Date("2026-02-01T00:00:00.000Z"),
+        lt: new Date("2026-03-01T00:00:00.000Z")
+      }
+    });
+  });
 });

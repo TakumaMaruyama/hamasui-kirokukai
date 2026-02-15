@@ -6,6 +6,7 @@ import type { ReactElement } from "react";
 import { RankingGroup } from "./ranking-report";
 import { formatTimeForDocument } from "./display-time";
 import { formatGradeLabel, formatGradeShortLabel } from "./grade";
+import { paginateRankingGroups } from "./ranking-pagination";
 
 const FONT_FAMILY = "NotoSansJP";
 const NOTO_SANS_JP_FONT_URL = "https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Regular.otf";
@@ -466,51 +467,64 @@ export async function renderRankingPdf({
   periodLabel: string;
   groups: RankingGroup[];
 }): Promise<Buffer> {
+  const pages = paginateRankingGroups(groups);
+
   return renderPdfDocument(
     <Document>
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>{periodLabel} ランキング</Text>
-        {groups.length === 0 ? (
-          <Text style={styles.empty}>ランキング対象（1〜3位）のデータがありません。</Text>
-        ) : (
-          groups.map((group) => {
-            const palette = rankingPalette(group.gender);
+      {groups.length === 0 ? (
+        <Page size="A4" style={styles.page}>
+          <Text style={styles.title}>{periodLabel} ランキング</Text>
+          <Text style={styles.empty}>ランキング対象データがありません。</Text>
+        </Page>
+      ) : (
+        pages.map((page, pageIndex) => (
+          <Page key={`${periodLabel}-${pageIndex}`} size="A4" style={styles.page}>
+            <Text style={styles.title}>
+              {periodLabel} ランキング
+              {pages.length > 1 ? ` (${pageIndex + 1}/${pages.length})` : ""}
+            </Text>
+            {page.blocks.map((block) => {
+              const palette = rankingPalette(block.gender);
+              const continuationLabel =
+                block.chunkCount > 1 ? `（続き ${block.chunkIndex}/${block.chunkCount}）` : "";
 
-            return (
-              <View
-                key={group.eventId}
-                style={[styles.rankingGroup, { borderColor: palette.border }]}
-                wrap={false}
-              >
-                <Text style={[styles.rankingGroupTitle, { color: palette.title }]}>
-                  {group.eventTitle} / {formatGradeLabel(group.grade)} / {genderLabel(group.gender)}
-                </Text>
-                <View style={[styles.table, { borderColor: palette.border }]}>
-                  <View style={[styles.row, { borderColor: palette.border }]}>
-                    <Text style={[styles.cell, styles.cellRank, styles.headerCell, { backgroundColor: palette.header }]}>順位</Text>
-                    <Text style={[styles.cell, styles.cellEvent, styles.headerCell, { backgroundColor: palette.header }]}>氏名</Text>
-                    <Text style={[styles.cell, styles.cellTime, styles.headerCell, { backgroundColor: palette.header }]}>記録</Text>
-                  </View>
-                  {group.entries.map((entry, index) => (
-                    <View
-                      key={`${group.eventId}-${entry.fullName}-${index}`}
-                      style={
-                        index === group.entries.length - 1
-                          ? [styles.row, { borderColor: palette.border }, styles.rowLast]
-                          : [styles.row, { borderColor: palette.border }]
-                      }
-                    >
-                      <Text style={[styles.cell, styles.cellRank]}>{entry.rank}位</Text>
-                      <Text style={[styles.cell, styles.cellEvent]}>{entry.fullName}</Text>
-                      <Text style={[styles.cell, styles.cellTime]}>{entry.timeText}</Text>
+              return (
+                <View
+                  key={`${block.eventId}-${block.chunkIndex}`}
+                  style={[styles.rankingGroup, { borderColor: palette.border }]}
+                  wrap={false}
+                >
+                  <Text style={[styles.rankingGroupTitle, { color: palette.title }]}>
+                    {block.eventTitle} / {formatGradeLabel(block.grade)} / {genderLabel(block.gender)}
+                    {continuationLabel}
+                  </Text>
+                  <View style={[styles.table, { borderColor: palette.border }]}>
+                    <View style={[styles.row, { borderColor: palette.border }]}>
+                      <Text style={[styles.cell, styles.cellRank, styles.headerCell, { backgroundColor: palette.header }]}>順位</Text>
+                      <Text style={[styles.cell, styles.cellEvent, styles.headerCell, { backgroundColor: palette.header }]}>氏名</Text>
+                      <Text style={[styles.cell, styles.cellTime, styles.headerCell, { backgroundColor: palette.header }]}>記録</Text>
                     </View>
-                  ))}
+                    {block.entries.map((entry, index) => (
+                      <View
+                        key={`${block.eventId}-${block.chunkIndex}-${entry.fullName}-${index}`}
+                        style={
+                          index === block.entries.length - 1
+                            ? [styles.row, { borderColor: palette.border }, styles.rowLast]
+                            : [styles.row, { borderColor: palette.border }]
+                        }
+                      >
+                        <Text style={[styles.cell, styles.cellRank]}>{entry.rank}位</Text>
+                        <Text style={[styles.cell, styles.cellEvent]}>{entry.fullName}</Text>
+                        <Text style={[styles.cell, styles.cellTime]}>{entry.timeText}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
-            );
-          })
-        )}
-      </Page>
+              );
+            })}
+          </Page>
+        ))
+      )}
     </Document>
   );
 }

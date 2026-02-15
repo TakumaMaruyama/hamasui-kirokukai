@@ -11,7 +11,7 @@ type ApiPayload = {
 };
 
 type Props = {
-  program: "swimming" | "school";
+  program: "swimming" | "school" | "challenge";
 };
 
 async function readApiPayload(response: Response): Promise<ApiPayload | null> {
@@ -74,6 +74,7 @@ export default function ImportForm({ program }: Props) {
       }
 
       setPreview(payload.rows);
+      setMessage(payload.message ?? null);
     } catch (error) {
       setMessage("通信に失敗しました");
     } finally {
@@ -100,7 +101,7 @@ export default function ImportForm({ program }: Props) {
         return;
       }
 
-      setMessage("取り込みが完了しました");
+      setMessage(payload?.message ?? "取り込みが完了しました");
       setPreview(null);
       setFile(null);
     } catch (error) {
