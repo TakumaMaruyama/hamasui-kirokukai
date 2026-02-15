@@ -1,3 +1,4 @@
+import { Program } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatMeetLabel } from "@/lib/meet-context";
@@ -29,6 +30,18 @@ function isMissingChallengeProgramError(error: unknown): boolean {
     );
 }
 
+function isMissingChallengeProgramInDatabaseError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+        return false;
+    }
+
+    return /invalid input value for enum .*Program.*challenge/i.test(error.message);
+}
+
+function hasChallengeInRuntimeProgramEnum(): boolean {
+    return Object.values(Program).includes("challenge");
+}
+
 async function deleteMeet(formData: FormData) {
     "use server";
     const id = formData.get("id")?.toString();
@@ -50,17 +63,25 @@ export default async function MeetsPage({
     let meets: Awaited<ReturnType<typeof prisma.meet.findMany>> = [];
     let loadMessage: string | null = null;
 
+    if (selectedProgram === "challenge" && !hasChallengeInRuntimeProgramEnum()) {
+        loadMessage = "チャレンジコースのPrisma Clientが古い可能性があります。アプリを再起動/再デプロイしてください。";
+    }
+
     try {
-        meets = await prisma.meet.findMany({
-            where: { program: selectedProgram },
-            include: {
-                _count: { select: { results: true } }
-            },
-            orderBy: { heldOn: "desc" }
-        });
+        if (!loadMessage) {
+            meets = await prisma.meet.findMany({
+                where: { program: selectedProgram },
+                include: {
+                    _count: { select: { results: true } }
+                },
+                orderBy: { heldOn: "desc" }
+            });
+        }
     } catch (error) {
         if (selectedProgram === "challenge" && isMissingChallengeProgramError(error)) {
-            loadMessage = "チャレンジコースのDB設定が未反映です。`Program.challenge` をDBへ反映してください（例: npx prisma db push）。";
+            loadMessage = "チャレンジコースのPrisma Clientが古い可能性があります。アプリを再起動/再デプロイしてください。";
+        } else if (selectedProgram === "challenge" && isMissingChallengeProgramInDatabaseError(error)) {
+            loadMessage = "チャレンジコースのDB設定が未反映です。実行中アプリと同じDATABASE_URLに `Program.challenge` を反映してください（例: npx prisma db push）。";
         } else {
             throw error;
         }
