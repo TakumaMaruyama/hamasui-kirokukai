@@ -65,27 +65,41 @@ export default function SearchForm() {
       <div
         style={{
           marginTop: 16,
-          padding: 12,
-          background: "#f7f8fb",
+          padding: 14,
+          background: "#fff8e7",
           borderRadius: 8,
-          border: "1px solid #d5dce8"
+          border: "1px solid #f2d48a"
         }}
       >
-        <div style={{ fontWeight: 700, marginBottom: 8, color: "#1b1b1f" }}>検索利用時の同意事項</div>
-        {SEARCH_CONSENT_ITEMS.map((item) => (
-          <div
-            key={item}
-            style={{
-              marginBottom: 4,
-              color: "#1f2937",
-              fontSize: "0.95rem",
-              lineHeight: 1.55,
-              fontWeight: 500
-            }}
-          >
-            {item}
-          </div>
-        ))}
+        <div
+          style={{
+            fontWeight: 800,
+            fontSize: "1.05rem",
+            marginBottom: 8,
+            color: "#92400e",
+            background: "#fdecc8",
+            padding: "6px 8px",
+            borderRadius: 6
+          }}
+        >
+          検索利用時の同意事項
+        </div>
+        <ul
+          style={{
+            margin: "0 0 0 1.2rem",
+            padding: 0,
+            color: "#1f2937",
+            fontSize: "0.95rem",
+            lineHeight: 1.55,
+            fontWeight: 500
+          }}
+        >
+          {SEARCH_CONSENT_ITEMS.map((item) => (
+            <li key={item} style={{ marginBottom: 4 }}>
+              {item}
+            </li>
+          ))}
+        </ul>
         <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10 }}>
           <input
             type="checkbox"
