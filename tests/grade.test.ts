@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatGradeLabel, formatGradeShortLabel } from "../lib/grade";
+import { formatElementaryFirstGradeLabel, formatGradeLabel, formatGradeShortLabel } from "../lib/grade";
 
 describe("grade label formatting", () => {
   it("formats preschool labels", () => {
@@ -20,5 +20,11 @@ describe("grade label formatting", () => {
     expect(formatGradeShortLabel(2)).toBe("年中");
     expect(formatGradeShortLabel(4)).toBe("小1");
     expect(formatGradeShortLabel(10)).toBe("中1");
+  });
+
+  it("supports elementary-first labels for public search display", () => {
+    expect(formatElementaryFirstGradeLabel(5)).toBe("小学5年生");
+    expect(formatElementaryFirstGradeLabel(6)).toBe("小学6年生");
+    expect(formatElementaryFirstGradeLabel(10)).toBe("中学1年生");
   });
 });

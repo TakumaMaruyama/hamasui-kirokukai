@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { nameSearchKey, parseSearchRequestInput } from "@/lib/search-request";
+import { isMissingSearchLogConsentVersionColumnError } from "@/lib/search-log";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -22,14 +23,28 @@ export async function POST(request: Request) {
 
   const normalizedFullName = parsed.value.fullName;
 
-  await prisma.searchLog.create({
-    data: {
-      fullName: normalizedFullName,
-      ipAddress,
-      userAgent: request.headers.get("user-agent") ?? "",
-      consentVersion: parsed.value.consentVersion
+  try {
+    await prisma.searchLog.create({
+      data: {
+        fullName: normalizedFullName,
+        ipAddress,
+        userAgent: request.headers.get("user-agent") ?? "",
+        consentVersion: parsed.value.consentVersion
+      }
+    });
+  } catch (error) {
+    if (!isMissingSearchLogConsentVersionColumnError(error)) {
+      throw error;
     }
-  });
+
+    await prisma.searchLog.create({
+      data: {
+        fullName: normalizedFullName,
+        ipAddress,
+        userAgent: request.headers.get("user-agent") ?? ""
+      }
+    });
+  }
 
   const athletes = await prisma.athlete.findMany({
     where: {

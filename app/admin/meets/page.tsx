@@ -10,6 +10,17 @@ const PROGRAM_OPTIONS = [
 ] as const;
 
 type AdminProgram = (typeof PROGRAM_OPTIONS)[number]["value"];
+type MeetWithCount = {
+    id: string;
+    program: Program;
+    heldOn: Date;
+    title: string;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: {
+        results: number;
+    };
+};
 
 function toAdminProgram(value: string | string[] | undefined): AdminProgram {
     if (value === "school" || value === "challenge") {
@@ -60,7 +71,7 @@ export default async function MeetsPage({
     const selectedProgram = toAdminProgram(searchParams?.program);
     const selectedProgramLabel = PROGRAM_OPTIONS.find((option) => option.value === selectedProgram)?.label ?? "スイミング";
 
-    let meets: Awaited<ReturnType<typeof prisma.meet.findMany>> = [];
+    let meets: MeetWithCount[] = [];
     let loadMessage: string | null = null;
 
     if (selectedProgram === "challenge" && !hasChallengeInRuntimeProgramEnum()) {

@@ -1,15 +1,63 @@
 import { prisma } from "@/lib/prisma";
+import { isMissingSearchLogConsentVersionColumnError } from "@/lib/search-log";
+
+export const dynamic = "force-dynamic";
+
+type SearchLogRow = {
+  id: string;
+  createdAt: Date;
+  fullName: string;
+  ipAddress: string;
+  userAgent: string;
+  consentVersion: string | null;
+};
 
 export default async function LogsPage() {
-  const logs = await prisma.searchLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200
-  });
+  let logs: SearchLogRow[] = [];
+  let warning: string | null = null;
+
+  try {
+    logs = await prisma.searchLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: {
+        id: true,
+        createdAt: true,
+        fullName: true,
+        ipAddress: true,
+        userAgent: true,
+        consentVersion: true
+      }
+    });
+  } catch (error) {
+    if (!isMissingSearchLogConsentVersionColumnError(error)) {
+      throw error;
+    }
+
+    const fallbackLogs = await prisma.searchLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: {
+        id: true,
+        createdAt: true,
+        fullName: true,
+        ipAddress: true,
+        userAgent: true
+      }
+    });
+
+    logs = fallbackLogs.map((log) => ({
+      ...log,
+      consentVersion: null
+    }));
+    warning = "本番DBに consentVersion 列が未反映のため、同意版は表示していません。";
+  }
 
   return (
     <main>
       <header>
         <h1>検索ログ</h1>
+        {warning ? <p className="notice" style={{ color: "#b00020" }}>{warning}</p> : null}
       </header>
       <div className="card">
         <table className="table">

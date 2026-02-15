@@ -61,3 +61,12 @@ export function formatGradeShortLabel(grade: number): string {
 
   return `${grade}年`;
 }
+
+// Public-facing fallback label for data where elementary grades are stored as 1..6.
+export function formatElementaryFirstGradeLabel(grade: number): string {
+  if (grade >= 1 && grade <= 6) {
+    return `小学${grade}年生`;
+  }
+
+  return formatGradeLabel(grade);
+}

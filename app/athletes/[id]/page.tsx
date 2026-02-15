@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatMeetLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
-import { formatGradeLabel } from "@/lib/grade";
+import { formatElementaryFirstGradeLabel } from "@/lib/grade";
 import { assignAllTimeClassRanks, assignMonthlyOverallRanks, assignMonthlyRanks } from "@/lib/monthly-rank";
 
 type ResultWithMeetEvent = {
@@ -245,7 +245,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
       <header>
         <h1>{athlete.fullName}</h1>
         <p className="notice">
-          {formatGradeLabel(athlete.grade)} / {genderLabel}
+          {formatElementaryFirstGradeLabel(athlete.grade)} / {genderLabel}
         </p>
         <p className="notice">
           {formatPublishRange(publishWindow?.publishFrom, publishWindow?.publishUntil)}
