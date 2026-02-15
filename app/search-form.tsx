@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatElementaryFirstGradeLabel } from "@/lib/grade";
+import { formatGradeLabel } from "@/lib/grade";
 import { SEARCH_CONSENT_ITEMS, SEARCH_CONSENT_VERSION } from "@/lib/search-consent";
 
 type SearchResult = {
@@ -128,7 +128,7 @@ export default function SearchForm() {
             {results.map((result) => (
               <li key={result.id}>
                 <a href={`/athletes/${result.id}`}>
-                  {result.fullName}（{formatElementaryFirstGradeLabel(result.grade)}）
+                  {result.fullName}（{formatGradeLabel(result.grade)}）
                 </a>
               </li>
             ))}

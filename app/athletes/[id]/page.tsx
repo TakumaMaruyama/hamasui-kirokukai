@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatMeetLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
-import { formatElementaryFirstGradeLabel } from "@/lib/grade";
+import { formatGradeLabel } from "@/lib/grade";
 import { assignAllTimeClassRanks, assignMonthlyOverallRanks, assignMonthlyRanks } from "@/lib/monthly-rank";
 
 type ResultWithMeetEvent = {
@@ -245,7 +245,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
       <header>
         <h1>{athlete.fullName}</h1>
         <p className="notice">
-          {formatElementaryFirstGradeLabel(athlete.grade)} / {genderLabel}
+          {formatGradeLabel(athlete.grade)} / {genderLabel}
         </p>
         <p className="notice">
           {formatPublishRange(publishWindow?.publishFrom, publishWindow?.publishUntil)}
@@ -282,11 +282,11 @@ export default async function AthletePage({ params }: { params: { id: string } }
       {/* 記録会ごとの記録 */}
       <section className="card">
         <h2>📊 記録会別履歴</h2>
-        <div className="notice" style={{ marginBottom: 12, lineHeight: 1.6 }}>
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>順位の見方</div>
-          <div>同月 学年/性別: 同じ月の、同じ種目・同じ学年・同じ性別の中での順位です。</div>
-          <div>同月 全体: 同じ月の、同じ種目に出た全員の中での順位です（学年・性別をまたぎます）。</div>
-          <div>歴代 学年/性別: これまでの全記録で、同じ種目・同じ学年・同じ性別の中での順位です。</div>
+        <div className="notice" style={{ marginBottom: 12, lineHeight: 1.7 }}>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>順位の見方（わかりやすく）</div>
+          <div>・同月 学年/性別: その月の「同じ種目・同じ学年・同じ性別」で比べた順位</div>
+          <div>・同月 全体（性別別）: その月の「同じ種目・同じ性別」で比べた順位（学年は混合）</div>
+          <div>・歴代 学年/性別: これまでの全記録で「同じ種目・同じ学年・同じ性別」で比べた順位</div>
         </div>
         {groupedResults.length === 0 ? (
           <p className="notice">記録がありません</p>
@@ -301,7 +301,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
                       <th>種目</th>
                       <th>タイム</th>
                       <th>同月 学年/性別</th>
-                      <th>同月 全体</th>
+                      <th>同月 全体（性別別）</th>
                       <th>歴代 学年/性別</th>
                     </tr>
                   </thead>

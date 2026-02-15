@@ -52,13 +52,13 @@ describe("assignMonthlyRanks", () => {
     expect(ranks.get("f")).toBe(1);
   });
 
-  it("assigns monthly overall ranks by month and event base (title/distance/style)", () => {
+  it("assigns monthly overall ranks by month, event base, and gender", () => {
     const ranks = assignMonthlyOverallRanks(sampleRows);
 
     expect(ranks.get("d")).toBe(1);
-    expect(ranks.get("e")).toBe(2);
-    expect(ranks.get("b")).toBe(3);
-    expect(ranks.get("a")).toBe(4);
+    expect(ranks.get("b")).toBe(2);
+    expect(ranks.get("a")).toBe(3);
+    expect(ranks.get("e")).toBe(1);
     expect(ranks.get("c")).toBe(1);
     expect(ranks.get("f")).toBe(1);
   });
@@ -85,8 +85,8 @@ describe("assignMonthlyRanks", () => {
       }
     ]);
 
-    expect(ranks.get("b")).toBe(3);
-    expect(ranks.get("g")).toBe(3);
-    expect(ranks.get("a")).toBe(4);
+    expect(ranks.get("b")).toBe(2);
+    expect(ranks.get("g")).toBe(1);
+    expect(ranks.get("a")).toBe(3);
   });
 });

@@ -28,6 +28,10 @@ function toEventClassKey(source: MonthlyRankSource): string {
   return `${toEventBaseKey(source)}:${grade}:${gender}`;
 }
 
+function toEventBaseGenderKey(source: MonthlyRankSource): string {
+  return `${toEventBaseKey(source)}:${source.event.gender}`;
+}
+
 function assignGroupedRanks(
   results: MonthlyRankSource[],
   toGroupKey: (source: MonthlyRankSource) => string
@@ -59,7 +63,7 @@ export function assignMonthlyRanks(results: MonthlyRankSource[]): Map<string, nu
 }
 
 export function assignMonthlyOverallRanks(results: MonthlyRankSource[]): Map<string, number> {
-  return assignGroupedRanks(results, (result) => `${toMonthKey(result.heldOn)}:${toEventBaseKey(result)}`);
+  return assignGroupedRanks(results, (result) => `${toMonthKey(result.heldOn)}:${toEventBaseGenderKey(result)}`);
 }
 
 export function assignAllTimeClassRanks(results: MonthlyRankSource[]): Map<string, number> {
