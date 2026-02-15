@@ -61,7 +61,7 @@ export default async function MeetsPage({
     const selectedProgram = toAdminProgram(searchParams?.program);
     const selectedProgramLabel = PROGRAM_OPTIONS.find((option) => option.value === selectedProgram)?.label ?? "スイミング";
 
-    let meets: Awaited<ReturnType<typeof prisma.meet.findMany>> = [];
+    let meets: (Awaited<ReturnType<typeof prisma.meet.findMany>>[number] & { _count: { results: number } })[] = [];
     let loadMessage: string | null = null;
 
     if (selectedProgram === "challenge" && !hasChallengeInRuntimeProgramEnum()) {
