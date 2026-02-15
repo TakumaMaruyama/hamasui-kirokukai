@@ -2,7 +2,6 @@ import { Program } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatMeetLabel } from "@/lib/meet-context";
-import DeleteMeetButton from "./DeleteMeetButton";
 
 const PROGRAM_OPTIONS = [
     { value: "swimming", label: "スイミング" },
@@ -11,6 +10,17 @@ const PROGRAM_OPTIONS = [
 ] as const;
 
 type AdminProgram = (typeof PROGRAM_OPTIONS)[number]["value"];
+type MeetWithCount = {
+    id: string;
+    program: Program;
+    heldOn: Date;
+    title: string;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: {
+        results: number;
+    };
+};
 
 function toAdminProgram(value: string | string[] | undefined): AdminProgram {
     if (value === "school" || value === "challenge") {
@@ -61,7 +71,7 @@ export default async function MeetsPage({
     const selectedProgram = toAdminProgram(searchParams?.program);
     const selectedProgramLabel = PROGRAM_OPTIONS.find((option) => option.value === selectedProgram)?.label ?? "スイミング";
 
-    let meets: (Awaited<ReturnType<typeof prisma.meet.findMany>>[number] & { _count: { results: number } })[] = [];
+    let meets: MeetWithCount[] = [];
     let loadMessage: string | null = null;
 
     if (selectedProgram === "challenge" && !hasChallengeInRuntimeProgramEnum()) {
@@ -140,7 +150,18 @@ export default async function MeetsPage({
                                     <td>
                                         <form action={deleteMeet} style={{ display: "inline" }}>
                                             <input type="hidden" name="id" value={meet.id} />
-                                            <DeleteMeetButton meetLabel={formatMeetLabel(meet)} />
+                                            <button
+                                                type="submit"
+                                                className="secondary"
+                                                style={{ fontSize: "0.85rem", padding: "6px 12px" }}
+                                                onClick={(e) => {
+                                                    if (!confirm(`「${formatMeetLabel(meet)}」を削除しますか？関連する全ての記録も削除されます。`)) {
+                                                        e.preventDefault();
+                                                    }
+                                                }}
+                                            >
+                                                削除
+                                            </button>
                                         </form>
                                     </td>
                                 </tr>
