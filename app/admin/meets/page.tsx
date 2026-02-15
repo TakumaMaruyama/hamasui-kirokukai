@@ -18,6 +18,17 @@ function toAdminProgram(value: string | string[] | undefined): AdminProgram {
     return "swimming";
 }
 
+function isMissingChallengeProgramError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+        return false;
+    }
+
+    return (
+        error.message.includes("Invalid value for argument `program`") &&
+        error.message.includes('program: "challenge"')
+    );
+}
+
 async function deleteMeet(formData: FormData) {
     "use server";
     const id = formData.get("id")?.toString();
@@ -36,13 +47,24 @@ export default async function MeetsPage({
     const selectedProgram = toAdminProgram(searchParams?.program);
     const selectedProgramLabel = PROGRAM_OPTIONS.find((option) => option.value === selectedProgram)?.label ?? "スイミング";
 
-    const meets = await prisma.meet.findMany({
-        where: { program: selectedProgram },
-        include: {
-            _count: { select: { results: true } }
-        },
-        orderBy: { heldOn: "desc" }
-    });
+    let meets: Awaited<ReturnType<typeof prisma.meet.findMany>> = [];
+    let loadMessage: string | null = null;
+
+    try {
+        meets = await prisma.meet.findMany({
+            where: { program: selectedProgram },
+            include: {
+                _count: { select: { results: true } }
+            },
+            orderBy: { heldOn: "desc" }
+        });
+    } catch (error) {
+        if (selectedProgram === "challenge" && isMissingChallengeProgramError(error)) {
+            loadMessage = "チャレンジコースのDB設定が未反映です。`Program.challenge` をDBへ反映してください（例: npx prisma db push）。";
+        } else {
+            throw error;
+        }
+    }
 
     return (
         <main>
@@ -50,6 +72,9 @@ export default async function MeetsPage({
                 <h1>記録会管理</h1>
                 <p className="notice">過去の記録会一覧です。CSVインポートで自動作成されます。</p>
                 <p className="notice">表示中: {selectedProgramLabel}</p>
+                {loadMessage ? (
+                    <p className="notice" style={{ color: "#b00020" }}>{loadMessage}</p>
+                ) : null}
             </header>
             <div className="card">
                 <div style={{ marginBottom: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
