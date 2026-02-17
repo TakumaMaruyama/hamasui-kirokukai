@@ -11,13 +11,13 @@ describe("buildMeetRankingGroups", () => {
       {
         rank: 2,
         timeText: "00:40.00",
-        athlete: { fullName: "山田 太郎" },
+        athlete: { fullName: "山田 太郎", fullNameKana: "やまだ たろう" },
         event: { id: "e2", title: "25m自由形", grade: 2, gender: "male" }
       },
       {
         rank: 1,
         timeText: "00:35.00",
-        athlete: { fullName: "佐藤 花子" },
+        athlete: { fullName: "佐藤 花子", fullNameKana: "さとう はなこ" },
         event: { id: "e1", title: "15mキック", grade: 1, gender: "female" }
       },
       {
@@ -32,6 +32,46 @@ describe("buildMeetRankingGroups", () => {
     expect(groups[0].eventId).toBe("e1");
     expect(groups[1].eventId).toBe("e2");
     expect(groups[1].entries.map((entry) => entry.fullName)).toEqual(["青木 一郎", "山田 太郎"]);
+    expect(groups[1].entries.map((entry) => entry.displayName)).toEqual(["青木 一郎", "山田 太郎"]);
+  });
+
+  it("shows kana only for preschool grades and keeps full-name sort order", () => {
+    const groups = buildMeetRankingGroups(
+      [
+        {
+          rank: 1,
+          timeText: "00:33.00",
+          athlete: { fullName: "B太郎", fullNameKana: "あたろう" },
+          event: { id: "e1", title: "15mキック", grade: 3, gender: "male" }
+        },
+        {
+          rank: 1,
+          timeText: "00:34.00",
+          athlete: { fullName: "A太郎", fullNameKana: "んたろう" },
+          event: { id: "e1", title: "15mキック", grade: 3, gender: "male" }
+        },
+        {
+          rank: 2,
+          timeText: "00:40.00",
+          athlete: { fullName: "C花子" },
+          event: { id: "e1", title: "15mキック", grade: 3, gender: "male" }
+        },
+        {
+          rank: 1,
+          timeText: "00:30.00",
+          athlete: { fullName: "D次郎", fullNameKana: "でぃじろう" },
+          event: { id: "e2", title: "25mクロール", grade: 4, gender: "male" }
+        }
+      ],
+      {
+        preschoolNameMode: "kanaOnly",
+        preschoolMaxGrade: 3
+      }
+    );
+
+    expect(groups[0]?.entries.map((entry) => entry.fullName)).toEqual(["A太郎", "B太郎", "C花子"]);
+    expect(groups[0]?.entries.map((entry) => entry.displayName)).toEqual(["んたろう", "あたろう", "C花子"]);
+    expect(groups[1]?.entries[0]?.displayName).toBe("D次郎");
   });
 });
 
@@ -71,9 +111,11 @@ describe("buildHistoricalFirstRankingGroups", () => {
     expect(groups).toHaveLength(2);
     expect(groups[0].grade).toBe(3);
     expect(groups[0].entries.map((entry) => entry.fullName)).toEqual(["佐藤 花子", "青木 一郎"]);
+    expect(groups[0].entries.map((entry) => entry.displayName)).toEqual(["佐藤 花子", "青木 一郎"]);
     expect(groups[1].grade).toBe(4);
     expect(groups[1].entries).toHaveLength(1);
     expect(groups[1].entries[0]?.fullName).toBe("鈴木 次郎");
+    expect(groups[1].entries[0]?.displayName).toBe("鈴木 次郎");
   });
 });
 
@@ -118,6 +160,8 @@ describe("buildChallengeEventRankingGroups", () => {
     expect(groups[0]?.gradeGroups[0]?.grade).toBe(1);
     expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["ひらいし たいが"]);
     expect(groups[0]?.gradeGroups[0]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["おおすぎ あいな"]);
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.displayName)).toEqual(["ひらいし たいが"]);
+    expect(groups[0]?.gradeGroups[0]?.femaleEntries.map((entry) => entry.displayName)).toEqual(["おおすぎ あいな"]);
     expect(groups[0]?.gradeGroups[1]?.grade).toBe(5);
     expect(groups[0]?.gradeGroups[1]?.maleEntries[0]?.fullName).toBe("増山 連人");
     expect(groups[0]?.gradeGroups[1]?.femaleEntries[0]?.fullName).toBe("上原 梨菜");
@@ -137,5 +181,38 @@ describe("buildChallengeEventRankingGroups", () => {
     expect(groups).toHaveLength(1);
     expect(groups[0]?.gradeGroups[0]?.maleEntries).toHaveLength(0);
     expect(groups[0]?.gradeGroups[0]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["テスト 太郎"]);
+  });
+
+  it("shows kana only for preschool rows and falls back to full name when kana is empty", () => {
+    const groups = buildChallengeEventRankingGroups(
+      [
+        {
+          rank: 1,
+          timeText: "24.00",
+          athlete: { fullName: "田中 太郎", fullNameKana: "たなか たろう" },
+          event: { id: "e1", title: "15mクロール", grade: 2, gender: "male" }
+        },
+        {
+          rank: 1,
+          timeText: "25.00",
+          athlete: { fullName: "鈴木 花子", fullNameKana: " " },
+          event: { id: "e2", title: "15mクロール", grade: 2, gender: "female" }
+        },
+        {
+          rank: 1,
+          timeText: "26.00",
+          athlete: { fullName: "高橋 次郎", fullNameKana: "たかはし じろう" },
+          event: { id: "e3", title: "15mクロール", grade: 4, gender: "male" }
+        }
+      ],
+      {
+        preschoolNameMode: "kanaOnly",
+        preschoolMaxGrade: 3
+      }
+    );
+
+    expect(groups[0]?.gradeGroups[0]?.maleEntries[0]?.displayName).toBe("たなか たろう");
+    expect(groups[0]?.gradeGroups[0]?.femaleEntries[0]?.displayName).toBe("鈴木 花子");
+    expect(groups[0]?.gradeGroups[1]?.maleEntries[0]?.displayName).toBe("高橋 次郎");
   });
 });

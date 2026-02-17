@@ -469,7 +469,7 @@ function buildChallengeGenderTable({
           style={index === entries.length - 1 ? [styles.challengeTableRow, styles.challengeTableRowLast] : styles.challengeTableRow}
         >
           <Text style={[styles.challengeCell, styles.challengeCellRank]}>{entry ? entry.rank : ""}</Text>
-          <Text style={[styles.challengeCell, styles.challengeCellName]}>{entry?.fullName ?? ""}</Text>
+          <Text style={[styles.challengeCell, styles.challengeCellName]}>{entry?.displayName || entry?.fullName || ""}</Text>
           <Text style={[styles.challengeCell, styles.challengeCellTime]}>
             {entry ? formatTimeForDocument({ timeText: entry.timeText }) : ""}
           </Text>
@@ -825,7 +825,7 @@ export async function renderRankingPdf({
                         }
                       >
                         <Text style={[styles.cell, styles.cellRank]}>{entry.rank}位</Text>
-                        <Text style={[styles.cell, styles.cellEvent]}>{entry.fullName}</Text>
+                        <Text style={[styles.cell, styles.cellEvent]}>{entry.displayName || entry.fullName}</Text>
                         <Text style={[styles.cell, styles.cellTime]}>{entry.timeText}</Text>
                       </View>
                     ))}

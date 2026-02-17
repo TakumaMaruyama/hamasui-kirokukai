@@ -3,7 +3,7 @@ import { Gender } from "@prisma/client";
 export type RankingSourceResult = {
   rank: number;
   timeText: string;
-  athlete: { fullName: string };
+  athlete: { fullName: string; fullNameKana?: string | null };
   event: {
     id: string;
     title: string;
@@ -31,6 +31,7 @@ export type HistoricalFirstSourceResult = {
 export type RankingEntry = {
   rank: number;
   fullName: string;
+  displayName: string;
   timeText: string;
 };
 
@@ -53,11 +54,55 @@ export type ChallengeEventRankingGroup = {
   gradeGroups: ChallengeGradeRankingGroup[];
 };
 
+export type PreschoolNameMode = "none" | "kanaOnly" | "nameAndKana";
+
+export type RankingDisplayOptions = {
+  preschoolNameMode?: PreschoolNameMode;
+  preschoolMaxGrade?: number;
+};
+
 const GENDER_ORDER: Record<Gender, number> = {
   male: 0,
   female: 1,
   other: 2
 };
+
+const DEFAULT_PRESCHOOL_MAX_GRADE = 3;
+
+function normalizeKana(value: string | null | undefined): string {
+  return value?.replace(/\s+/g, " ").trim() ?? "";
+}
+
+function isPreschoolGrade(grade: number, preschoolMaxGrade: number): boolean {
+  return grade >= 0 && grade <= preschoolMaxGrade;
+}
+
+function toRankingDisplayName(
+  input: { fullName: string; fullNameKana?: string | null; grade: number },
+  options: RankingDisplayOptions = {}
+): string {
+  const mode = options.preschoolNameMode ?? "none";
+  const preschoolMaxGrade = options.preschoolMaxGrade ?? DEFAULT_PRESCHOOL_MAX_GRADE;
+
+  if (mode === "none" || !isPreschoolGrade(input.grade, preschoolMaxGrade)) {
+    return input.fullName;
+  }
+
+  const fullNameKana = normalizeKana(input.fullNameKana);
+  if (!fullNameKana) {
+    return input.fullName;
+  }
+
+  if (mode === "kanaOnly") {
+    return fullNameKana;
+  }
+
+  if (mode === "nameAndKana") {
+    return `${input.fullName}（${fullNameKana}）`;
+  }
+
+  return input.fullName;
+}
 
 function sortRankingEntries(entries: RankingEntry[]): RankingEntry[] {
   return [...entries].sort((a, b) => {
@@ -69,7 +114,10 @@ function sortRankingEntries(entries: RankingEntry[]): RankingEntry[] {
   });
 }
 
-export function buildMeetRankingGroups(results: RankingSourceResult[]): RankingGroup[] {
+export function buildMeetRankingGroups(
+  results: RankingSourceResult[],
+  options: RankingDisplayOptions = {}
+): RankingGroup[] {
   const groups = new Map<string, RankingGroup>();
 
   for (const result of results) {
@@ -87,6 +135,14 @@ export function buildMeetRankingGroups(results: RankingSourceResult[]): RankingG
     groups.get(key)!.entries.push({
       rank: result.rank,
       fullName: result.athlete.fullName,
+      displayName: toRankingDisplayName(
+        {
+          fullName: result.athlete.fullName,
+          fullNameKana: result.athlete.fullNameKana,
+          grade: result.event.grade
+        },
+        options
+      ),
       timeText: result.timeText
     });
   }
@@ -110,7 +166,10 @@ export function buildMeetRankingGroups(results: RankingSourceResult[]): RankingG
     });
 }
 
-export function buildChallengeEventRankingGroups(results: RankingSourceResult[]): ChallengeEventRankingGroup[] {
+export function buildChallengeEventRankingGroups(
+  results: RankingSourceResult[],
+  options: RankingDisplayOptions = {}
+): ChallengeEventRankingGroup[] {
   const eventMap = new Map<string, Map<number, ChallengeGradeRankingGroup>>();
 
   for (const result of results) {
@@ -134,6 +193,14 @@ export function buildChallengeEventRankingGroups(results: RankingSourceResult[])
     const entry = {
       rank: result.rank,
       fullName: result.athlete.fullName,
+      displayName: toRankingDisplayName(
+        {
+          fullName: result.athlete.fullName,
+          fullNameKana: result.athlete.fullNameKana,
+          grade: result.event.grade
+        },
+        options
+      ),
       timeText: result.timeText
     };
 
@@ -222,5 +289,7 @@ export function buildHistoricalFirstRankingGroups(results: HistoricalFirstSource
     }
   }
 
-  return buildMeetRankingGroups(topRows);
+  return buildMeetRankingGroups(topRows, {
+    preschoolNameMode: "none"
+  });
 }

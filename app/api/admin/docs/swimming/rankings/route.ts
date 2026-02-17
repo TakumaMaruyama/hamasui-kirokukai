@@ -43,7 +43,8 @@ export async function POST(request: Request) {
       include: {
         athlete: {
           select: {
-            fullName: true
+            fullName: true,
+            fullNameKana: true
           }
         },
         event: true,
@@ -80,7 +81,10 @@ export async function POST(request: Request) {
       }))
       .filter((row) => row.rank > 0 && row.rank <= 3);
 
-    const groups = buildMeetRankingGroups(rankedRows);
+    const groups = buildMeetRankingGroups(rankedRows, {
+      preschoolNameMode: "kanaOnly",
+      preschoolMaxGrade: 3
+    });
     if (groups.length === 0) {
       return NextResponse.json({ message: "条件に一致するランキングデータがありません" }, { status: 400 });
     }

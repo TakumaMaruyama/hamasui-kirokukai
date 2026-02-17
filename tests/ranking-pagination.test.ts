@@ -11,6 +11,7 @@ function buildGroup(eventId: string, entryCount: number): RankingGroup {
     entries: Array.from({ length: entryCount }, (_, index) => ({
       rank: index + 1,
       fullName: `name-${index + 1}`,
+      displayName: `name-${index + 1}`,
       timeText: `00:${String(index + 1).padStart(2, "0")}.00`
     }))
   };
