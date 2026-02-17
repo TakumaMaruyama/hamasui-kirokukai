@@ -42,11 +42,32 @@ export type RankingGroup = {
   entries: RankingEntry[];
 };
 
+export type ChallengeGradeRankingGroup = {
+  grade: number;
+  maleEntries: RankingEntry[];
+  femaleEntries: RankingEntry[];
+};
+
+export type ChallengeEventRankingGroup = {
+  eventTitle: string;
+  gradeGroups: ChallengeGradeRankingGroup[];
+};
+
 const GENDER_ORDER: Record<Gender, number> = {
   male: 0,
   female: 1,
   other: 2
 };
+
+function sortRankingEntries(entries: RankingEntry[]): RankingEntry[] {
+  return [...entries].sort((a, b) => {
+    if (a.rank !== b.rank) {
+      return a.rank - b.rank;
+    }
+
+    return a.fullName.localeCompare(b.fullName, "ja");
+  });
+}
 
 export function buildMeetRankingGroups(results: RankingSourceResult[]): RankingGroup[] {
   const groups = new Map<string, RankingGroup>();
@@ -73,13 +94,7 @@ export function buildMeetRankingGroups(results: RankingSourceResult[]): RankingG
   return Array.from(groups.values())
     .map((group) => ({
       ...group,
-      entries: [...group.entries].sort((a, b) => {
-        if (a.rank !== b.rank) {
-          return a.rank - b.rank;
-        }
-
-        return a.fullName.localeCompare(b.fullName, "ja");
-      })
+      entries: sortRankingEntries(group.entries)
     }))
     .sort((a, b) => {
       const titleOrder = a.eventTitle.localeCompare(b.eventTitle, "ja");
@@ -93,6 +108,56 @@ export function buildMeetRankingGroups(results: RankingSourceResult[]): RankingG
 
       return GENDER_ORDER[a.gender] - GENDER_ORDER[b.gender];
     });
+}
+
+export function buildChallengeEventRankingGroups(results: RankingSourceResult[]): ChallengeEventRankingGroup[] {
+  const eventMap = new Map<string, Map<number, ChallengeGradeRankingGroup>>();
+
+  for (const result of results) {
+    const eventTitle = result.event.title;
+
+    if (!eventMap.has(eventTitle)) {
+      eventMap.set(eventTitle, new Map<number, ChallengeGradeRankingGroup>());
+    }
+
+    const byGrade = eventMap.get(eventTitle)!;
+
+    if (!byGrade.has(result.event.grade)) {
+      byGrade.set(result.event.grade, {
+        grade: result.event.grade,
+        maleEntries: [],
+        femaleEntries: []
+      });
+    }
+
+    const gradeGroup = byGrade.get(result.event.grade)!;
+    const entry = {
+      rank: result.rank,
+      fullName: result.athlete.fullName,
+      timeText: result.timeText
+    };
+
+    if (result.event.gender === "male") {
+      gradeGroup.maleEntries.push(entry);
+      continue;
+    }
+
+    // チャレンジ出力は左右2列構成のため、female/other は右側列にまとめる。
+    gradeGroup.femaleEntries.push(entry);
+  }
+
+  return Array.from(eventMap.entries())
+    .map(([eventTitle, byGrade]) => ({
+      eventTitle,
+      gradeGroups: Array.from(byGrade.values())
+        .map((gradeGroup) => ({
+          ...gradeGroup,
+          maleEntries: sortRankingEntries(gradeGroup.maleEntries),
+          femaleEntries: sortRankingEntries(gradeGroup.femaleEntries)
+        }))
+        .sort((a, b) => a.grade - b.grade)
+    }))
+    .sort((a, b) => a.eventTitle.localeCompare(b.eventTitle, "ja", { numeric: true }));
 }
 
 function toEventClassKey(result: HistoricalFirstSourceResult): string {

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { renderRankingPdf } from "@/lib/pdf";
+import { renderChallengeRankingPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
 import { parseDocsFilterInput } from "@/lib/docs-filter";
-import { buildMeetRankingGroups } from "@/lib/ranking-report";
+import { buildChallengeEventRankingGroups } from "@/lib/ranking-report";
 import { assignMonthlyRanks } from "@/lib/monthly-rank";
 
 export const runtime = "nodejs";
@@ -60,6 +60,7 @@ export async function POST(request: Request) {
         id: row.id,
         heldOn: row.meet.heldOn,
         timeMs: row.timeMs,
+        athleteName: row.athlete.fullName,
         event: {
           title: row.event.title,
           distanceM: row.event.distanceM,
@@ -77,13 +78,13 @@ export async function POST(request: Request) {
       }))
       .filter((row) => row.rank > 0);
 
-    const groups = buildMeetRankingGroups(rankedRows);
+    const groups = buildChallengeEventRankingGroups(rankedRows);
     if (groups.length === 0) {
       return NextResponse.json({ message: "条件に一致するランキングデータがありません" }, { status: 400 });
     }
 
     const periodLabel = `${filter.year}年${filter.month}月 チャレンジコース`;
-    const buffer = await renderRankingPdf({ periodLabel, groups });
+    const buffer = await renderChallengeRankingPdf({ periodLabel, groups });
     const name = `${filter.year}年${filter.month}月_challenge_ranking.pdf`;
     const storageKey = await saveBuffer(`challenge/rankings/${name}`, buffer);
 

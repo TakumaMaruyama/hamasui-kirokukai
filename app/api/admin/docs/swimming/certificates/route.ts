@@ -1,13 +1,124 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { renderCertificatePdf } from "@/lib/pdf";
+import { renderFirstPrizeAwardPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
-
-type BestEntry = { eventTitle: string; timeText: string; timeMs: number };
+import { buildFirstPrizeAwards, type FirstPrizeSourceRow } from "@/lib/first-prize";
 export const runtime = "nodejs";
+
+function isMissingFullNameKanaColumnError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : "";
+  return /Athlete\.fullNameKana|column .*fullNameKana.* does not exist/i.test(message);
+}
+
+async function findFirstPrizeRows(options: {
+  meetWhere: ReturnType<typeof buildMeetWhere> | { id: string };
+  fullName?: string;
+}): Promise<FirstPrizeSourceRow[]> {
+  const where = {
+    meet: options.meetWhere,
+    rank: 1,
+    ...(options.fullName ? { athlete: { fullName: options.fullName } } : {})
+  } as const;
+
+  const orderBy = [
+    { athlete: { fullName: "asc" as const } },
+    { event: { title: "asc" as const } },
+    { timeMs: "asc" as const },
+    { meet: { heldOn: "asc" as const } }
+  ];
+
+  try {
+    const rows = await prisma.result.findMany({
+      where,
+      include: {
+        athlete: {
+          select: {
+            fullName: true,
+            fullNameKana: true,
+            grade: true,
+            gender: true
+          }
+        },
+        event: {
+          select: {
+            title: true
+          }
+        },
+        meet: {
+          select: {
+            heldOn: true
+          }
+        }
+      },
+      orderBy
+    });
+
+    return rows.map((row) => ({
+      athlete: {
+        fullName: row.athlete.fullName,
+        fullNameKana: row.athlete.fullNameKana,
+        grade: row.athlete.grade,
+        gender: row.athlete.gender
+      },
+      event: {
+        title: row.event.title
+      },
+      timeText: row.timeText,
+      timeMs: row.timeMs,
+      meet: {
+        heldOn: row.meet.heldOn
+      }
+    }));
+  } catch (error) {
+    if (!isMissingFullNameKanaColumnError(error)) {
+      throw error;
+    }
+  }
+
+  const rows = await prisma.result.findMany({
+    where,
+    include: {
+      athlete: {
+        select: {
+          fullName: true,
+          grade: true,
+          gender: true
+        }
+      },
+      event: {
+        select: {
+          title: true
+        }
+      },
+      meet: {
+        select: {
+          heldOn: true
+        }
+      }
+    },
+    orderBy
+  });
+
+  return rows.map((row) => ({
+    athlete: {
+      fullName: row.athlete.fullName,
+      fullNameKana: null,
+      grade: row.athlete.grade,
+      gender: row.athlete.gender
+    },
+    event: {
+      title: row.event.title
+    },
+    timeText: row.timeText,
+    timeMs: row.timeMs,
+    meet: {
+      heldOn: row.meet.heldOn
+    }
+  }));
+}
 
 export async function POST(request: Request) {
   if (!isAdminAuthenticated()) {
@@ -39,67 +150,32 @@ export async function POST(request: Request) {
     const meetWhere = filter.hasMonthFilter
       ? buildMeetWhere("swimming", filter)
       : { id: latestMeet!.id };
-    const periodLabel = filter.hasMonthFilter && filter.year && filter.month
-      ? `${filter.year}年${filter.month}月`
-      : latestMeet!.title;
 
-    const rows = await prisma.result.findMany({
-      where: {
-        meet: meetWhere,
-        rank: 1,
-        ...(filter.fullName ? { athlete: { fullName: filter.fullName } } : {})
-      },
-      include: {
-        athlete: {
-          select: {
-            id: true,
-            fullName: true,
-            grade: true,
-            gender: true
-          }
-        },
-        event: true
-      },
-      orderBy: [{ athlete: { fullName: "asc" } }, { event: { title: "asc" } }, { timeMs: "asc" }]
+    const rankOneRows = await findFirstPrizeRows({
+      meetWhere,
+      fullName: filter.fullName
     });
-
-    if (rows.length === 0) {
+    if (rankOneRows.length === 0) {
       return NextResponse.json({ message: "条件に一致する賞状対象がありません" }, { status: 400 });
     }
 
+    const awards = buildFirstPrizeAwards(
+      rankOneRows,
+      filter.hasMonthFilter && typeof filter.year === "number" && typeof filter.month === "number"
+        ? { year: filter.year, month: filter.month }
+        : undefined
+    );
+
     const files = [] as { name: string; buffer: Buffer }[];
-    const grouped = new Map<string, { athlete: (typeof rows)[number]["athlete"]; bestByEvent: Map<string, BestEntry> }>();
-
-    for (const row of rows) {
-      if (!grouped.has(row.athleteId)) {
-        grouped.set(row.athleteId, {
-          athlete: row.athlete,
-          bestByEvent: new Map<string, BestEntry>()
-        });
-      }
-
-      const athleteGroup = grouped.get(row.athleteId)!;
-      const current = athleteGroup.bestByEvent.get(row.eventId);
-      if (!current || row.timeMs < current.timeMs) {
-        athleteGroup.bestByEvent.set(row.eventId, {
-          eventTitle: row.event.title,
-          timeText: row.timeText,
-          timeMs: row.timeMs
-        });
-      }
-    }
-
-    for (const { athlete, bestByEvent } of grouped.values()) {
-      const entries = Array.from(bestByEvent.values())
-        .sort((a, b) => a.eventTitle.localeCompare(b.eventTitle, "ja"))
-        .map((entry) => ({ eventTitle: entry.eventTitle, timeText: entry.timeText, timeMs: entry.timeMs }));
-
-      if (entries.length === 0) {
-        continue;
-      }
-
-      const buffer = await renderCertificatePdf({ athlete, entries });
-      const name = `${athlete.fullName}_${periodLabel}_first_prize.pdf`;
+    for (const award of awards) {
+      const buffer = await renderFirstPrizeAwardPdf({
+        athlete: award.athlete,
+        eventTitle: award.eventTitle,
+        timeText: award.timeText,
+        timeMs: award.timeMs,
+        issueLabel: award.issueLabel
+      });
+      const name = award.fileName;
       const storageKey = await saveBuffer(`swimming/certificates/${name}`, buffer);
 
       await prisma.generatedDoc.create({

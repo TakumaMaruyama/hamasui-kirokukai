@@ -5,6 +5,7 @@ export type MonthlyRankSource = {
   id: string;
   heldOn: Date;
   timeMs: number;
+  athleteName?: string;
   event: {
     title: string;
     distanceM: number;
@@ -32,11 +33,48 @@ function toEventBaseGenderKey(source: MonthlyRankSource): string {
   return `${toEventBaseKey(source)}:${source.event.gender}`;
 }
 
+function normalizeAthleteName(value: string | undefined): string | null {
+  const normalized = value?.replace(/\s+/g, " ").trim();
+  return normalized ? normalized : null;
+}
+
+function toRankTargets(
+  entries: MonthlyRankSource[],
+  options?: { dedupeByAthleteName?: boolean }
+): Array<{ id: string; timeMs: number }> {
+  if (!options?.dedupeByAthleteName) {
+    return entries.map((entry) => ({ id: entry.id, timeMs: entry.timeMs }));
+  }
+
+  const bestByAthlete = new Map<string, { id: string; timeMs: number }>();
+  const unnamedEntries: Array<{ id: string; timeMs: number }> = [];
+
+  for (const entry of entries) {
+    const athleteName = normalizeAthleteName(entry.athleteName);
+    if (!athleteName) {
+      unnamedEntries.push({ id: entry.id, timeMs: entry.timeMs });
+      continue;
+    }
+
+    const currentBest = bestByAthlete.get(athleteName);
+    if (
+      !currentBest ||
+      entry.timeMs < currentBest.timeMs ||
+      (entry.timeMs === currentBest.timeMs && entry.id.localeCompare(currentBest.id, "en") < 0)
+    ) {
+      bestByAthlete.set(athleteName, { id: entry.id, timeMs: entry.timeMs });
+    }
+  }
+
+  return [...bestByAthlete.values(), ...unnamedEntries];
+}
+
 function assignGroupedRanks(
   results: MonthlyRankSource[],
-  toGroupKey: (source: MonthlyRankSource) => string
+  toGroupKey: (source: MonthlyRankSource) => string,
+  options?: { dedupeByAthleteName?: boolean }
 ): Map<string, number> {
-  const grouped = new Map<string, Array<{ id: string; timeMs: number }>>();
+  const grouped = new Map<string, MonthlyRankSource[]>();
 
   for (const result of results) {
     const key = toGroupKey(result);
@@ -44,12 +82,13 @@ function assignGroupedRanks(
       grouped.set(key, []);
     }
 
-    grouped.get(key)!.push({ id: result.id, timeMs: result.timeMs });
+    grouped.get(key)!.push(result);
   }
 
   const ranks = new Map<string, number>();
-  for (const entries of grouped.values()) {
-    const groupRanks = assignDenseRanks(entries);
+  for (const groupedEntries of grouped.values()) {
+    const rankTargets = toRankTargets(groupedEntries, options);
+    const groupRanks = assignDenseRanks(rankTargets);
     for (const [id, rank] of groupRanks.entries()) {
       ranks.set(id, rank);
     }
@@ -59,11 +98,19 @@ function assignGroupedRanks(
 }
 
 export function assignMonthlyRanks(results: MonthlyRankSource[]): Map<string, number> {
-  return assignGroupedRanks(results, (result) => `${toMonthKey(result.heldOn)}:${toEventClassKey(result)}`);
+  return assignGroupedRanks(
+    results,
+    (result) => `${toMonthKey(result.heldOn)}:${toEventClassKey(result)}`,
+    { dedupeByAthleteName: true }
+  );
 }
 
 export function assignMonthlyOverallRanks(results: MonthlyRankSource[]): Map<string, number> {
-  return assignGroupedRanks(results, (result) => `${toMonthKey(result.heldOn)}:${toEventBaseGenderKey(result)}`);
+  return assignGroupedRanks(
+    results,
+    (result) => `${toMonthKey(result.heldOn)}:${toEventBaseGenderKey(result)}`,
+    { dedupeByAthleteName: true }
+  );
 }
 
 export function assignAllTimeClassRanks(results: MonthlyRankSource[]): Map<string, number> {

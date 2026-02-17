@@ -39,12 +39,14 @@ function toRankSource(result: {
   id: string;
   timeMs: number;
   meet: { heldOn: Date };
+  athlete?: { fullName: string };
   event: { title: string; distanceM: number; style: string; grade: number; gender: Gender };
 }) {
   return {
     id: result.id,
     heldOn: result.meet.heldOn,
     timeMs: result.timeMs,
+    athleteName: result.athlete?.fullName,
     event: {
       title: result.event.title,
       distanceM: result.event.distanceM,
@@ -191,6 +193,11 @@ export default async function AthletePage({ params }: { params: { id: string } }
         select: {
           id: true,
           timeMs: true,
+          athlete: {
+            select: {
+              fullName: true
+            }
+          },
           meet: {
             select: { heldOn: true }
           },

@@ -62,6 +62,7 @@ export async function POST(request: Request) {
         id: row.id,
         heldOn: row.meet.heldOn,
         timeMs: row.timeMs,
+        athleteName: row.athlete.fullName,
         event: {
           title: row.event.title,
           distanceM: row.event.distanceM,

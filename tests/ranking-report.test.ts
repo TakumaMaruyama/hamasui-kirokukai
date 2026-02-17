@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildHistoricalFirstRankingGroups, buildMeetRankingGroups } from "../lib/ranking-report";
+import {
+  buildChallengeEventRankingGroups,
+  buildHistoricalFirstRankingGroups,
+  buildMeetRankingGroups
+} from "../lib/ranking-report";
 
 describe("buildMeetRankingGroups", () => {
   it("groups by event and sorts groups/entries", () => {
@@ -70,5 +74,68 @@ describe("buildHistoricalFirstRankingGroups", () => {
     expect(groups[1].grade).toBe(4);
     expect(groups[1].entries).toHaveLength(1);
     expect(groups[1].entries[0]?.fullName).toBe("鈴木 次郎");
+  });
+});
+
+describe("buildChallengeEventRankingGroups", () => {
+  it("groups by event title and grade, splitting male/female columns", () => {
+    const groups = buildChallengeEventRankingGroups([
+      {
+        rank: 2,
+        timeText: "24.25",
+        athlete: { fullName: "おおすぎ あいな" },
+        event: { id: "e-15-f-1", title: "15mクロール", grade: 1, gender: "female" }
+      },
+      {
+        rank: 1,
+        timeText: "46.97",
+        athlete: { fullName: "ひらいし たいが" },
+        event: { id: "e-15-m-1", title: "15mクロール", grade: 1, gender: "male" }
+      },
+      {
+        rank: 1,
+        timeText: "14.57",
+        athlete: { fullName: "増山 連人" },
+        event: { id: "e-15-m-5", title: "15mクロール", grade: 5, gender: "male" }
+      },
+      {
+        rank: 1,
+        timeText: "15.51",
+        athlete: { fullName: "上原 梨菜" },
+        event: { id: "e-15-f-5", title: "15mクロール", grade: 5, gender: "female" }
+      },
+      {
+        rank: 1,
+        timeText: "12.00",
+        athlete: { fullName: "青木 一郎" },
+        event: { id: "e-25-m-5", title: "25mクロール", grade: 5, gender: "male" }
+      }
+    ]);
+
+    expect(groups).toHaveLength(2);
+    expect(groups[0]?.eventTitle).toBe("15mクロール");
+    expect(groups[0]?.gradeGroups).toHaveLength(2);
+    expect(groups[0]?.gradeGroups[0]?.grade).toBe(1);
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["ひらいし たいが"]);
+    expect(groups[0]?.gradeGroups[0]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["おおすぎ あいな"]);
+    expect(groups[0]?.gradeGroups[1]?.grade).toBe(5);
+    expect(groups[0]?.gradeGroups[1]?.maleEntries[0]?.fullName).toBe("増山 連人");
+    expect(groups[0]?.gradeGroups[1]?.femaleEntries[0]?.fullName).toBe("上原 梨菜");
+    expect(groups[1]?.eventTitle).toBe("25mクロール");
+  });
+
+  it("keeps right column for non-male gender data", () => {
+    const groups = buildChallengeEventRankingGroups([
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "テスト 太郎" },
+        event: { id: "e1", title: "15mキック", grade: 2, gender: "other" }
+      }
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.gradeGroups[0]?.maleEntries).toHaveLength(0);
+    expect(groups[0]?.gradeGroups[0]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["テスト 太郎"]);
   });
 });

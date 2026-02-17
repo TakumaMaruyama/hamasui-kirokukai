@@ -18,6 +18,12 @@ describe("meet context", () => {
       month: 2,
       weekday: "木曜"
     });
+
+    expect(parseMeetTitleContext("2026年2月木曜（2）")).toEqual({
+      year: 2026,
+      month: 2,
+      weekday: "木曜"
+    });
   });
 
   it("formats meet label from title context", () => {
@@ -27,5 +33,12 @@ describe("meet context", () => {
         heldOn: new Date("2026-02-01T00:00:00.000Z")
       })
     ).toBe("2026年2月 木曜");
+
+    expect(
+      formatMeetLabel({
+        title: "2026年2月木曜日（2）",
+        heldOn: new Date("2026-02-01T00:00:00.000Z")
+      })
+    ).toBe("2026年2月 木曜 （2）");
   });
 });

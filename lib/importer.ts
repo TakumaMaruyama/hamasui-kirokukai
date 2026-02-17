@@ -30,6 +30,8 @@ const GENDER_MAP: Record<string, Prisma.AthleteUncheckedCreateInput["gender"]> =
   "その他": "other"
 };
 
+const MAX_MEET_TITLE_ATTEMPTS = 200;
+
 function parseRequiredText(value: string | undefined, fieldName: string): string {
   const normalized = value?.trim();
 
@@ -108,8 +110,46 @@ function parseDate(value: string, fieldName: string): Date {
   return parsed;
 }
 
+function isMeetUniqueConstraintError(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+}
+
+function buildMeetTitleCandidate(baseTitle: string, sequence: number): string {
+  if (sequence <= 1) {
+    return baseTitle;
+  }
+
+  return `${baseTitle}（${sequence}）`;
+}
+
+async function createMeetWithUniqueTitle(program: Program, heldOn: Date, meetTitle: string) {
+  for (let sequence = 1; sequence <= MAX_MEET_TITLE_ATTEMPTS; sequence += 1) {
+    const candidateTitle = buildMeetTitleCandidate(meetTitle, sequence);
+
+    try {
+      return await prisma.meet.create({
+        data: {
+          program,
+          heldOn,
+          title: candidateTitle
+        },
+        select: {
+          id: true
+        }
+      });
+    } catch (error) {
+      if (!isMeetUniqueConstraintError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`同じ開催日の記録会が多すぎるため取り込めませんでした: ${meetTitle}`);
+}
+
 export async function importRows(program: Program, rows: ImportRow[]) {
   const rankTargets = new Set<string>();
+  const importMeetCache = new Map<string, Promise<{ id: string }>>();
 
   for (const [index, row] of rows.entries()) {
     try {
@@ -181,21 +221,11 @@ export async function importRows(program: Program, rows: ImportRow[]) {
         }
       }
 
-      const meet = await prisma.meet.upsert({
-        where: {
-          program_heldOn_title: {
-            program,
-            heldOn,
-            title: meetTitle
-          }
-        },
-        create: {
-          program,
-          heldOn,
-          title: meetTitle
-        },
-        update: {}
-      });
+      const meetCacheKey = `${program}:${heldOn.toISOString()}:${meetTitle}`;
+      const meetPromise =
+        importMeetCache.get(meetCacheKey) ?? createMeetWithUniqueTitle(program, heldOn, meetTitle);
+      importMeetCache.set(meetCacheKey, meetPromise);
+      const meet = await meetPromise;
 
       const event =
         (await prisma.event.findFirst({

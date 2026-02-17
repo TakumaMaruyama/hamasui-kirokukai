@@ -8,7 +8,11 @@ export type MeetContext = {
   weekday: MeetWeekday;
 };
 
-const CONTEXT_TITLE_PATTERN = /^(\d{4})年(\d{1,2})月([月火水木金土日])曜(?:日)?$/;
+const CONTEXT_TITLE_PATTERN = /^(\d{4})年(\d{1,2})月([月火水木金土日])曜(?:日)?(?:\s*(.+))?$/;
+
+type ParsedMeetTitle = MeetContext & {
+  suffix?: string;
+};
 
 function normalizeDateParts(year: number, month: number, day: number): string | null {
   const candidate = new Date(Date.UTC(year, month - 1, day));
@@ -32,7 +36,7 @@ export function formatMeetTitle(context: MeetContext): string {
   return `${context.year}年${context.month}月${context.weekday}`;
 }
 
-export function parseMeetTitleContext(title: string): MeetContext | null {
+function parseMeetTitle(title: string): ParsedMeetTitle | null {
   const match = title.trim().match(CONTEXT_TITLE_PATTERN);
 
   if (!match) {
@@ -47,14 +51,30 @@ export function parseMeetTitleContext(title: string): MeetContext | null {
     return null;
   }
 
-  return { year, month, weekday };
+  const suffix = match[4]?.trim();
+
+  return suffix ? { year, month, weekday, suffix } : { year, month, weekday };
+}
+
+export function parseMeetTitleContext(title: string): MeetContext | null {
+  const parsed = parseMeetTitle(title);
+  if (!parsed) {
+    return null;
+  }
+
+  return {
+    year: parsed.year,
+    month: parsed.month,
+    weekday: parsed.weekday
+  };
 }
 
 export function formatMeetLabel(meet: { title: string; heldOn: Date }): string {
-  const context = parseMeetTitleContext(meet.title);
+  const parsed = parseMeetTitle(meet.title);
 
-  if (context) {
-    return `${context.year}年${context.month}月 ${context.weekday}`;
+  if (parsed) {
+    const baseLabel = `${parsed.year}年${parsed.month}月 ${parsed.weekday}`;
+    return parsed.suffix ? `${baseLabel} ${parsed.suffix}` : baseLabel;
   }
 
   return `${meet.title} (${meet.heldOn.toISOString().slice(0, 10)})`;

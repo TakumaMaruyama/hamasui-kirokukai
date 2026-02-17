@@ -3,7 +3,7 @@ import path from "node:path";
 import { Gender } from "@prisma/client";
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
-import { RankingGroup } from "./ranking-report";
+import type { ChallengeEventRankingGroup, RankingEntry, RankingGroup } from "./ranking-report";
 import { formatTimeForDocument } from "./display-time";
 import { formatGradeLabel, formatGradeShortLabel } from "./grade";
 import { paginateRankingGroups } from "./ranking-pagination";
@@ -29,6 +29,20 @@ export type CertificatePdfEntry = {
   eventTitle: string;
   timeText: string;
   timeMs?: number;
+};
+
+export type FirstPrizeAwardPdfInput = {
+  athlete: PdfAthlete;
+  eventTitle: string;
+  timeText: string;
+  timeMs?: number;
+  issueLabel: string;
+};
+
+export type RecordCertificatePdfInput = {
+  athlete: PdfAthlete;
+  entries: RecordPdfEntry[];
+  issueLabel: string;
 };
 
 type PdfAthlete = {
@@ -170,6 +184,63 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 6
   },
+  challengeEventSection: {
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: "#252933",
+    borderRadius: 8,
+    padding: 10
+  },
+  challengeEventTitle: {
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 8
+  },
+  challengeGradeSection: {
+    marginTop: 8
+  },
+  challengeGradeColumns: {
+    flexDirection: "row"
+  },
+  challengeGenderTable: {
+    width: "50%",
+    borderWidth: 1,
+    borderColor: "#252933"
+  },
+  challengeGenderTableLeft: {
+    marginRight: 4
+  },
+  challengeGenderTableRight: {
+    marginLeft: 4
+  },
+  challengeTableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderColor: "#252933"
+  },
+  challengeTableRowLast: {
+    borderBottomWidth: 0
+  },
+  challengeCell: {
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    fontSize: 10
+  },
+  challengeCellRank: {
+    width: "17%",
+    textAlign: "center"
+  },
+  challengeCellName: {
+    width: "50%"
+  },
+  challengeCellTime: {
+    width: "33%",
+    textAlign: "center"
+  },
+  challengeHeaderText: {
+    fontSize: 10,
+    fontWeight: 700
+  },
   empty: {
     marginTop: 24,
     textAlign: "center",
@@ -226,6 +297,22 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 1.5
   },
+  recordGradeLabelValue: {
+    position: "absolute",
+    top: 250,
+    left: 330,
+    width: 190,
+    textAlign: "left",
+    fontSize: 20
+  },
+  recordIssueLabelValue: {
+    position: "absolute",
+    top: 700,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 18
+  },
   prizeName: {
     position: "absolute",
     top: 360,
@@ -267,6 +354,38 @@ const styles = StyleSheet.create({
     width: A4_WIDTH,
     textAlign: "center",
     fontSize: 24
+  },
+  prizeAwardMeta: {
+    position: "absolute",
+    top: 470,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 22
+  },
+  prizeAwardEvent: {
+    position: "absolute",
+    top: 530,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 26
+  },
+  prizeAwardTime: {
+    position: "absolute",
+    top: 590,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 24
+  },
+  prizeIssueLabel: {
+    position: "absolute",
+    top: 700,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 18
   }
 });
 
@@ -292,6 +411,72 @@ function rankingPalette(gender: Gender): { border: string; header: string; title
     header: "#f5f6fa",
     title: "#4d5564"
   };
+}
+
+function challengeHeaderPalette(side: "male" | "female"): { background: string; text: string } {
+  if (side === "male") {
+    return {
+      background: "#b9ddf0",
+      text: "#103c5d"
+    };
+  }
+
+  return {
+    background: "#f1c9d2",
+    text: "#6b2738"
+  };
+}
+
+function padChallengeEntries(entries: RankingEntry[], count: number): Array<RankingEntry | null> {
+  const padded: Array<RankingEntry | null> = [...entries];
+
+  while (padded.length < count) {
+    padded.push(null);
+  }
+
+  return padded;
+}
+
+function buildChallengeGradeLabel(grade: number): string {
+  return formatGradeShortLabel(grade);
+}
+
+function buildChallengeGenderTable({
+  side,
+  gradeLabel,
+  entries,
+  keyPrefix,
+  tableStyle
+}: {
+  side: "male" | "female";
+  gradeLabel: string;
+  entries: Array<RankingEntry | null>;
+  keyPrefix: string;
+  tableStyle: any;
+}): ReactElement {
+  const palette = challengeHeaderPalette(side);
+
+  return (
+    <View style={[styles.challengeGenderTable, tableStyle]}>
+      <View style={[styles.challengeTableRow, { backgroundColor: palette.background }]}>
+        <Text style={[styles.challengeCell, styles.challengeCellRank, styles.challengeHeaderText, { color: palette.text }]}>{gradeLabel}</Text>
+        <Text style={[styles.challengeCell, styles.challengeCellName, styles.challengeHeaderText, { color: palette.text }]}>氏名</Text>
+        <Text style={[styles.challengeCell, styles.challengeCellTime, styles.challengeHeaderText, { color: palette.text }]}>タイム</Text>
+      </View>
+      {entries.map((entry, index) => (
+        <View
+          key={`${keyPrefix}-${index}`}
+          style={index === entries.length - 1 ? [styles.challengeTableRow, styles.challengeTableRowLast] : styles.challengeTableRow}
+        >
+          <Text style={[styles.challengeCell, styles.challengeCellRank]}>{entry ? entry.rank : ""}</Text>
+          <Text style={[styles.challengeCell, styles.challengeCellName]}>{entry?.fullName ?? ""}</Text>
+          <Text style={[styles.challengeCell, styles.challengeCellTime]}>
+            {entry ? formatTimeForDocument({ timeText: entry.timeText }) : ""}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
 }
 
 async function renderPdfDocument(document: ReactElement): Promise<Buffer> {
@@ -366,6 +551,65 @@ function buildRecordFallbackDocument({
   );
 }
 
+function buildRecordCertificateTemplateDocument({
+  athlete,
+  entries,
+  issueLabel,
+  templateDataUri
+}: RecordCertificatePdfInput & { templateDataUri: string }): ReactElement {
+  const lines = buildRecordLines(entries);
+  const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.templatePage}>
+        <Image style={styles.templateBackground} src={templateDataUri} />
+        <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
+        <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
+        <Text style={styles.recordGradeLabelValue}>{formatGradeLabel(athlete.grade)}</Text>
+        <Text style={styles.recordEventValue}>{lines.events}</Text>
+        <Text style={styles.recordTimeValue}>{lines.times}</Text>
+        <Text style={styles.recordIssueLabelValue}>{issueLabel}</Text>
+      </Page>
+    </Document>
+  );
+}
+
+function buildRecordCertificateFallbackDocument({
+  athlete,
+  entries,
+  issueLabel
+}: RecordCertificatePdfInput): ReactElement {
+  const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.title}>記録証</Text>
+        <Text style={styles.meta}>ふりがな: {nameKana}</Text>
+        <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
+        <Text style={styles.meta}>学年: {formatGradeLabel(athlete.grade)}</Text>
+        <Text style={styles.meta}>年月: {issueLabel}</Text>
+        <View style={styles.table}>
+          <View style={styles.row}>
+            <Text style={[styles.cell, styles.cellEvent, styles.headerCell]}>種目</Text>
+            <Text style={[styles.cell, styles.cellTime, styles.headerCell]}>記録</Text>
+          </View>
+          {entries.map((entry, index) => (
+            <View
+              key={`${entry.eventTitle}-${entry.timeText}-${index}`}
+              style={index === entries.length - 1 ? [styles.row, styles.rowLast] : styles.row}
+            >
+              <Text style={[styles.cell, styles.cellEvent]}>{entry.eventTitle}</Text>
+              <Text style={[styles.cell, styles.cellTime]}>{formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs })}</Text>
+            </View>
+          ))}
+        </View>
+      </Page>
+    </Document>
+  );
+}
+
 function buildFirstPrizeTemplateDocument({
   athlete,
   entries,
@@ -430,6 +674,55 @@ function buildFirstPrizeFallbackDocument({
   );
 }
 
+function buildFirstPrizeAwardTemplateDocument({
+  athlete,
+  eventTitle,
+  timeText,
+  timeMs,
+  issueLabel,
+  templateDataUri
+}: FirstPrizeAwardPdfInput & { templateDataUri: string }): ReactElement {
+  return (
+    <Document>
+      <Page size="A4" style={styles.templatePage}>
+        <Image style={styles.templateBackground} src={templateDataUri} />
+        <Text style={styles.prizeNameKana}>{athlete.fullNameKana?.trim() || athlete.fullName}</Text>
+        <Text style={styles.prizeName}>{athlete.fullName}</Text>
+        <Text style={styles.prizeAwardMeta}>{`${formatGradeLabel(athlete.grade)} ${genderLabel(athlete.gender)}`}</Text>
+        <Text style={styles.prizeAwardEvent}>{eventTitle}</Text>
+        <Text style={styles.prizeAwardTime}>記録 {formatTimeForDocument({ timeText, timeMs })}</Text>
+        <Text style={styles.prizeIssueLabel}>{issueLabel}</Text>
+      </Page>
+    </Document>
+  );
+}
+
+function buildFirstPrizeAwardFallbackDocument({
+  athlete,
+  eventTitle,
+  timeText,
+  timeMs,
+  issueLabel
+}: FirstPrizeAwardPdfInput): ReactElement {
+  const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.title}>第1位 賞状</Text>
+        <Text style={styles.meta}>ふりがな: {nameKana}</Text>
+        <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
+        <Text style={styles.meta}>
+          学年・性別: {formatGradeLabel(athlete.grade)} {genderLabel(athlete.gender)}
+        </Text>
+        <Text style={styles.meta}>種目: {eventTitle}</Text>
+        <Text style={styles.meta}>記録: {formatTimeForDocument({ timeText, timeMs })}</Text>
+        <Text style={styles.meta}>発行年月: {issueLabel}</Text>
+      </Page>
+    </Document>
+  );
+}
+
 export async function renderRecordPdf({
   athlete,
   entries
@@ -445,6 +738,15 @@ export async function renderRecordPdf({
   return renderPdfDocument(buildRecordFallbackDocument({ athlete, entries }));
 }
 
+export async function renderRecordCertificatePdf(input: RecordCertificatePdfInput): Promise<Buffer> {
+  const templateDataUri = getTemplateDataUri(RECORD_TEMPLATE_FILE);
+  if (templateDataUri) {
+    return renderPdfDocument(buildRecordCertificateTemplateDocument({ ...input, templateDataUri }));
+  }
+
+  return renderPdfDocument(buildRecordCertificateFallbackDocument(input));
+}
+
 export async function renderCertificatePdf({
   athlete,
   entries
@@ -458,6 +760,15 @@ export async function renderCertificatePdf({
   }
 
   return renderPdfDocument(buildFirstPrizeFallbackDocument({ athlete, entries }));
+}
+
+export async function renderFirstPrizeAwardPdf(input: FirstPrizeAwardPdfInput): Promise<Buffer> {
+  const templateDataUri = getTemplateDataUri(FIRST_PRIZE_TEMPLATE_FILE);
+  if (templateDataUri) {
+    return renderPdfDocument(buildFirstPrizeAwardTemplateDocument({ ...input, templateDataUri }));
+  }
+
+  return renderPdfDocument(buildFirstPrizeAwardFallbackDocument(input));
 }
 
 export async function renderRankingPdf({
@@ -525,6 +836,58 @@ export async function renderRankingPdf({
           </Page>
         ))
       )}
+    </Document>
+  );
+}
+
+export async function renderChallengeRankingPdf({
+  periodLabel,
+  groups
+}: {
+  periodLabel: string;
+  groups: ChallengeEventRankingGroup[];
+}): Promise<Buffer> {
+  return renderPdfDocument(
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.title}>{periodLabel} ランキング</Text>
+        {groups.length === 0 ? (
+          <Text style={styles.empty}>ランキング対象データがありません。</Text>
+        ) : (
+          groups.map((eventGroup) => (
+            <View key={eventGroup.eventTitle} style={styles.challengeEventSection}>
+              <Text style={styles.challengeEventTitle}>{eventGroup.eventTitle}</Text>
+              {eventGroup.gradeGroups.map((gradeGroup) => {
+                const rowCount = Math.max(gradeGroup.maleEntries.length, gradeGroup.femaleEntries.length, 1);
+                const maleRows = padChallengeEntries(gradeGroup.maleEntries, rowCount);
+                const femaleRows = padChallengeEntries(gradeGroup.femaleEntries, rowCount);
+                const gradeLabel = buildChallengeGradeLabel(gradeGroup.grade);
+
+                return (
+                  <View key={`${eventGroup.eventTitle}-${gradeGroup.grade}`} style={styles.challengeGradeSection} wrap={false}>
+                    <View style={styles.challengeGradeColumns}>
+                      {buildChallengeGenderTable({
+                        side: "male",
+                        gradeLabel,
+                        entries: maleRows,
+                        keyPrefix: `${eventGroup.eventTitle}-${gradeGroup.grade}-male`,
+                        tableStyle: styles.challengeGenderTableLeft
+                      })}
+                      {buildChallengeGenderTable({
+                        side: "female",
+                        gradeLabel,
+                        entries: femaleRows,
+                        keyPrefix: `${eventGroup.eventTitle}-${gradeGroup.grade}-female`,
+                        tableStyle: styles.challengeGenderTableRight
+                      })}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ))
+        )}
+      </Page>
     </Document>
   );
 }
