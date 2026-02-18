@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assignAllTimeClassRanks,
   assignAllTimeClassRankStats,
+  assignAllTimeClassRankStatsUpToHeldOn,
   assignMonthlyOverallRanks,
   assignMonthlyOverallRankStats,
   assignMonthlyRanks,
@@ -288,5 +289,49 @@ describe("assignMonthlyRanks", () => {
     expect(stats.get("tie-1")).toEqual({ rank: 1, total: 3, topPercent: 34 });
     expect(stats.get("tie-2")).toEqual({ rank: 1, total: 3, topPercent: 34 });
     expect(stats.get("next")).toEqual({ rank: 2, total: 3, topPercent: 67 });
+  });
+
+  it("excludes future records when calculating all-time class rank stats at each heldOn", () => {
+    const allResults = [
+      {
+        id: "past",
+        heldOn: new Date("2023-08-01T00:00:00.000Z"),
+        timeMs: 45000,
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" as const }
+      },
+      {
+        id: "target-2023",
+        heldOn: new Date("2023-09-01T00:00:00.000Z"),
+        timeMs: 50000,
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" as const }
+      },
+      {
+        id: "future-fast",
+        heldOn: new Date("2024-01-01T00:00:00.000Z"),
+        timeMs: 40000,
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" as const }
+      }
+    ];
+
+    const stats = assignAllTimeClassRankStatsUpToHeldOn(
+      [
+        {
+          id: "target-2023",
+          heldOn: new Date("2023-09-01T00:00:00.000Z"),
+          timeMs: 50000,
+          event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" as const }
+        },
+        {
+          id: "future-fast",
+          heldOn: new Date("2024-01-01T00:00:00.000Z"),
+          timeMs: 40000,
+          event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" as const }
+        }
+      ],
+      allResults
+    );
+
+    expect(stats.get("target-2023")).toEqual({ rank: 2, total: 2, topPercent: 100 });
+    expect(stats.get("future-fast")).toEqual({ rank: 1, total: 3, topPercent: 34 });
   });
 });

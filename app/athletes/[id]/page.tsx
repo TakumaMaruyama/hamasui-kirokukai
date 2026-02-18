@@ -7,7 +7,7 @@ import { formatPublishRange } from "@/lib/publish";
 import { formatGradeLabel } from "@/lib/grade";
 import { buildAthleteRankScopeLabels } from "@/lib/athlete-rank-scope";
 import {
-  assignAllTimeClassRankStats,
+  assignAllTimeClassRankStatsUpToHeldOn,
   assignMonthlyOverallRankStats,
   assignMonthlyRankStats,
   type RankStat
@@ -62,6 +62,8 @@ function toRankSource(result: {
     }
   };
 }
+
+type RankSource = ReturnType<typeof toRankSource>;
 
 // 記録会ごとにグループ化
 function groupByMeet(results: ResultWithMeetEvent[]) {
@@ -261,9 +263,25 @@ export default async function AthletePage({ params }: { params: { id: string } }
         }
       });
 
-  const monthlyClassRankStats = assignMonthlyRankStats(monthlyScope.map(toRankSource));
-  const monthlyOverallRankStats = assignMonthlyOverallRankStats(monthlyScope.map(toRankSource));
-  const allTimeClassRankStats = assignAllTimeClassRankStats(allTimeClassScope.map(toRankSource));
+  const monthlySources = monthlyScope.map(toRankSource);
+  const allTimeSources = allTimeClassScope.map(toRankSource);
+  const athleteSources: RankSource[] = athlete.results.map((result) => toRankSource({
+    id: result.id,
+    timeMs: result.timeMs,
+    meet: { heldOn: result.meet.heldOn },
+    athlete: { fullName: athlete.fullName },
+    event: {
+      title: result.event.title,
+      distanceM: result.event.distanceM,
+      style: result.event.style,
+      grade: result.event.grade,
+      gender: result.event.gender
+    }
+  }));
+
+  const monthlyClassRankStats = assignMonthlyRankStats(monthlySources);
+  const monthlyOverallRankStats = assignMonthlyOverallRankStats(monthlySources);
+  const allTimeClassRankStats = assignAllTimeClassRankStatsUpToHeldOn(athleteSources, allTimeSources);
 
   const groupedResults = groupByMeet(athlete.results);
   const bestTimes = getBestTimes(athlete.results);
@@ -316,6 +334,9 @@ export default async function AthletePage({ params }: { params: { id: string } }
       {/* 記録会ごとの記録 */}
       <section className="card">
         <h2>📊 記録会別履歴</h2>
+        <p className="notice" style={{ marginBottom: 12 }}>
+          ※ 歴代順位は各記録時点までで算出（以降のデータは対象外）
+        </p>
         {groupedResults.length === 0 ? (
           <p className="notice">記録がありません</p>
         ) : (

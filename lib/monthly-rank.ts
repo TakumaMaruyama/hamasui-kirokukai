@@ -163,3 +163,48 @@ export function assignMonthlyOverallRankStats(results: MonthlyRankSource[]): Map
 export function assignAllTimeClassRankStats(results: MonthlyRankSource[]): Map<string, RankStat> {
   return assignGroupedRankStats(results, toEventClassKey);
 }
+
+export function assignAllTimeClassRankStatsUpToHeldOn(
+  targets: MonthlyRankSource[],
+  allResults: MonthlyRankSource[]
+): Map<string, RankStat> {
+  const resultsByClassKey = new Map<string, MonthlyRankSource[]>();
+
+  for (const result of allResults) {
+    const classKey = toEventClassKey(result);
+    if (!resultsByClassKey.has(classKey)) {
+      resultsByClassKey.set(classKey, []);
+    }
+    resultsByClassKey.get(classKey)!.push(result);
+  }
+
+  const statsById = new Map<string, RankStat>();
+
+  for (const target of targets) {
+    const classKey = toEventClassKey(target);
+    const classResults = resultsByClassKey.get(classKey) ?? [];
+    const rankTargets = toRankTargets(
+      classResults.filter((entry) => entry.heldOn.getTime() <= target.heldOn.getTime())
+    );
+    const total = rankTargets.length;
+
+    if (total === 0) {
+      continue;
+    }
+
+    const ranks = assignDenseRanks(rankTargets);
+    const rank = ranks.get(target.id);
+
+    if (typeof rank !== "number") {
+      continue;
+    }
+
+    statsById.set(target.id, {
+      rank,
+      total,
+      topPercent: Math.ceil((rank / total) * 100)
+    });
+  }
+
+  return statsById;
+}
