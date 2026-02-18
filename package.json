@@ -6,7 +6,8 @@
     "build": "prisma generate && next build",
     "start": "next start -H 0.0.0.0 -p 3000",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "normalize:halfwidth": "node scripts/normalize-halfwidth-existing.mjs"
   },
   "dependencies": {
     "@prisma/client": "5.18.0",

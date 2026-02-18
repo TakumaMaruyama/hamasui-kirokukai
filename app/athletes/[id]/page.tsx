@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Gender } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { formatMeetLabel } from "@/lib/meet-context";
+import { formatMeetMonthLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
 import { formatGradeLabel } from "@/lib/grade";
 import { assignAllTimeClassRanks, assignMonthlyOverallRanks, assignMonthlyRanks } from "@/lib/monthly-rank";
@@ -278,7 +278,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
                 <tr key={result.id}>
                   <td>{result.event.title}</td>
                   <td style={{ fontWeight: 600 }}>{result.timeText}</td>
-                  <td className="notice">{formatMeetLabel(result.meet)}</td>
+                  <td className="notice">{formatMeetMonthLabel(result.meet)}</td>
                 </tr>
               ))}
             </tbody>
@@ -300,7 +300,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
         ) : (
           groupedResults.map((group) => (
             <div key={group.meet.id} style={{ marginBottom: 24 }}>
-              <h3 style={{ fontSize: "1rem", marginBottom: 8 }}>{formatMeetLabel(group.meet)}</h3>
+              <h3 style={{ fontSize: "1rem", marginBottom: 8 }}>{formatMeetMonthLabel(group.meet)}</h3>
               <div className="table-scroll">
                 <table className="table">
                   <thead>

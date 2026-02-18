@@ -79,20 +79,22 @@ function toSet(values: string[]): Set<string> {
 }
 
 function pickCellValue(value: CsvValue, mode: "first" | "last" = "first"): string {
+  const normalizeCell = (input: string | undefined): string => toHalfWidthDigits(input ?? "").trim();
+
   if (!Array.isArray(value)) {
-    return value?.trim() ?? "";
+    return normalizeCell(value);
   }
 
   const candidates = mode === "first" ? value : [...value].reverse();
 
   for (const candidate of candidates) {
-    const trimmed = candidate.trim();
+    const trimmed = normalizeCell(candidate);
     if (trimmed) {
       return trimmed;
     }
   }
 
-  return value[0]?.trim() ?? "";
+  return normalizeCell(value[0]);
 }
 
 function toHalfWidthDigits(value: string): string {
@@ -297,7 +299,8 @@ function deriveMeetTitle(fileName?: string, meetContext?: MeetContext): string |
 
   const fileNameOnly = fileName.split(/[/\\]/).at(-1) ?? fileName;
   const nameWithoutExtension = fileNameOnly.replace(/\.[^/.]+$/, "").trim();
-  return nameWithoutExtension || null;
+  const normalized = toHalfWidthDigits(nameWithoutExtension);
+  return normalized || null;
 }
 
 function missingColumns(columnSet: Set<string>): string[] {

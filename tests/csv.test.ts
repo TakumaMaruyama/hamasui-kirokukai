@@ -27,6 +27,26 @@ describe("parseCsv", () => {
     expect(rows[0].distance_m).toBe("50");
   });
 
+  it("normalizes full-width digits to half-width in imported values", () => {
+    const content =
+      "記録会名称,開催日,氏名,学年,性別,種目名,泳法,距離,レーン,記録\n" +
+      "第１回記録会,２０２４-０６-０１,山田１郎,４,male,１５ｍクロール,free,１５,２,０:３５.１２";
+
+    const rows = parseCsv(content);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      meet_title: "第1回記録会",
+      held_on: "2024-06-01",
+      full_name: "山田1郎",
+      grade: "4",
+      event_title: "15ｍクロール",
+      distance_m: "15",
+      lane: "2",
+      time_text: "0:35.12"
+    });
+  });
+
   it("throws when required columns are missing", () => {
     const content =
       "meet_title,held_on,full_name,grade,gender,event_title,distance_m,time_text\n" +
@@ -56,6 +76,17 @@ describe("parseCsv", () => {
       distance_m: "15",
       time_text: "65.29"
     });
+  });
+
+  it("normalizes full-width digits in legacy file-name-derived meet titles", () => {
+    const content =
+      "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +
+      "15ｍ板キック,1,,満留　一智,男,みつどめ　いち,年中,65.29,\n";
+
+    const rows = parseCsv(content, { fileName: "２５.０９名簿 - 月.csv" });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.meet_title).toBe("25.09名簿 - 月");
   });
 
   it("normalizes legacy roster CSV using year/month/weekday context", () => {

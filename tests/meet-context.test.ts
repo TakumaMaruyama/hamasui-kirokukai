@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMeetLabel, formatMeetTitle, parseMeetTitleContext } from "../lib/meet-context";
+import { formatMeetLabel, formatMeetMonthLabel, formatMeetTitle, parseMeetTitleContext } from "../lib/meet-context";
 
 describe("meet context", () => {
   it("formats title with unified weekday", () => {
@@ -58,5 +58,21 @@ describe("meet context", () => {
         heldOn: new Date("2026-02-01T00:00:00.000Z")
       })
     ).toBe("2026年2月 （2）");
+  });
+
+  it("formats user-facing meet month labels without suffix", () => {
+    expect(
+      formatMeetMonthLabel({
+        title: "2026年2月木曜日（2）",
+        heldOn: new Date("2026-02-01T00:00:00.000Z")
+      })
+    ).toBe("2026年2月");
+
+    expect(
+      formatMeetMonthLabel({
+        title: "任意タイトル",
+        heldOn: new Date("2026-02-15T00:00:00.000Z")
+      })
+    ).toBe("2026年2月");
   });
 });

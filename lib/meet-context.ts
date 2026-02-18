@@ -94,5 +94,5 @@ export function formatMeetMonthLabel(meet: { title: string; heldOn: Date }): str
     return `${context.year}年${context.month}月`;
   }
 
-  return meet.heldOn.toISOString().slice(0, 7);
+  return `${meet.heldOn.getUTCFullYear()}年${meet.heldOn.getUTCMonth() + 1}月`;
 }
