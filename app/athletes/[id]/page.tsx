@@ -289,11 +289,13 @@ export default async function AthletePage({ params }: { params: { id: string } }
       {/* 記録会ごとの記録 */}
       <section className="card">
         <h2>📊 記録会別履歴</h2>
-        <div className="notice" style={{ marginBottom: 12, lineHeight: 1.7 }}>
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>順位の見方（わかりやすく）</div>
-          <div>・同月 学年/性別: その月の「同じ種目・同じ学年・同じ性別」で比べた順位</div>
-          <div>・同月 全体（性別別）: その月の「同じ種目・同じ性別」で比べた順位（学年は混合）</div>
-          <div>・歴代 学年/性別: これまでの全記録で「同じ種目・同じ学年・同じ性別」で比べた順位</div>
+        <div className="notice rank-guide">
+          <div className="rank-guide-title">順位は「期間 × 比較対象」で見分けます</div>
+          <ul className="rank-guide-list">
+            <li><span className="rank-guide-key">月内 × 同学年・同性別</span></li>
+            <li><span className="rank-guide-key">月内 × 性別内（学年混合）</span></li>
+            <li><span className="rank-guide-key">歴代 × 同学年・同性別</span></li>
+          </ul>
         </div>
         {groupedResults.length === 0 ? (
           <p className="notice">記録がありません</p>
@@ -302,14 +304,18 @@ export default async function AthletePage({ params }: { params: { id: string } }
             <div key={group.meet.id} style={{ marginBottom: 24 }}>
               <h3 style={{ fontSize: "1rem", marginBottom: 8 }}>{formatMeetMonthLabel(group.meet)}</h3>
               <div className="table-scroll">
-                <table className="table">
+                <table className="table rank-table">
                   <thead>
+                    <tr className="rank-table-period-row">
+                      <th rowSpan={2}>種目</th>
+                      <th rowSpan={2}>タイム</th>
+                      <th colSpan={2} className="rank-table-period-group">月内</th>
+                      <th colSpan={1} className="rank-table-period-group">歴代</th>
+                    </tr>
                     <tr>
-                      <th>種目</th>
-                      <th>タイム</th>
-                      <th>同月 学年/性別</th>
-                      <th>同月 全体（性別別）</th>
-                      <th>歴代 学年/性別</th>
+                      <th>同学年・同性別</th>
+                      <th>性別内（学年混合）</th>
+                      <th>同学年・同性別</th>
                     </tr>
                   </thead>
                   <tbody>

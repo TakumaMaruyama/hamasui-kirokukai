@@ -90,6 +90,48 @@ button.secondary {
   text-align: left;
 }
 
+.rank-guide {
+  margin-bottom: 12px;
+  line-height: 1.7;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f7f9ff;
+  border: 1px solid #dfe7ff;
+}
+
+.rank-guide-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.rank-guide-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.rank-guide-key {
+  font-weight: 600;
+  color: #2c3f73;
+}
+
+.table-scroll .rank-table {
+  min-width: 860px;
+}
+
+.rank-table thead .rank-table-period-group {
+  text-align: center;
+  background: #eef3ff;
+  color: #25345f;
+}
+
+.rank-table thead .rank-table-period-row th[rowspan] {
+  vertical-align: middle;
+}
+
+.rank-table thead th {
+  white-space: nowrap;
+}
+
 .notice {
   font-size: 0.9rem;
   color: #5b6170;
