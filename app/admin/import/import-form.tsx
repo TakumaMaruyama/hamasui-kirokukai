@@ -34,47 +34,83 @@ async function readApiPayload(response: Response): Promise<ApiPayload | null> {
 
 export default function ImportForm({ program }: Props) {
   const now = new Date();
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [year, setYear] = useState(String(now.getFullYear()));
   const [month, setMonth] = useState(String(now.getMonth() + 1));
-  const [weekday, setWeekday] = useState<MeetWeekday>("月曜");
+  const [weekday, setWeekday] = useState<MeetWeekday | "">("");
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const importContextLabel = `${year}年${month}月${weekday ? ` ${weekday}` : ""}`;
+
+  const buildPreviewFormData = (selectedFiles: File[]) => {
+    const formData = new FormData();
+    for (const file of selectedFiles) {
+      formData.append("files", file);
+    }
+    formData.append("year", year);
+    formData.append("month", month);
+    if (weekday) {
+      formData.append("weekday", weekday);
+    }
+
+    return formData;
+  };
+
+  const fetchPreviewRows = async (
+    selectedFiles: File[]
+  ): Promise<{ rows?: PreviewRow[]; message?: string; error?: string }> => {
+    const response = await fetch(`/api/admin/import/${program}/preview`, {
+      method: "POST",
+      body: buildPreviewFormData(selectedFiles)
+    });
+    const payload = await readApiPayload(response);
+
+    if (!response.ok) {
+      return { error: payload?.message ?? `プレビューに失敗しました (HTTP ${response.status})` };
+    }
+
+    if (!payload?.rows) {
+      return { error: "プレビュー結果の形式が不正です" };
+    }
+
+    return { rows: payload.rows, message: payload.message };
+  };
+
+  const importWithRows = async (
+    rows: PreviewRow[]
+  ): Promise<{ message?: string; error?: string }> => {
+    const response = await fetch(`/api/admin/import/${program}/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rows })
+    });
+    const payload = await readApiPayload(response);
+
+    if (!response.ok) {
+      return { error: payload?.message ?? `取り込みに失敗しました (HTTP ${response.status})` };
+    }
+
+    return { message: payload?.message ?? "取り込みが完了しました" };
+  };
 
   const handlePreview = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!file) return;
+    if (files.length === 0) return;
 
     setLoading(true);
     setMessage(null);
     setPreview(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("year", year);
-      formData.append("month", month);
-      formData.append("weekday", weekday);
-
-      const response = await fetch(`/api/admin/import/${program}/preview`, {
-        method: "POST",
-        body: formData
-      });
-      const payload = await readApiPayload(response);
-
-      if (!response.ok) {
-        setMessage(payload?.message ?? `プレビューに失敗しました (HTTP ${response.status})`);
+      const previewResult = await fetchPreviewRows(files);
+      if (!previewResult.rows) {
+        setMessage(previewResult.error ?? "プレビューに失敗しました");
         return;
       }
 
-      if (!payload?.rows) {
-        setMessage("プレビュー結果の形式が不正です");
-        return;
-      }
-
-      setPreview(payload.rows);
-      setMessage(payload.message ?? null);
+      setPreview(previewResult.rows);
+      setMessage(previewResult.message ?? null);
     } catch (error) {
       setMessage("通信に失敗しました");
     } finally {
@@ -89,21 +125,46 @@ export default function ImportForm({ program }: Props) {
     setMessage(null);
 
     try {
-      const response = await fetch(`/api/admin/import/${program}/confirm`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: preview })
-      });
-      const payload = await readApiPayload(response);
-
-      if (!response.ok) {
-        setMessage(payload?.message ?? `取り込みに失敗しました (HTTP ${response.status})`);
+      const importResult = await importWithRows(preview);
+      if (importResult.error) {
+        setMessage(importResult.error);
         return;
       }
 
-      setMessage(payload?.message ?? "取り込みが完了しました");
+      setMessage(importResult.message ?? "取り込みが完了しました");
       setPreview(null);
-      setFile(null);
+      setFiles([]);
+    } catch (error) {
+      setMessage("通信に失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImportWithoutPreview = async () => {
+    if (files.length === 0) return;
+
+    setLoading(true);
+    setMessage(null);
+    setPreview(null);
+
+    try {
+      const previewResult = await fetchPreviewRows(files);
+      if (!previewResult.rows) {
+        setMessage(previewResult.error ?? "取り込みに失敗しました");
+        return;
+      }
+
+      const importResult = await importWithRows(previewResult.rows);
+      if (importResult.error) {
+        setMessage(importResult.error);
+        return;
+      }
+
+      const importMessage = importResult.message ?? "取り込みが完了しました";
+      const finalMessage = previewResult.message ? `${importMessage}\n${previewResult.message}` : importMessage;
+      setMessage(finalMessage);
+      setFiles([]);
     } catch (error) {
       setMessage("通信に失敗しました");
     } finally {
@@ -153,12 +214,12 @@ export default function ImportForm({ program }: Props) {
               id="importWeekday"
               value={weekday}
               onChange={(event) => {
-                setWeekday(event.target.value as MeetWeekday);
+                setWeekday(event.target.value as MeetWeekday | "");
                 setPreview(null);
                 setMessage(null);
               }}
-              required
             >
+              <option value="">指定なし</option>
               {WEEKDAY_VALUES.map((option) => (
                 <option key={option} value={option}>
                   {option}
@@ -169,22 +230,36 @@ export default function ImportForm({ program }: Props) {
         </div>
 
         <div style={{ marginTop: 12 }}>
-        <label htmlFor="csvFile">CSVファイル</label>
+        <label htmlFor="csvFile">CSVファイル（複数選択可）</label>
         <input
           id="csvFile"
           type="file"
           accept="text/csv"
+          multiple
           onChange={(event) => {
-            setFile(event.target.files?.[0] ?? null);
+            setFiles(Array.from(event.target.files ?? []));
             setPreview(null);
             setMessage(null);
           }}
           required
         />
         </div>
+        {files.length > 0 && (
+          <p className="notice" style={{ marginTop: 8 }}>
+            選択中: {files.length}ファイル
+          </p>
+        )}
         <div style={{ marginTop: 16 }}>
-          <button type="submit" disabled={loading || !file}>
+          <button type="submit" disabled={loading || files.length === 0}>
             {loading ? "処理中..." : "プレビュー"}
+          </button>
+          <button
+            type="button"
+            onClick={handleImportWithoutPreview}
+            disabled={loading || files.length === 0}
+            style={{ marginLeft: 8 }}
+          >
+            {loading ? "処理中..." : "プレビューせず取り込み"}
           </button>
         </div>
       </form>
@@ -193,7 +268,7 @@ export default function ImportForm({ program }: Props) {
         <div style={{ marginTop: 24 }}>
           <h2>プレビュー</h2>
           <p className="notice">
-            取り込み先: {year}年{month}月 {weekday}
+            取り込み先: {importContextLabel}
           </p>
           <table className="table">
             <thead>

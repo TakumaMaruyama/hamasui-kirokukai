@@ -4,6 +4,7 @@ import { formatMeetLabel, formatMeetTitle, parseMeetTitleContext } from "../lib/
 describe("meet context", () => {
   it("formats title with unified weekday", () => {
     expect(formatMeetTitle({ year: 2026, month: 2, weekday: "木曜" })).toBe("2026年2月木曜");
+    expect(formatMeetTitle({ year: 2026, month: 2 })).toBe("2026年2月");
   });
 
   it("parses both 木曜 and 木曜日 titles", () => {
@@ -24,6 +25,16 @@ describe("meet context", () => {
       month: 2,
       weekday: "木曜"
     });
+
+    expect(parseMeetTitleContext("2026年2月")).toEqual({
+      year: 2026,
+      month: 2
+    });
+
+    expect(parseMeetTitleContext("2026年2月（2）")).toEqual({
+      year: 2026,
+      month: 2
+    });
   });
 
   it("formats meet label from title context", () => {
@@ -40,5 +51,12 @@ describe("meet context", () => {
         heldOn: new Date("2026-02-01T00:00:00.000Z")
       })
     ).toBe("2026年2月 木曜 （2）");
+
+    expect(
+      formatMeetLabel({
+        title: "2026年2月（2）",
+        heldOn: new Date("2026-02-01T00:00:00.000Z")
+      })
+    ).toBe("2026年2月 （2）");
   });
 });

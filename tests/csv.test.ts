@@ -77,6 +77,25 @@ describe("parseCsv", () => {
     });
   });
 
+  it("normalizes legacy roster CSV using year/month context without weekday", () => {
+    const content =
+      "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +
+      "15ｍ板キック,1,,満留　一智,男,みつどめ　いち,年中,65.29,\n";
+
+    const rows = parseCsv(content, {
+      meetContext: { year: 2026, month: 2 }
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      meet_title: "2026年2月",
+      held_on: "2026-02-01",
+      full_name: "満留 一智",
+      grade: "2",
+      gender: "male"
+    });
+  });
+
   it("normalizes elementary and middle school grades without overlap", () => {
     const content =
       "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +

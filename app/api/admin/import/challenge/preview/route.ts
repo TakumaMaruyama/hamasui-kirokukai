@@ -8,7 +8,10 @@ import { CHALLENGE_GRADE_MAX, CHALLENGE_GRADE_MIN, filterChallengeGradeRows } fr
 const contextSchema = z.object({
   year: z.coerce.number().int().min(2000).max(2100),
   month: z.coerce.number().int().min(1).max(12),
-  weekday: z.enum(WEEKDAY_VALUES)
+  weekday: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.enum(WEEKDAY_VALUES).optional()
+  )
 });
 
 function skippedMessage(skippedCount: number): string {
@@ -21,24 +24,35 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData();
-  const file = formData.get("file");
+  const files = formData
+    .getAll("files")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  if (files.length === 0) {
+    const legacyFile = formData.get("file");
+    if (legacyFile instanceof File && legacyFile.size > 0) {
+      files.push(legacyFile);
+    }
+  }
   const context = contextSchema.safeParse({
     year: formData.get("year"),
     month: formData.get("month"),
     weekday: formData.get("weekday")
   });
 
-  if (!(file instanceof File)) {
-    return NextResponse.json({ message: "ファイルが必要です" }, { status: 400 });
+  if (files.length === 0) {
+    return NextResponse.json({ message: "CSVファイルが必要です" }, { status: 400 });
   }
 
   if (!context.success) {
-    return NextResponse.json({ message: "年・月・曜日を正しく指定してください" }, { status: 400 });
+    return NextResponse.json({ message: "年・月を正しく指定してください" }, { status: 400 });
   }
 
   try {
-    const content = await readCsvText(file);
-    const rows = parseCsv(content, { fileName: file.name, meetContext: context.data });
+    const rows: ReturnType<typeof parseCsv> = [];
+    for (const file of files) {
+      const content = await readCsvText(file);
+      rows.push(...parseCsv(content, { fileName: file.name, meetContext: context.data }));
+    }
     const { acceptedRows, skippedCount } = filterChallengeGradeRows(rows);
 
     if (acceptedRows.length === 0) {

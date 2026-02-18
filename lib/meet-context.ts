@@ -5,12 +5,15 @@ export type MeetWeekday = (typeof WEEKDAY_VALUES)[number];
 export type MeetContext = {
   year: number;
   month: number;
-  weekday: MeetWeekday;
+  weekday?: MeetWeekday;
 };
 
-const CONTEXT_TITLE_PATTERN = /^(\d{4})年(\d{1,2})月([月火水木金土日])曜(?:日)?(?:\s*(.+))?$/;
+const CONTEXT_TITLE_PATTERN = /^(\d{4})年(\d{1,2})月(?:([月火水木金土日])曜(?:日)?)?(?:\s*(.+))?$/;
 
-type ParsedMeetTitle = MeetContext & {
+type ParsedMeetTitle = {
+  year: number;
+  month: number;
+  weekday?: MeetWeekday;
   suffix?: string;
 };
 
@@ -33,7 +36,8 @@ export function heldOnFromMeetContext(context: Pick<MeetContext, "year" | "month
 }
 
 export function formatMeetTitle(context: MeetContext): string {
-  return `${context.year}年${context.month}月${context.weekday}`;
+  const weekday = context.weekday ?? "";
+  return `${context.year}年${context.month}月${weekday}`;
 }
 
 function parseMeetTitle(title: string): ParsedMeetTitle | null {
@@ -45,7 +49,7 @@ function parseMeetTitle(title: string): ParsedMeetTitle | null {
 
   const year = Number(match[1]);
   const month = Number(match[2]);
-  const weekday = `${match[3]}曜` as MeetWeekday;
+  const weekday = match[3] ? (`${match[3]}曜` as MeetWeekday) : undefined;
 
   if (!heldOnFromMeetContext({ year, month })) {
     return null;
@@ -53,7 +57,8 @@ function parseMeetTitle(title: string): ParsedMeetTitle | null {
 
   const suffix = match[4]?.trim();
 
-  return suffix ? { year, month, weekday, suffix } : { year, month, weekday };
+  const base: ParsedMeetTitle = weekday ? { year, month, weekday } : { year, month };
+  return suffix ? { ...base, suffix } : base;
 }
 
 export function parseMeetTitleContext(title: string): MeetContext | null {
@@ -65,7 +70,7 @@ export function parseMeetTitleContext(title: string): MeetContext | null {
   return {
     year: parsed.year,
     month: parsed.month,
-    weekday: parsed.weekday
+    ...(parsed.weekday ? { weekday: parsed.weekday } : {})
   };
 }
 
@@ -73,7 +78,9 @@ export function formatMeetLabel(meet: { title: string; heldOn: Date }): string {
   const parsed = parseMeetTitle(meet.title);
 
   if (parsed) {
-    const baseLabel = `${parsed.year}年${parsed.month}月 ${parsed.weekday}`;
+    const baseLabel = parsed.weekday
+      ? `${parsed.year}年${parsed.month}月 ${parsed.weekday}`
+      : `${parsed.year}年${parsed.month}月`;
     return parsed.suffix ? `${baseLabel} ${parsed.suffix}` : baseLabel;
   }
 
