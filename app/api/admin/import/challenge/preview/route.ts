@@ -9,7 +9,22 @@ const contextSchema = z.object({
   year: z.coerce.number().int().min(2000).max(2100),
   month: z.coerce.number().int().min(1).max(12),
   weekday: z.preprocess(
-    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    (value) => {
+      if (value === null || typeof value === "undefined") {
+        return undefined;
+      }
+
+      if (typeof value === "string") {
+        const normalized = value.trim();
+        if (!normalized || normalized === "指定なし") {
+          return undefined;
+        }
+
+        return normalized;
+      }
+
+      return value;
+    },
     z.enum(WEEKDAY_VALUES).optional()
   )
 });
