@@ -27,8 +27,8 @@ export function buildAthleteRankScopeLabels(input: { grade: number; gender: Gend
 
   return {
     profileScopeLabel,
-    monthlyClassHeader: `同学年・同性別（${profileScopeLabel}）`,
-    monthlyOverallHeader: `性別内（${genderLabel}・学年混合）`,
-    allTimeClassHeader: `同学年・同性別（${profileScopeLabel}）`
+    monthlyClassHeader: "学年・性別",
+    monthlyOverallHeader: `${genderLabel}・全学年`,
+    allTimeClassHeader: "学年・性別"
   };
 }
