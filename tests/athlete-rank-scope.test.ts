@@ -9,11 +9,6 @@ describe("athlete rank scope labels", () => {
     expect(labels.monthlyClassHeader).toContain("小5女子");
     expect(labels.monthlyOverallHeader).toBe("性別内（女子・学年混合）");
     expect(labels.allTimeClassHeader).toContain("小5女子");
-    expect(labels.guideRows).toEqual([
-      "月内 × 小5女子内",
-      "月内 × 女子内（学年混合）",
-      "歴代 × 小5女子内"
-    ]);
   });
 
   it("builds labels for middle school male athletes", () => {
@@ -29,7 +24,6 @@ describe("athlete rank scope labels", () => {
 
     expect(labels.profileScopeLabel).toBe("小5その他");
     expect(labels.monthlyOverallHeader).toBe("性別内（その他・学年混合）");
-    expect(labels.guideRows[1]).toBe("月内 × その他内（学年混合）");
   });
 
   it("uses short grade labels at boundaries", () => {

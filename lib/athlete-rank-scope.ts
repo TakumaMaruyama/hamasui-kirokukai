@@ -6,7 +6,6 @@ export type AthleteRankScopeLabels = {
   monthlyClassHeader: string;
   monthlyOverallHeader: string;
   allTimeClassHeader: string;
-  guideRows: [string, string, string];
 };
 
 function toGenderLabel(gender: Gender): string {
@@ -30,11 +29,6 @@ export function buildAthleteRankScopeLabels(input: { grade: number; gender: Gend
     profileScopeLabel,
     monthlyClassHeader: `同学年・同性別（${profileScopeLabel}）`,
     monthlyOverallHeader: `性別内（${genderLabel}・学年混合）`,
-    allTimeClassHeader: `同学年・同性別（${profileScopeLabel}）`,
-    guideRows: [
-      `月内 × ${profileScopeLabel}内`,
-      `月内 × ${genderLabel}内（学年混合）`,
-      `歴代 × ${profileScopeLabel}内`
-    ]
+    allTimeClassHeader: `同学年・同性別（${profileScopeLabel}）`
   };
 }

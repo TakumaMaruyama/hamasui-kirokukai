@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { assignAllTimeClassRanks, assignMonthlyOverallRanks, assignMonthlyRanks } from "../lib/monthly-rank";
+import {
+  assignAllTimeClassRanks,
+  assignAllTimeClassRankStats,
+  assignMonthlyOverallRanks,
+  assignMonthlyOverallRankStats,
+  assignMonthlyRanks,
+  assignMonthlyRankStats
+} from "../lib/monthly-rank";
 
 const sampleRows = [
   {
@@ -186,5 +193,100 @@ describe("assignMonthlyRanks", () => {
     expect(ranks.get("history-fast")).toBe(1);
     expect(ranks.get("history-other")).toBe(2);
     expect(ranks.get("history-slow")).toBe(3);
+  });
+
+  it("returns monthly class rank stats with total and topPercent", () => {
+    const stats = assignMonthlyRankStats(sampleRows);
+
+    expect(stats.get("b")).toEqual({ rank: 1, total: 2, topPercent: 50 });
+    expect(stats.get("a")).toEqual({ rank: 2, total: 2, topPercent: 100 });
+    expect(stats.get("c")).toEqual({ rank: 1, total: 1, topPercent: 100 });
+  });
+
+  it("returns monthly overall rank stats with deduped total", () => {
+    const stats = assignMonthlyOverallRankStats([
+      {
+        id: "overall-slow",
+        heldOn: new Date("2025-09-01T00:00:00.000Z"),
+        timeMs: 42000,
+        athleteName: "同名 太郎",
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" as const }
+      },
+      {
+        id: "overall-fast",
+        heldOn: new Date("2025-09-10T00:00:00.000Z"),
+        timeMs: 40000,
+        athleteName: "同名 太郎",
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 5, gender: "male" as const }
+      },
+      {
+        id: "overall-other",
+        heldOn: new Date("2025-09-12T00:00:00.000Z"),
+        timeMs: 41000,
+        athleteName: "別人 次郎",
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 4, gender: "male" as const }
+      }
+    ]);
+
+    expect(stats.get("overall-slow")).toBeUndefined();
+    expect(stats.get("overall-fast")).toEqual({ rank: 1, total: 2, topPercent: 50 });
+    expect(stats.get("overall-other")).toEqual({ rank: 2, total: 2, topPercent: 100 });
+  });
+
+  it("returns all-time class rank stats without dedupe", () => {
+    const stats = assignAllTimeClassRankStats([
+      {
+        id: "history-slow",
+        heldOn: new Date("2025-09-01T00:00:00.000Z"),
+        timeMs: 42000,
+        athleteName: "同名 太郎",
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" as const }
+      },
+      {
+        id: "history-fast",
+        heldOn: new Date("2025-10-01T00:00:00.000Z"),
+        timeMs: 40000,
+        athleteName: "同名 太郎",
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" as const }
+      },
+      {
+        id: "history-other",
+        heldOn: new Date("2025-11-01T00:00:00.000Z"),
+        timeMs: 41000,
+        athleteName: "別人 次郎",
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" as const }
+      }
+    ]);
+
+    expect(stats.get("history-fast")).toEqual({ rank: 1, total: 3, topPercent: 34 });
+    expect(stats.get("history-other")).toEqual({ rank: 2, total: 3, topPercent: 67 });
+    expect(stats.get("history-slow")).toEqual({ rank: 3, total: 3, topPercent: 100 });
+  });
+
+  it("calculates topPercent from dense rank", () => {
+    const stats = assignMonthlyOverallRankStats([
+      {
+        id: "tie-1",
+        heldOn: new Date("2025-09-01T00:00:00.000Z"),
+        timeMs: 40000,
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" as const }
+      },
+      {
+        id: "tie-2",
+        heldOn: new Date("2025-09-10T00:00:00.000Z"),
+        timeMs: 40000,
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 4, gender: "male" as const }
+      },
+      {
+        id: "next",
+        heldOn: new Date("2025-09-20T00:00:00.000Z"),
+        timeMs: 41000,
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 5, gender: "male" as const }
+      }
+    ]);
+
+    expect(stats.get("tie-1")).toEqual({ rank: 1, total: 3, topPercent: 34 });
+    expect(stats.get("tie-2")).toEqual({ rank: 1, total: 3, topPercent: 34 });
+    expect(stats.get("next")).toEqual({ rank: 2, total: 3, topPercent: 67 });
   });
 });

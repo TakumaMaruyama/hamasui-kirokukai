@@ -90,30 +90,6 @@ button.secondary {
   text-align: left;
 }
 
-.rank-guide {
-  margin-bottom: 12px;
-  line-height: 1.7;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: #f7f9ff;
-  border: 1px solid #dfe7ff;
-}
-
-.rank-guide-title {
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.rank-guide-list {
-  margin: 0;
-  padding-left: 1.2rem;
-}
-
-.rank-guide-key {
-  font-weight: 600;
-  color: #2c3f73;
-}
-
 .table-scroll .rank-table {
   min-width: 860px;
 }
@@ -136,6 +112,50 @@ button.secondary {
 .rank-table thead .rank-table-period-group,
 .rank-table thead .rank-table-period-row th[rowspan] {
   white-space: nowrap;
+}
+
+.rank-table .rank-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rank-table .rank-main {
+  font-weight: 700;
+  color: #1b1b1f;
+  line-height: 1.2;
+}
+
+.rank-table .rank-sub {
+  font-size: 0.78rem;
+  color: #5b6170;
+  line-height: 1.2;
+}
+
+.rank-table .rank-details {
+  margin-top: 2px;
+}
+
+.rank-table .rank-details > summary {
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 0.75rem;
+  list-style: none;
+}
+
+.rank-table .rank-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rank-table .rank-details[open] > summary {
+  margin-bottom: 2px;
+}
+
+.rank-table .rank-details > span {
+  display: block;
+  font-size: 0.75rem;
+  color: #4b5563;
+  line-height: 1.3;
 }
 
 .notice {

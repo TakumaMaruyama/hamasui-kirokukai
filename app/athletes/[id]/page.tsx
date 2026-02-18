@@ -6,7 +6,12 @@ import { formatMeetMonthLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
 import { formatGradeLabel } from "@/lib/grade";
 import { buildAthleteRankScopeLabels } from "@/lib/athlete-rank-scope";
-import { assignAllTimeClassRanks, assignMonthlyOverallRanks, assignMonthlyRanks } from "@/lib/monthly-rank";
+import {
+  assignAllTimeClassRankStats,
+  assignMonthlyOverallRankStats,
+  assignMonthlyRankStats,
+  type RankStat
+} from "@/lib/monthly-rank";
 
 type ResultWithMeetEvent = {
   id: string;
@@ -89,6 +94,23 @@ function getBestTimes(results: ResultWithMeetEvent[]) {
 
   return Array.from(bestByEvent.values()).sort((a, b) =>
     a.event.title.localeCompare(b.event.title, "ja")
+  );
+}
+
+function renderRankCell(stat: RankStat | undefined) {
+  if (!stat) {
+    return "-";
+  }
+
+  return (
+    <div className="rank-cell">
+      <div className="rank-main">{stat.rank}位</div>
+      <div className="rank-sub">上位{stat.topPercent}%</div>
+      <details className="rank-details">
+        <summary>詳細</summary>
+        <span>{stat.total}人中{stat.rank}位</span>
+      </details>
+    </div>
   );
 }
 
@@ -239,9 +261,9 @@ export default async function AthletePage({ params }: { params: { id: string } }
         }
       });
 
-  const monthlyClassRanks = assignMonthlyRanks(monthlyScope.map(toRankSource));
-  const monthlyOverallRanks = assignMonthlyOverallRanks(monthlyScope.map(toRankSource));
-  const allTimeClassRanks = assignAllTimeClassRanks(allTimeClassScope.map(toRankSource));
+  const monthlyClassRankStats = assignMonthlyRankStats(monthlyScope.map(toRankSource));
+  const monthlyOverallRankStats = assignMonthlyOverallRankStats(monthlyScope.map(toRankSource));
+  const allTimeClassRankStats = assignAllTimeClassRankStats(allTimeClassScope.map(toRankSource));
 
   const groupedResults = groupByMeet(athlete.results);
   const bestTimes = getBestTimes(athlete.results);
@@ -294,14 +316,6 @@ export default async function AthletePage({ params }: { params: { id: string } }
       {/* 記録会ごとの記録 */}
       <section className="card">
         <h2>📊 記録会別履歴</h2>
-        <div className="notice rank-guide">
-          <div className="rank-guide-title">順位は「期間 × 比較対象」で見分けます</div>
-          <ul className="rank-guide-list">
-            {rankScopeLabels.guideRows.map((guideRow) => (
-              <li key={guideRow}><span className="rank-guide-key">{guideRow}</span></li>
-            ))}
-          </ul>
-        </div>
         {groupedResults.length === 0 ? (
           <p className="notice">記録がありません</p>
         ) : (
@@ -325,17 +339,17 @@ export default async function AthletePage({ params }: { params: { id: string } }
                   </thead>
                   <tbody>
                     {group.results.map((result) => {
-                      const monthlyClassRank = monthlyClassRanks.get(result.id);
-                      const monthlyOverallRank = monthlyOverallRanks.get(result.id);
-                      const allTimeClassRank = allTimeClassRanks.get(result.id);
+                      const monthlyClassRank = monthlyClassRankStats.get(result.id);
+                      const monthlyOverallRank = monthlyOverallRankStats.get(result.id);
+                      const allTimeClassRank = allTimeClassRankStats.get(result.id);
 
                       return (
                         <tr key={result.id}>
                           <td>{result.event.title}</td>
                           <td>{result.timeText}</td>
-                          <td>{typeof monthlyClassRank === "number" ? `${monthlyClassRank}位` : "-"}</td>
-                          <td>{typeof monthlyOverallRank === "number" ? `${monthlyOverallRank}位` : "-"}</td>
-                          <td>{typeof allTimeClassRank === "number" ? `${allTimeClassRank}位` : "-"}</td>
+                          <td>{renderRankCell(monthlyClassRank)}</td>
+                          <td>{renderRankCell(monthlyOverallRank)}</td>
+                          <td>{renderRankCell(allTimeClassRank)}</td>
                         </tr>
                       );
                     })}

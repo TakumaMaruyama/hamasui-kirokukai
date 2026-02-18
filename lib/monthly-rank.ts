@@ -15,6 +15,12 @@ export type MonthlyRankSource = {
   };
 };
 
+export type RankStat = {
+  rank: number;
+  total: number;
+  topPercent: number;
+};
+
 function toMonthKey(date: Date): string {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
@@ -74,6 +80,19 @@ function assignGroupedRanks(
   toGroupKey: (source: MonthlyRankSource) => string,
   options?: { dedupeByAthleteName?: boolean }
 ): Map<string, number> {
+  const rankStats = assignGroupedRankStats(results, toGroupKey, options);
+  const ranks = new Map<string, number>();
+  for (const [id, stat] of rankStats.entries()) {
+    ranks.set(id, stat.rank);
+  }
+  return ranks;
+}
+
+function assignGroupedRankStats(
+  results: MonthlyRankSource[],
+  toGroupKey: (source: MonthlyRankSource) => string,
+  options?: { dedupeByAthleteName?: boolean }
+): Map<string, RankStat> {
   const grouped = new Map<string, MonthlyRankSource[]>();
 
   for (const result of results) {
@@ -85,16 +104,24 @@ function assignGroupedRanks(
     grouped.get(key)!.push(result);
   }
 
-  const ranks = new Map<string, number>();
+  const rankStats = new Map<string, RankStat>();
   for (const groupedEntries of grouped.values()) {
     const rankTargets = toRankTargets(groupedEntries, options);
+    const total = rankTargets.length;
+    if (total === 0) {
+      continue;
+    }
     const groupRanks = assignDenseRanks(rankTargets);
     for (const [id, rank] of groupRanks.entries()) {
-      ranks.set(id, rank);
+      rankStats.set(id, {
+        rank,
+        total,
+        topPercent: Math.ceil((rank / total) * 100)
+      });
     }
   }
 
-  return ranks;
+  return rankStats;
 }
 
 export function assignMonthlyRanks(results: MonthlyRankSource[]): Map<string, number> {
@@ -115,4 +142,24 @@ export function assignMonthlyOverallRanks(results: MonthlyRankSource[]): Map<str
 
 export function assignAllTimeClassRanks(results: MonthlyRankSource[]): Map<string, number> {
   return assignGroupedRanks(results, toEventClassKey);
+}
+
+export function assignMonthlyRankStats(results: MonthlyRankSource[]): Map<string, RankStat> {
+  return assignGroupedRankStats(
+    results,
+    (result) => `${toMonthKey(result.heldOn)}:${toEventClassKey(result)}`,
+    { dedupeByAthleteName: true }
+  );
+}
+
+export function assignMonthlyOverallRankStats(results: MonthlyRankSource[]): Map<string, RankStat> {
+  return assignGroupedRankStats(
+    results,
+    (result) => `${toMonthKey(result.heldOn)}:${toEventBaseGenderKey(result)}`,
+    { dedupeByAthleteName: true }
+  );
+}
+
+export function assignAllTimeClassRankStats(results: MonthlyRankSource[]): Map<string, RankStat> {
+  return assignGroupedRankStats(results, toEventClassKey);
 }
