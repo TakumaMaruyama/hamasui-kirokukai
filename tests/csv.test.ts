@@ -27,7 +27,7 @@ describe("parseCsv", () => {
     expect(rows[0].distance_m).toBe("50");
   });
 
-  it("normalizes full-width digits to half-width in imported values", () => {
+  it("normalizes full-width ascii to half-width in imported values", () => {
     const content =
       "記録会名称,開催日,氏名,学年,性別,種目名,泳法,距離,レーン,記録\n" +
       "第１回記録会,２０２４-０６-０１,山田１郎,４,male,１５ｍクロール,free,１５,２,０:３５.１２";
@@ -40,7 +40,7 @@ describe("parseCsv", () => {
       held_on: "2024-06-01",
       full_name: "山田1郎",
       grade: "4",
-      event_title: "15ｍクロール",
+      event_title: "15mクロール",
       distance_m: "15",
       lane: "2",
       time_text: "0:35.12"
@@ -71,7 +71,7 @@ describe("parseCsv", () => {
       full_name_kana: "みつどめ いち",
       grade: "2",
       gender: "male",
-      event_title: "15ｍ板キック",
+      event_title: "15m板キック",
       style: "kick",
       distance_m: "15",
       time_text: "65.29"

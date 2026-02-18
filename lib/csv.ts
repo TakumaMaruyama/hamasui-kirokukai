@@ -98,7 +98,9 @@ function pickCellValue(value: CsvValue, mode: "first" | "last" = "first"): strin
 }
 
 function toHalfWidthDigits(value: string): string {
-  return value.replace(/[０-９]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0xfee0));
+  return value
+    .replace(/\u3000/g, " ")
+    .replace(/[！-～]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0));
 }
 
 const GRADE_ALIASES: Record<string, string> = {

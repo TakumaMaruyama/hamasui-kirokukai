@@ -7,7 +7,9 @@ loadEnvConfig(process.cwd(), true);
 const prisma = new PrismaClient();
 
 function toHalfWidthDigits(value) {
-  return value.replace(/[０-９]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0xfee0));
+  return value
+    .replace(/\u3000/g, " ")
+    .replace(/[！-～]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0));
 }
 
 function normalizeText(value) {
