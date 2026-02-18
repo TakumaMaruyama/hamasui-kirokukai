@@ -106,10 +106,10 @@ function renderRankCell(stat: RankStat | undefined) {
 
   return (
     <div className="rank-cell">
-      <div className="rank-main">{stat.rank}位</div>
-      <div className="rank-sub">上位{stat.topPercent}%</div>
       <details className="rank-details">
-        <summary>詳細</summary>
+        <summary>表示</summary>
+        <div className="rank-main">{stat.rank}位</div>
+        <div className="rank-sub">上位{stat.topPercent}%</div>
         <span>{stat.total}人中{stat.rank}位</span>
       </details>
     </div>
@@ -349,8 +349,8 @@ export default async function AthletePage({ params }: { params: { id: string } }
                     <tr className="rank-table-period-row">
                       <th rowSpan={2}>種目</th>
                       <th rowSpan={2}>タイム</th>
-                      <th colSpan={2} className="rank-table-period-group">月内</th>
-                      <th colSpan={1} className="rank-table-period-group">歴代</th>
+                      <th colSpan={2} className="rank-table-period-group rank-table-period-monthly">月内</th>
+                      <th colSpan={1} className="rank-table-period-group rank-table-period-alltime">歴代</th>
                     </tr>
                     <tr>
                       <th>{rankScopeLabels.monthlyClassHeader}</th>

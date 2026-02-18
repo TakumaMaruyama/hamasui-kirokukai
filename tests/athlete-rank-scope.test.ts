@@ -6,16 +6,16 @@ describe("athlete rank scope labels", () => {
     const labels = buildAthleteRankScopeLabels({ grade: 8, gender: "female" });
 
     expect(labels.profileScopeLabel).toBe("小5女子");
-    expect(labels.monthlyClassHeader).toBe("学年・性別");
+    expect(labels.monthlyClassHeader).toBe("小5女子");
     expect(labels.monthlyOverallHeader).toBe("女子・全学年");
-    expect(labels.allTimeClassHeader).toBe("学年・性別");
+    expect(labels.allTimeClassHeader).toBe("小5女子");
   });
 
   it("builds labels for middle school male athletes", () => {
     const labels = buildAthleteRankScopeLabels({ grade: 10, gender: "male" });
 
     expect(labels.profileScopeLabel).toBe("中1男子");
-    expect(labels.monthlyClassHeader).toBe("学年・性別");
+    expect(labels.monthlyClassHeader).toBe("中1男子");
     expect(labels.monthlyOverallHeader).toBe("男子・全学年");
   });
 

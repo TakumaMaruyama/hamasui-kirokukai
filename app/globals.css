@@ -96,8 +96,16 @@ button.secondary {
 
 .rank-table thead .rank-table-period-group {
   text-align: center;
-  background: #eef3ff;
+}
+
+.rank-table thead .rank-table-period-monthly {
+  background: #eaf2ff;
   color: #25345f;
+}
+
+.rank-table thead .rank-table-period-alltime {
+  background: #fff1e4;
+  color: #7a3d10;
 }
 
 .rank-table thead .rank-table-period-row th[rowspan] {
