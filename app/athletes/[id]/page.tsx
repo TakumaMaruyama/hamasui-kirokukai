@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatMeetMonthLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
 import { formatGradeLabel } from "@/lib/grade";
+import { buildAthleteRankScopeLabels } from "@/lib/athlete-rank-scope";
 import { assignAllTimeClassRanks, assignMonthlyOverallRanks, assignMonthlyRanks } from "@/lib/monthly-rank";
 
 type ResultWithMeetEvent = {
@@ -244,6 +245,10 @@ export default async function AthletePage({ params }: { params: { id: string } }
 
   const groupedResults = groupByMeet(athlete.results);
   const bestTimes = getBestTimes(athlete.results);
+  const rankScopeLabels = buildAthleteRankScopeLabels({
+    grade: athlete.grade,
+    gender: athlete.gender
+  });
 
   const genderLabel = athlete.gender === "male" ? "男子" : athlete.gender === "female" ? "女子" : "";
 
@@ -292,9 +297,9 @@ export default async function AthletePage({ params }: { params: { id: string } }
         <div className="notice rank-guide">
           <div className="rank-guide-title">順位は「期間 × 比較対象」で見分けます</div>
           <ul className="rank-guide-list">
-            <li><span className="rank-guide-key">月内 × 同学年・同性別</span></li>
-            <li><span className="rank-guide-key">月内 × 性別内（学年混合）</span></li>
-            <li><span className="rank-guide-key">歴代 × 同学年・同性別</span></li>
+            {rankScopeLabels.guideRows.map((guideRow) => (
+              <li key={guideRow}><span className="rank-guide-key">{guideRow}</span></li>
+            ))}
           </ul>
         </div>
         {groupedResults.length === 0 ? (
@@ -313,9 +318,9 @@ export default async function AthletePage({ params }: { params: { id: string } }
                       <th colSpan={1} className="rank-table-period-group">歴代</th>
                     </tr>
                     <tr>
-                      <th>同学年・同性別</th>
-                      <th>性別内（学年混合）</th>
-                      <th>同学年・同性別</th>
+                      <th>{rankScopeLabels.monthlyClassHeader}</th>
+                      <th>{rankScopeLabels.monthlyOverallHeader}</th>
+                      <th>{rankScopeLabels.allTimeClassHeader}</th>
                     </tr>
                   </thead>
                   <tbody>

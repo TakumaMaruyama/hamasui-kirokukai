@@ -129,6 +129,12 @@ button.secondary {
 }
 
 .rank-table thead th {
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.rank-table thead .rank-table-period-group,
+.rank-table thead .rank-table-period-row th[rowspan] {
   white-space: nowrap;
 }
 
