@@ -1,0 +1,50 @@
+run = "npm run dev"
+entrypoint = "app/page.tsx"
+
+hidden = [".next", "node_modules"]
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+packages = ["gti"]
+
+[deployment]
+run = ["npm", "run", "start"]
+deploymentTarget = "autoscale"
+build = ["bash", "-c", "npx prisma generate && npx prisma db push --accept-data-loss && npm run build"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[agent]
+expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Next.js Dev Server"
+
+[[workflows.workflow]]
+name = "Next.js Dev Server"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+ADMIN_PASSWORD = "admin0909"
