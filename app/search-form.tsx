@@ -121,11 +121,30 @@ export default function SearchForm() {
             fontWeight: 500
           }}
         >
-          {SEARCH_CONSENT_ITEMS.map((item) => (
-            <li key={item} style={{ marginBottom: 4 }}>
-              {item}
-            </li>
-          ))}
+          {SEARCH_CONSENT_ITEMS.map((item) => {
+            const isLogRecordNotice = item.startsWith("ログ記録:");
+
+            return (
+              <li
+                key={item}
+                style={{
+                  marginBottom: 4,
+                  ...(isLogRecordNotice
+                    ? {
+                        color: "#9f1239",
+                        background: "#ffe4ea",
+                        border: "1px solid #fbc2cf",
+                        borderRadius: 6,
+                        padding: "5px 8px",
+                        fontWeight: 700
+                      }
+                    : {})
+                }}
+              >
+                {item}
+              </li>
+            );
+          })}
         </ul>
         <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10 }}>
           <input
