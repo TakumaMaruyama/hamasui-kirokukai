@@ -151,15 +151,15 @@ button.secondary {
 
 @media (max-width: 640px) {
   .history-best-table .history-best-col-event {
-    width: 30%;
+    width: 35%;
   }
 
   .history-best-table .history-best-col-time {
-    width: 28%;
+    width: 25%;
   }
 
   .history-best-table .history-best-col-meet {
-    width: 42%;
+    width: 40%;
   }
 
   .table-scroll .history-rank-table {

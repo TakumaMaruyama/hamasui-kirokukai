@@ -456,7 +456,7 @@ export default async function AthleteHistoryPage({
             <thead>
               <tr>
                 <th>種目</th>
-                <th>ベストタイム</th>
+                <th>タイム</th>
                 <th>開催区分</th>
               </tr>
             </thead>
