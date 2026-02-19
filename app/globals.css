@@ -112,6 +112,16 @@ button.secondary {
   vertical-align: middle;
 }
 
+.rank-table thead .rank-table-subhead-monthly {
+  background: #f4f8ff;
+  color: #2d456f;
+}
+
+.rank-table thead .rank-table-subhead-alltime {
+  background: #fff7ef;
+  color: #7a3d10;
+}
+
 .rank-table thead th {
   white-space: normal;
   line-height: 1.35;
@@ -126,6 +136,22 @@ button.secondary {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.rank-table td.rank-table-rank-col-monthly {
+  background: #fbfdff;
+}
+
+.rank-table td.rank-table-rank-col-alltime {
+  background: #fffaf4;
+}
+
+.rank-table td.rank-table-rank-col-monthly .rank-main {
+  color: #1f3d74;
+}
+
+.rank-table td.rank-table-rank-col-alltime .rank-main {
+  color: #7a3d10;
 }
 
 .rank-table .rank-main {

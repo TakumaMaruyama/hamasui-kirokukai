@@ -334,4 +334,68 @@ describe("assignMonthlyRanks", () => {
     expect(stats.get("target-2023")).toEqual({ rank: 2, total: 2, topPercent: 100 });
     expect(stats.get("future-fast")).toEqual({ rank: 1, total: 3, topPercent: 34 });
   });
+
+  it("treats style variants as the same event key for monthly overall stats", () => {
+    const stats = assignMonthlyOverallRankStats([
+      {
+        id: "free-style",
+        heldOn: new Date("2025-09-01T00:00:00.000Z"),
+        timeMs: 41000,
+        event: { title: "15mクロール", distanceM: 15, style: "free", grade: 3, gender: "male" as const }
+      },
+      {
+        id: "jp-style",
+        heldOn: new Date("2025-09-10T00:00:00.000Z"),
+        timeMs: 40000,
+        event: { title: "15ｍクロール", distanceM: 15, style: "クロール", grade: 5, gender: "male" as const }
+      },
+      {
+        id: "other",
+        heldOn: new Date("2025-09-20T00:00:00.000Z"),
+        timeMs: 42000,
+        event: { title: "15mクロール", distanceM: 15, style: "自由形", grade: 4, gender: "male" as const }
+      }
+    ]);
+
+    expect(stats.get("jp-style")).toEqual({ rank: 1, total: 3, topPercent: 34 });
+    expect(stats.get("free-style")).toEqual({ rank: 2, total: 3, topPercent: 67 });
+    expect(stats.get("other")).toEqual({ rank: 3, total: 3, topPercent: 100 });
+  });
+
+  it("treats style and full-width title variants as the same event key for all-time class stats", () => {
+    const allResults = [
+      {
+        id: "past-free",
+        heldOn: new Date("2024-06-01T00:00:00.000Z"),
+        timeMs: 40000,
+        event: { title: "30mクロール", distanceM: 30, style: "free", grade: 6, gender: "male" as const }
+      },
+      {
+        id: "target-jp",
+        heldOn: new Date("2025-09-01T00:00:00.000Z"),
+        timeMs: 42000,
+        event: { title: "30ｍクロール", distanceM: 30, style: "クロール", grade: 6, gender: "male" as const }
+      },
+      {
+        id: "other-event",
+        heldOn: new Date("2025-09-01T00:00:00.000Z"),
+        timeMs: 39000,
+        event: { title: "30m背泳ぎ", distanceM: 30, style: "back", grade: 6, gender: "male" as const }
+      }
+    ];
+
+    const stats = assignAllTimeClassRankStatsUpToHeldOn(
+      [
+        {
+          id: "target-jp",
+          heldOn: new Date("2025-09-01T00:00:00.000Z"),
+          timeMs: 42000,
+          event: { title: "30ｍクロール", distanceM: 30, style: "クロール", grade: 6, gender: "male" as const }
+        }
+      ],
+      allResults
+    );
+
+    expect(stats.get("target-jp")).toEqual({ rank: 2, total: 2, topPercent: 100 });
+  });
 });

@@ -23,9 +23,7 @@ type ResultWithMeetEvent = {
 };
 
 type EventBaseFilter = {
-  title: string;
   distanceM: number;
-  style: string;
 };
 
 type EventClassFilter = EventBaseFilter & {
@@ -34,7 +32,7 @@ type EventClassFilter = EventBaseFilter & {
 };
 
 function toEventBaseKey(event: EventBaseFilter): string {
-  return [event.title, event.distanceM, event.style].join(":");
+  return [event.distanceM].join(":");
 }
 
 function toEventClassKey(event: EventClassFilter): string {
@@ -168,9 +166,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
     }
 
     const eventBase = {
-      title: result.event.title,
-      distanceM: result.event.distanceM,
-      style: result.event.style
+      distanceM: result.event.distanceM
     };
     eventBaseByKey.set(toEventBaseKey(eventBase), eventBase);
 
@@ -190,16 +186,12 @@ export default async function AthletePage({ params }: { params: { id: string } }
   }));
   const eventBaseScopes = Array.from(eventBaseByKey.values()).map((event) => ({
     event: {
-      title: event.title,
-      distanceM: event.distanceM,
-      style: event.style
+      distanceM: event.distanceM
     }
   }));
   const eventClassScopes = Array.from(eventClassByKey.values()).map((event) => ({
     event: {
-      title: event.title,
       distanceM: event.distanceM,
-      style: event.style,
       grade: event.grade,
       gender: event.gender
     }
@@ -355,9 +347,9 @@ export default async function AthletePage({ params }: { params: { id: string } }
                       <th colSpan={1} className="rank-table-period-group rank-table-period-alltime">歴代</th>
                     </tr>
                     <tr>
-                      <th>{rankScopeLabels.monthlyClassHeader}</th>
-                      <th>{rankScopeLabels.monthlyOverallHeader}</th>
-                      <th>{rankScopeLabels.allTimeClassHeader}</th>
+                      <th className="rank-table-subhead-monthly">{rankScopeLabels.monthlyClassHeader}</th>
+                      <th className="rank-table-subhead-monthly">{rankScopeLabels.monthlyOverallHeader}</th>
+                      <th className="rank-table-subhead-alltime">{rankScopeLabels.allTimeClassHeader}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -370,9 +362,15 @@ export default async function AthletePage({ params }: { params: { id: string } }
                         <tr key={result.id}>
                           <td>{result.event.title}</td>
                           <td>{result.timeText}</td>
-                          <td>{renderRankCell(monthlyClassRank)}</td>
-                          <td>{renderRankCell(monthlyOverallRank)}</td>
-                          <td>{renderRankCell(allTimeClassRank)}</td>
+                          <td className="rank-table-rank-col rank-table-rank-col-monthly">
+                            {renderRankCell(monthlyClassRank)}
+                          </td>
+                          <td className="rank-table-rank-col rank-table-rank-col-monthly">
+                            {renderRankCell(monthlyOverallRank)}
+                          </td>
+                          <td className="rank-table-rank-col rank-table-rank-col-alltime">
+                            {renderRankCell(allTimeClassRank)}
+                          </td>
                         </tr>
                       );
                     })}

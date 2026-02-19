@@ -25,9 +25,18 @@ function toMonthKey(date: Date): string {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+function normalizeEventTitle(value: string): string {
+  return value
+    .replace(/\u3000/g, " ")
+    .replace(/[！-～]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0))
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 function toEventBaseKey(source: MonthlyRankSource): string {
-  const { title, distanceM, style } = source.event;
-  return [title, distanceM, style].join(":");
+  const { title, distanceM } = source.event;
+  return [normalizeEventTitle(title), distanceM].join(":");
 }
 
 function toEventClassKey(source: MonthlyRankSource): string {
