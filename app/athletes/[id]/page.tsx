@@ -291,7 +291,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
         <p className="notice">
           {formatGradeLabel(athlete.grade)} / {genderLabel}
         </p>
-        <p className="notice">
+        <p className="notice publish-deadline">
           {formatPublishRange(publishWindow?.publishFrom, publishWindow?.publishUntil)}
         </p>
       </header>

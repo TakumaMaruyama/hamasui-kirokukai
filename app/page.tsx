@@ -4,13 +4,18 @@ import { prisma } from "@/lib/prisma";
 import { formatPublishRange } from "@/lib/publish";
 
 export default async function HomePage() {
-  let publishWindow: { publishFrom: Date | null; publishUntil: Date | null } | null = null;
+  let publishWindow: {
+    publishFrom: Date | null;
+    publishUntil: Date | null;
+    announcement: string | null;
+  } | null = null;
   try {
     publishWindow = await prisma.publishWindow.findUnique({
       where: { id: "default" },
       select: {
         publishFrom: true,
-        publishUntil: true
+        publishUntil: true,
+        announcement: true
       }
     });
   } catch {
@@ -21,8 +26,13 @@ export default async function HomePage() {
     <main>
       <header>
         <h1>はまスイ記録会 記録検索</h1>
-        <p className="notice">フルネーム完全一致で検索できます。</p>
-        <p className="notice">
+        {publishWindow?.announcement?.trim() ? (
+          <section className="announcement-box">
+            <p className="announcement-title">お知らせ</p>
+            <p className="announcement-body">{publishWindow.announcement}</p>
+          </section>
+        ) : null}
+        <p className="notice publish-deadline">
           {formatPublishRange(publishWindow?.publishFrom, publishWindow?.publishUntil)}
         </p>
       </header>

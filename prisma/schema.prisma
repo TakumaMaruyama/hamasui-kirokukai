@@ -101,6 +101,7 @@ model PublishWindow {
   id           String   @id @default("default")
   publishFrom  DateTime?
   publishUntil DateTime?
+  announcement String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

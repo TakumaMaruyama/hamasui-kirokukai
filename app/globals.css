@@ -43,7 +43,8 @@ textarea {
 input[type="text"],
 input[type="password"],
 input[type="file"],
-select {
+select,
+textarea {
   width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
@@ -308,6 +309,32 @@ button.secondary {
 .notice {
   font-size: 0.9rem;
   color: #5b6170;
+}
+
+.publish-deadline {
+  color: #111;
+}
+
+.announcement-box {
+  margin: 14px 0 8px;
+  padding: 10px 12px;
+  border: 1px solid #dbe5ff;
+  border-radius: 10px;
+  background: #f5f8ff;
+}
+
+.announcement-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1f3d74;
+}
+
+.announcement-body {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  color: #1f2937;
 }
 
 .admin-link {
