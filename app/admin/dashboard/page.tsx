@@ -46,9 +46,11 @@ export default function AdminDashboard() {
                     </Link>
                 </nav>
             </div>
-            <Link href="/" className="admin-link">
-                ← トップに戻る
-            </Link>
+            <p style={{ marginTop: 20 }}>
+                <Link href="/" style={{ color: "#4d5564", textDecoration: "none", fontSize: "0.9rem" }}>
+                    ← トップに戻る
+                </Link>
+            </p>
         </main>
     );
 }

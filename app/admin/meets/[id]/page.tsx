@@ -121,7 +121,10 @@ export default async function MeetPreviewPage({ params, searchParams }: PageProp
                     <h1>記録会プレビュー</h1>
                     <p className="notice" style={{ color: "#b00020" }}>{loadMessage}</p>
                 </header>
-                <Link href={`/admin/meets?program=${requestedProgram}`} className="admin-link">
+                <Link
+                    href={`/admin/meets?program=${requestedProgram}`}
+                    style={{ color: "#4d5564", textDecoration: "none", fontSize: "0.9rem" }}
+                >
                     ← 記録会管理に戻る
                 </Link>
             </main>
@@ -197,9 +200,14 @@ export default async function MeetPreviewPage({ params, searchParams }: PageProp
                 )}
             </section>
 
-            <Link href={`/admin/meets?program=${backProgram}`} className="admin-link">
-                ← 記録会管理に戻る
-            </Link>
+            <p style={{ marginTop: 16 }}>
+                <Link
+                    href={`/admin/meets?program=${backProgram}`}
+                    style={{ color: "#4d5564", textDecoration: "none", fontSize: "0.9rem" }}
+                >
+                    ← 記録会管理に戻る
+                </Link>
+            </p>
         </main>
     );
 }

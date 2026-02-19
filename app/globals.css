@@ -385,3 +385,30 @@ button.secondary {
   font-weight: 600;
   font-size: 0.95rem;
 }
+
+.admin-menu-return-button {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #2f5cff;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(47, 92, 255, 0.35);
+}
+
+.admin-menu-return-button:hover {
+  background: #224ad6;
+}
+
+.admin-menu-return-button:focus-visible {
+  outline: 2px solid #1f3d74;
+  outline-offset: 2px;
+}

@@ -212,9 +212,6 @@ export default async function MeetsPage({
                     <button>新しい記録をインポート</button>
                 </Link>
             </div>
-            <Link href="/admin/dashboard" className="admin-link">
-                ← メニューに戻る
-            </Link>
         </main>
     );
 }

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { formatPublishRange, parsePublishDateInput, toDateInputValue } from "@/lib/publish";
@@ -90,10 +89,6 @@ export default async function PublishPage() {
             </button>
           </form>
         </div>
-
-        <Link href="/admin/dashboard" className="admin-link">
-          ← メニューに戻る
-        </Link>
       </main>
     );
   } catch {
@@ -103,9 +98,6 @@ export default async function PublishPage() {
           <h1>公開期間表示管理</h1>
           <p className="notice">公開期間設定テーブルが未作成です。`npx prisma db push` を実行してください。</p>
         </header>
-        <Link href="/admin/dashboard" className="admin-link">
-          ← メニューに戻る
-        </Link>
       </main>
     );
   }
