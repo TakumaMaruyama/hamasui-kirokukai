@@ -94,6 +94,24 @@ button.secondary {
   min-width: 860px;
 }
 
+.history-best-table,
+.history-rank-table {
+  table-layout: fixed;
+}
+
+.history-best-event-title {
+  display: block;
+  line-height: 1.35;
+}
+
+.history-best-event-grade {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: #5b6170;
+  line-height: 1.2;
+}
+
 .rank-table thead .rank-table-period-group {
   text-align: center;
 }

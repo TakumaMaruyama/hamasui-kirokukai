@@ -449,9 +449,9 @@ export default async function AthleteHistoryPage({
         ) : (
           <table className="table history-best-table">
             <colgroup>
-              <col style={{ width: "52%" }} />
-              <col style={{ width: "26%" }} />
-              <col style={{ width: "22%" }} />
+              <col style={{ width: "36%" }} />
+              <col style={{ width: "20%" }} />
+              <col style={{ width: "44%" }} />
             </colgroup>
             <thead>
               <tr>
@@ -463,7 +463,10 @@ export default async function AthleteHistoryPage({
             <tbody>
               {bestTimes.map((result) => (
                 <tr key={result.id}>
-                  <td>{result.event.title}（{formatGradeShortLabel(result.event.grade)}）</td>
+                  <td>
+                    <span className="history-best-event-title">{result.event.title}</span>
+                    <span className="history-best-event-grade">{formatGradeShortLabel(result.event.grade)}</span>
+                  </td>
                   <td style={{ fontWeight: 600 }}>{result.timeText}</td>
                   <td className="notice">{formatMeetMonthLabel(result.meet)}</td>
                 </tr>
@@ -497,11 +500,11 @@ export default async function AthleteHistoryPage({
                         <div className="table-scroll">
                           <table className="table rank-table history-rank-table">
                             <colgroup>
-                              <col style={{ width: "38%" }} />
-                              <col style={{ width: "14%" }} />
-                              <col style={{ width: "16%" }} />
-                              <col style={{ width: "16%" }} />
-                              <col style={{ width: "16%" }} />
+                              <col style={{ width: "31%" }} />
+                              <col style={{ width: "11%" }} />
+                              <col style={{ width: "19%" }} />
+                              <col style={{ width: "19%" }} />
+                              <col style={{ width: "20%" }} />
                             </colgroup>
                             <thead>
                               <tr className="rank-table-period-row">
