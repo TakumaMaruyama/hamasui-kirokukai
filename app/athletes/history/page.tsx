@@ -449,9 +449,9 @@ export default async function AthleteHistoryPage({
         ) : (
           <table className="table history-best-table">
             <colgroup>
-              <col style={{ width: "36%" }} />
-              <col style={{ width: "20%" }} />
-              <col style={{ width: "44%" }} />
+              <col className="history-best-col-event" />
+              <col className="history-best-col-time" />
+              <col className="history-best-col-meet" />
             </colgroup>
             <thead>
               <tr>
@@ -500,11 +500,11 @@ export default async function AthleteHistoryPage({
                         <div className="table-scroll">
                           <table className="table rank-table history-rank-table">
                             <colgroup>
-                              <col style={{ width: "31%" }} />
-                              <col style={{ width: "11%" }} />
-                              <col style={{ width: "19%" }} />
-                              <col style={{ width: "19%" }} />
-                              <col style={{ width: "20%" }} />
+                              <col className="history-rank-col-event" />
+                              <col className="history-rank-col-time" />
+                              <col className="history-rank-col-monthly-class" />
+                              <col className="history-rank-col-monthly-overall" />
+                              <col className="history-rank-col-alltime" />
                             </colgroup>
                             <thead>
                               <tr className="rank-table-period-row">

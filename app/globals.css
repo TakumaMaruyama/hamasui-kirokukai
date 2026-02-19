@@ -99,6 +99,23 @@ button.secondary {
   table-layout: fixed;
 }
 
+.history-best-table .history-best-col-event {
+  width: 36%;
+}
+
+.history-best-table .history-best-col-time {
+  width: 20%;
+}
+
+.history-best-table .history-best-col-meet {
+  width: 44%;
+}
+
+.history-best-table th:nth-child(2),
+.history-best-table td:nth-child(2) {
+  white-space: nowrap;
+}
+
 .history-best-event-title {
   display: block;
   line-height: 1.35;
@@ -110,6 +127,64 @@ button.secondary {
   font-size: 0.82rem;
   color: #5b6170;
   line-height: 1.2;
+}
+
+.history-rank-table .history-rank-col-event {
+  width: 31%;
+}
+
+.history-rank-table .history-rank-col-time {
+  width: 11%;
+}
+
+.history-rank-table .history-rank-col-monthly-class {
+  width: 19%;
+}
+
+.history-rank-table .history-rank-col-monthly-overall {
+  width: 19%;
+}
+
+.history-rank-table .history-rank-col-alltime {
+  width: 20%;
+}
+
+@media (max-width: 640px) {
+  .history-best-table .history-best-col-event {
+    width: 30%;
+  }
+
+  .history-best-table .history-best-col-time {
+    width: 28%;
+  }
+
+  .history-best-table .history-best-col-meet {
+    width: 42%;
+  }
+
+  .table-scroll .history-rank-table {
+    min-width: 760px;
+  }
+
+  .history-rank-table .history-rank-col-event {
+    width: 24%;
+  }
+
+  .history-rank-table .history-rank-col-time {
+    width: 12%;
+  }
+
+  .history-rank-table .history-rank-col-monthly-class {
+    width: 21%;
+  }
+
+  .history-rank-table .history-rank-col-monthly-overall {
+    width: 21%;
+  }
+
+  .history-rank-table .history-rank-col-alltime {
+    width: 22%;
+  }
 }
 
 .rank-table thead .rank-table-period-group {
