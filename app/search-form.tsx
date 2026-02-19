@@ -4,12 +4,39 @@ import { useState } from "react";
 import { formatGradeLabel } from "@/lib/grade";
 import { SEARCH_CONSENT_ITEMS, SEARCH_CONSENT_VERSION } from "@/lib/search-consent";
 
+type SearchGender = "male" | "female" | "other";
+
 type SearchResult = {
-  id: string;
   fullName: string;
-  grade: number;
-  gender: string;
+  gender: SearchGender;
+  grades: number[];
 };
+
+function formatGenderLabel(gender: SearchGender): string {
+  if (gender === "male") {
+    return "男子";
+  }
+
+  if (gender === "female") {
+    return "女子";
+  }
+
+  return "その他";
+}
+
+function formatGradeRange(grades: number[]): string {
+  if (grades.length === 0) {
+    return "-";
+  }
+
+  if (grades.length === 1) {
+    return formatGradeLabel(grades[0]);
+  }
+
+  const minGrade = grades[0];
+  const maxGrade = grades[grades.length - 1];
+  return `${formatGradeLabel(minGrade)}〜${formatGradeLabel(maxGrade)}`;
+}
 
 export default function SearchForm() {
   const [fullName, setFullName] = useState("");
@@ -126,9 +153,14 @@ export default function SearchForm() {
           <h2>検索結果</h2>
           <ul>
             {results.map((result) => (
-              <li key={result.id}>
-                <a href={`/athletes/${result.id}`}>
-                  {result.fullName}（{formatGradeLabel(result.grade)}）
+              <li key={`${result.fullName}:${result.gender}`}>
+                <a
+                  href={`/athletes/history?${new URLSearchParams({
+                    fullName: result.fullName,
+                    gender: result.gender
+                  }).toString()}`}
+                >
+                  {result.fullName}（{formatGenderLabel(result.gender)} / {formatGradeRange(result.grades)}）
                 </a>
               </li>
             ))}

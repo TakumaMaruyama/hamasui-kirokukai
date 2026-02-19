@@ -24,6 +24,7 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 ## 画面一覧
 - `/` トップ（検索フォーム）
 - `/athletes/[id]` 個人ページ（記録推移・種目別順位）
+- `/athletes/history` 子ども統合ページ（氏名+性別単位、学校年度ごとの履歴）
 - `/admin` 管理者ログイン
 - `/admin/import/swimming` スイミング取込
 - `/admin/import/school` 学校委託取込
@@ -56,6 +57,8 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - リクエストは `{ fullName, consentAccepted, consentVersion }`。
 - `consentAccepted` が `true` でない場合は検索できない。
 - `consentVersion` がサーバー定義と不一致の場合は再同意を求める。
+- 検索結果は学年単位ではなく、`fullName + gender` で集約した子ども単位で返す。
+- 検索結果要素は `{ fullName, gender, grades }`（`grades` は昇順の学年一覧）。
 
 ### PDF出力APIの条件指定
 - `POST /api/admin/docs/*` はJSONで条件指定できる（任意）。
@@ -81,6 +84,11 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - 検索実行時に `search_logs` に保存。
 - `search_logs` には `consentVersion` も保存する。
 - 公開期限はユーザー画面の案内表示専用（自動非公開は行わない）。
+
+## 子ども統合ページの表示仕様
+- `/athletes/history` はクエリ `fullName` と `gender` を受け取り、同一キー（氏名+性別）で複数学年の履歴を統合表示する。
+- 年度表示は学校年度（4月〜翌3月、UTC基準）を使用する。
+- 同姓同名・同性別の別人をDB上で完全判別できないため、統合表示される可能性がある旨を画面で案内する。
 
 ## PDF生成/ZIP
 - 記録証・賞状はHTMLテンプレからPDF生成しZIPにまとめる。

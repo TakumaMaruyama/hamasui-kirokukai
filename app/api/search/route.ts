@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { nameSearchKey, parseSearchRequestInput } from "@/lib/search-request";
 import { isMissingSearchLogConsentVersionColumnError } from "@/lib/search-log";
+import { groupAthletesByChild } from "@/lib/child-history";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -51,7 +52,6 @@ export async function POST(request: Request) {
       results: { some: { meet: { program: "swimming" } } }
     },
     select: {
-      id: true,
       fullName: true,
       grade: true,
       gender: true
@@ -59,7 +59,8 @@ export async function POST(request: Request) {
   });
 
   const key = nameSearchKey(normalizedFullName);
-  const results = athletes.filter((athlete) => nameSearchKey(athlete.fullName) === key);
+  const matchedAthletes = athletes.filter((athlete) => nameSearchKey(athlete.fullName) === key);
+  const results = groupAthletesByChild(matchedAthletes);
 
   return NextResponse.json({ results });
 }

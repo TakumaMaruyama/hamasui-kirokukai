@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildAthleteRankScopeLabels } from "../lib/athlete-rank-scope";
+import {
+  buildAthleteRankScopeLabels,
+  buildChildHistoryRankScopeLabels
+} from "../lib/athlete-rank-scope";
 
 describe("athlete rank scope labels", () => {
   it("builds labels for elementary female athletes", () => {
@@ -34,5 +37,15 @@ describe("athlete rank scope labels", () => {
     expect(preschool.profileScopeLabel).toBe("年少々女子");
     expect(elementary.profileScopeLabel).toBe("小1女子");
     expect(high.profileScopeLabel).toBe("高1男子");
+  });
+
+  it("builds child history labels without fixed grade", () => {
+    const female = buildChildHistoryRankScopeLabels({ gender: "female" });
+    const male = buildChildHistoryRankScopeLabels({ gender: "male" });
+
+    expect(female.monthlyClassHeader).toBe("同学年・同性別");
+    expect(female.monthlyOverallHeader).toBe("女子・全学年");
+    expect(female.allTimeClassHeader).toBe("同学年・同性別");
+    expect(male.monthlyOverallHeader).toBe("男子・全学年");
   });
 });
