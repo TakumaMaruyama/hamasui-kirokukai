@@ -100,7 +100,7 @@ button.secondary {
 }
 
 .history-best-table .history-best-col-event {
-  width: 36%;
+  width: calc(36% + 2.5ch);
 }
 
 .history-best-table .history-best-col-time {
@@ -108,7 +108,7 @@ button.secondary {
 }
 
 .history-best-table .history-best-col-meet {
-  width: 44%;
+  width: calc(44% - 2.5ch);
 }
 
 .history-best-table th:nth-child(2),
@@ -151,7 +151,7 @@ button.secondary {
 
 @media (max-width: 640px) {
   .history-best-table .history-best-col-event {
-    width: 35%;
+    width: calc(35% + 2.5ch);
   }
 
   .history-best-table .history-best-col-time {
@@ -159,7 +159,7 @@ button.secondary {
   }
 
   .history-best-table .history-best-col-meet {
-    width: 40%;
+    width: calc(40% - 2.5ch);
   }
 
   .table-scroll .history-rank-table {
