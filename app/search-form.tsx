@@ -96,7 +96,11 @@ export default function SearchForm() {
       />
       <div
         style={{
-          marginTop: 16
+          marginTop: 16,
+          padding: 14,
+          background: "#fff8e7",
+          borderRadius: 8,
+          border: "1px solid #f2d48a"
         }}
       >
         <div
