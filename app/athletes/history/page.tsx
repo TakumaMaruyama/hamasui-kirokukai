@@ -5,7 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { formatMeetMonthLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
 import { formatGradeLabel } from "@/lib/grade";
-import { buildChildHistoryRankScopeLabels } from "@/lib/athlete-rank-scope";
+import {
+  buildAthleteRankScopeLabels,
+  buildChildHistoryRankScopeLabels
+} from "@/lib/athlete-rank-scope";
 import { groupResultsBySchoolYear } from "@/lib/child-history";
 import { pickBestTimesByEventBase } from "@/lib/history-best-time";
 import { nameSearchKey, normalizeFullName } from "@/lib/search-request";
@@ -157,6 +160,20 @@ function renderRankCell(stat: RankStat | undefined) {
       </details>
     </div>
   );
+}
+
+function resolveRankScopeLabelsForMeet(
+  results: ResultWithMeetEventAthlete[],
+  gender: Gender
+) {
+  const gradeSet = new Set(results.map((result) => result.event.grade));
+
+  if (gradeSet.size !== 1) {
+    return buildChildHistoryRankScopeLabels({ gender });
+  }
+
+  const grade = Array.from(gradeSet)[0];
+  return buildAthleteRankScopeLabels({ grade, gender });
 }
 
 async function findAthletesByChild(normalizedFullName: string, gender: Gender) {
@@ -412,7 +429,6 @@ export default async function AthleteHistoryPage({
 
   const schoolYearGroups = groupResultsBySchoolYear(mergedResults);
   const bestTimes = getBestTimes(mergedResults);
-  const rankScopeLabels = buildChildHistoryRankScopeLabels({ gender });
 
   return (
     <main>
@@ -467,53 +483,57 @@ export default async function AthleteHistoryPage({
               <details key={schoolYearGroup.schoolYear} className="school-year-accordion" style={{ marginBottom: 16 }}>
                 <summary className="school-year-summary">{formatSchoolYearLabel(schoolYearGroup.schoolYear)}</summary>
                 <div style={{ marginTop: 12 }}>
-                  {meetGroups.map((group) => (
-                    <div key={group.meet.id} style={{ marginBottom: 24 }}>
-                      <h4 style={{ fontSize: "1rem", marginBottom: 8 }}>{formatMeetMonthLabel(group.meet)}</h4>
-                      <div className="table-scroll">
-                        <table className="table rank-table">
-                          <thead>
-                            <tr className="rank-table-period-row">
-                              <th rowSpan={2}>種目</th>
-                              <th rowSpan={2}>タイム</th>
-                              <th colSpan={2} className="rank-table-period-group rank-table-period-monthly">
-                                {formatMeetMonthLabel(group.meet)}
-                              </th>
-                              <th colSpan={1} className="rank-table-period-group rank-table-period-alltime">歴代</th>
-                            </tr>
-                            <tr>
-                              <th className="rank-table-subhead-monthly">{rankScopeLabels.monthlyClassHeader}</th>
-                              <th className="rank-table-subhead-monthly">{rankScopeLabels.monthlyOverallHeader}</th>
-                              <th className="rank-table-subhead-alltime">{rankScopeLabels.allTimeClassHeader}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {group.results.map((result) => {
-                              const monthlyClassRank = monthlyClassRankStats.get(result.id);
-                              const monthlyOverallRank = monthlyOverallRankStats.get(result.id);
-                              const allTimeClassRank = allTimeClassRankStats.get(result.id);
+                  {meetGroups.map((group) => {
+                    const rankScopeLabels = resolveRankScopeLabelsForMeet(group.results, gender);
 
-                              return (
-                                <tr key={result.id}>
-                                  <td>{result.event.title}（{formatGradeLabel(result.event.grade)}）</td>
-                                  <td>{result.timeText}</td>
-                                  <td className="rank-table-rank-col rank-table-rank-col-monthly">
-                                    {renderRankCell(monthlyClassRank)}
-                                  </td>
-                                  <td className="rank-table-rank-col rank-table-rank-col-monthly">
-                                    {renderRankCell(monthlyOverallRank)}
-                                  </td>
-                                  <td className="rank-table-rank-col rank-table-rank-col-alltime">
-                                    {renderRankCell(allTimeClassRank)}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                    return (
+                      <div key={group.meet.id} style={{ marginBottom: 24 }}>
+                        <h4 style={{ fontSize: "1rem", marginBottom: 8 }}>{formatMeetMonthLabel(group.meet)}</h4>
+                        <div className="table-scroll">
+                          <table className="table rank-table">
+                            <thead>
+                              <tr className="rank-table-period-row">
+                                <th rowSpan={2}>種目</th>
+                                <th rowSpan={2}>タイム</th>
+                                <th colSpan={2} className="rank-table-period-group rank-table-period-monthly">
+                                  {formatMeetMonthLabel(group.meet)}
+                                </th>
+                                <th colSpan={1} className="rank-table-period-group rank-table-period-alltime">歴代</th>
+                              </tr>
+                              <tr>
+                                <th className="rank-table-subhead-monthly">{rankScopeLabels.monthlyClassHeader}</th>
+                                <th className="rank-table-subhead-monthly">{rankScopeLabels.monthlyOverallHeader}</th>
+                                <th className="rank-table-subhead-alltime">{rankScopeLabels.allTimeClassHeader}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {group.results.map((result) => {
+                                const monthlyClassRank = monthlyClassRankStats.get(result.id);
+                                const monthlyOverallRank = monthlyOverallRankStats.get(result.id);
+                                const allTimeClassRank = allTimeClassRankStats.get(result.id);
+
+                                return (
+                                  <tr key={result.id}>
+                                    <td>{result.event.title}（{formatGradeLabel(result.event.grade)}）</td>
+                                    <td>{result.timeText}</td>
+                                    <td className="rank-table-rank-col rank-table-rank-col-monthly">
+                                      {renderRankCell(monthlyClassRank)}
+                                    </td>
+                                    <td className="rank-table-rank-col rank-table-rank-col-monthly">
+                                      {renderRankCell(monthlyOverallRank)}
+                                    </td>
+                                    <td className="rank-table-rank-col rank-table-rank-col-alltime">
+                                      {renderRankCell(allTimeClassRank)}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </details>
             );
