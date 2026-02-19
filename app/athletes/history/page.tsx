@@ -4,7 +4,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatMeetMonthLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
-import { formatGradeLabel } from "@/lib/grade";
+import { formatGradeShortLabel } from "@/lib/grade";
 import {
   buildAthleteRankScopeLabels,
   buildChildHistoryRankScopeLabels
@@ -93,12 +93,12 @@ function formatGradeRange(grades: number[]): string {
   }
 
   if (grades.length === 1) {
-    return formatGradeLabel(grades[0]);
+    return formatGradeShortLabel(grades[0]);
   }
 
   const minGrade = grades[0];
   const maxGrade = grades[grades.length - 1];
-  return `${formatGradeLabel(minGrade)}〜${formatGradeLabel(maxGrade)}`;
+  return `${formatGradeShortLabel(minGrade)}〜${formatGradeShortLabel(maxGrade)}`;
 }
 
 function toRankSource(result: {
@@ -447,7 +447,12 @@ export default async function AthleteHistoryPage({
         {bestTimes.length === 0 ? (
           <p className="notice">記録がありません</p>
         ) : (
-          <table className="table">
+          <table className="table history-best-table">
+            <colgroup>
+              <col style={{ width: "52%" }} />
+              <col style={{ width: "26%" }} />
+              <col style={{ width: "22%" }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>種目</th>
@@ -458,7 +463,7 @@ export default async function AthleteHistoryPage({
             <tbody>
               {bestTimes.map((result) => (
                 <tr key={result.id}>
-                  <td>{result.event.title}（{formatGradeLabel(result.event.grade)}）</td>
+                  <td>{result.event.title}（{formatGradeShortLabel(result.event.grade)}）</td>
                   <td style={{ fontWeight: 600 }}>{result.timeText}</td>
                   <td className="notice">{formatMeetMonthLabel(result.meet)}</td>
                 </tr>
@@ -490,7 +495,14 @@ export default async function AthleteHistoryPage({
                       <div key={group.meet.id} style={{ marginBottom: 24 }}>
                         <h4 style={{ fontSize: "1rem", marginBottom: 8 }}>{formatMeetMonthLabel(group.meet)}</h4>
                         <div className="table-scroll">
-                          <table className="table rank-table">
+                          <table className="table rank-table history-rank-table">
+                            <colgroup>
+                              <col style={{ width: "38%" }} />
+                              <col style={{ width: "14%" }} />
+                              <col style={{ width: "16%" }} />
+                              <col style={{ width: "16%" }} />
+                              <col style={{ width: "16%" }} />
+                            </colgroup>
                             <thead>
                               <tr className="rank-table-period-row">
                                 <th rowSpan={2}>種目</th>
@@ -514,7 +526,7 @@ export default async function AthleteHistoryPage({
 
                                 return (
                                   <tr key={result.id}>
-                                    <td>{result.event.title}（{formatGradeLabel(result.event.grade)}）</td>
+                                    <td>{result.event.title}（{formatGradeShortLabel(result.event.grade)}）</td>
                                     <td>{result.timeText}</td>
                                     <td className="rank-table-rank-col rank-table-rank-col-monthly">
                                       {renderRankCell(monthlyClassRank)}
