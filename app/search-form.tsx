@@ -96,11 +96,7 @@ export default function SearchForm() {
       />
       <div
         style={{
-          marginTop: 16,
-          padding: 14,
-          background: "#fff8e7",
-          borderRadius: 8,
-          border: "1px solid #f2d48a"
+          marginTop: 16
         }}
       >
         <div
@@ -108,10 +104,7 @@ export default function SearchForm() {
             fontWeight: 800,
             fontSize: "1.05rem",
             marginBottom: 8,
-            color: "#92400e",
-            background: "#fdecc8",
-            padding: "6px 8px",
-            borderRadius: 6
+            color: "#92400e"
           }}
         >
           検索利用時の同意事項
