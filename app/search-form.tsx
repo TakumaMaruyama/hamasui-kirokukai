@@ -81,7 +81,12 @@ export default function SearchForm() {
 
   return (
     <form onSubmit={handleSubmit}>
-      <label htmlFor="fullName">フルネーム</label>
+      <label htmlFor="fullName">
+        名前
+        <span style={{ marginLeft: 8, color: "#94a3b8", fontSize: "0.88rem", fontWeight: 500 }}>
+          ※フルネーム完全一致で検索できます。
+        </span>
+      </label>
       <input
         id="fullName"
         type="text"

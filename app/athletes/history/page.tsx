@@ -437,7 +437,7 @@ export default async function AthleteHistoryPage({
         <p className="notice">
           {formatGenderLabel(gender)} / 対象学年: {formatGradeRange(grades)}
         </p>
-        <p className="notice">
+        <p className="notice publish-deadline">
           {formatPublishRange(publishWindow?.publishFrom, publishWindow?.publishUntil)}
         </p>
       </header>

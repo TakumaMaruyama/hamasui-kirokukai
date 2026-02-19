@@ -29,7 +29,7 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - `/admin/import/swimming` スイミング取込
 - `/admin/import/school` 学校委託取込
 - `/admin/import/challenge` チャレンジコース取込
-- `/admin/publish` 公開期間表示管理
+- `/admin/publish` 公開期間・お知らせ表示管理
 - `/admin/docs/swimming` スイミングPDF生成
 - `/admin/docs/school` 学校委託PDF生成
 - `/admin/docs/challenge` チャレンジコースランキングPDF生成
@@ -75,7 +75,7 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - results: タイムと順位（DENSE_RANK）
 - generated_docs: 生成物の保存キー
 - search_logs: 検索ログ（検索名、IP、User-Agent、同意バージョン）
-- publish_windows: ユーザー画面に表示する公開期間（開始日/終了日）
+- publish_windows: ユーザー画面に表示する公開期間（開始日/終了日）とお知らせ
 
 ## ログ/レート制限仕様
 - 検索はフルネーム完全一致のみ。
