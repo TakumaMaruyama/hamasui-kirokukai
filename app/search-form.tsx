@@ -137,10 +137,6 @@ export default function SearchForm() {
                   ...(isLogRecordNotice
                     ? {
                         color: "#9f1239",
-                        background: "#ffe4ea",
-                        border: "1px solid #fbc2cf",
-                        borderRadius: 6,
-                        padding: "5px 8px",
                         fontWeight: 700
                       }
                     : {})
