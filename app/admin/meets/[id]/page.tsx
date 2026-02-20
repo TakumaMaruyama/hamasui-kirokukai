@@ -50,11 +50,14 @@ function toProgramQuery(value: string | string[] | undefined): Program | null {
 
 function formatAdminDateTime(value: Date): string {
     return new Intl.DateTimeFormat("ja-JP", {
+        timeZone: "Asia/Tokyo",
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
     }).format(value);
 }
 
@@ -152,7 +155,7 @@ export default async function MeetPreviewPage({ params, searchParams }: PageProp
                         <strong>開催日:</strong> {meet.heldOn.toISOString().slice(0, 10)}
                     </p>
                     <p style={{ margin: 0 }}>
-                        <strong>登録日時:</strong> {formatAdminDateTime(meet.createdAt)}
+                        <strong>登録日時 (JST):</strong> {formatAdminDateTime(meet.createdAt)}
                     </p>
                     <p style={{ margin: 0 }}>
                         <strong>記録数:</strong> {meet.results.length}件

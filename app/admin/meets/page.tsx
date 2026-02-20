@@ -68,11 +68,14 @@ function hasChallengeInRuntimeProgramEnum(): boolean {
 
 function formatAdminDateTime(value: Date): string {
     return new Intl.DateTimeFormat("ja-JP", {
+        timeZone: "Asia/Tokyo",
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
     }).format(value);
 }
 
@@ -159,7 +162,7 @@ export default async function MeetsPage({
                     <thead>
                         <tr>
                             <th>開催区分</th>
-                            <th>登録日時</th>
+                            <th>登録日時 (JST)</th>
                             <th>記録数</th>
                             <th>操作</th>
                         </tr>
