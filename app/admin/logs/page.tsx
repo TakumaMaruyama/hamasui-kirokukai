@@ -12,6 +12,19 @@ type SearchLogRow = {
   consentVersion: string | null;
 };
 
+function formatLogDateTime(value: Date): string {
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).format(value);
+}
+
 export default async function LogsPage() {
   let logs: SearchLogRow[] = [];
   let warning: string | null = null;
@@ -63,7 +76,7 @@ export default async function LogsPage() {
         <table className="table">
           <thead>
             <tr>
-              <th>日時</th>
+              <th>日時 (JST)</th>
               <th>氏名</th>
               <th>同意版</th>
               <th>IP</th>
@@ -73,7 +86,7 @@ export default async function LogsPage() {
           <tbody>
             {logs.map((log) => (
               <tr key={log.id}>
-                <td>{log.createdAt.toISOString()}</td>
+                <td>{formatLogDateTime(log.createdAt)}</td>
                 <td>{log.fullName}</td>
                 <td>{log.consentVersion ?? "-"}</td>
                 <td>{log.ipAddress}</td>
