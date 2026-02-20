@@ -84,7 +84,7 @@ export default function SearchForm() {
       <label htmlFor="fullName">
         名前
         <span style={{ marginLeft: 8, color: "#94a3b8", fontSize: "0.88rem", fontWeight: 500 }}>
-          ※フルネーム（漢字）完全一致で検索できます。
+          ※フルネーム（漢字）完全一致で検索可能
         </span>
       </label>
       <input

@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "はまスイ記録会",
-    short_name: "はまスイ",
+    short_name: "はまスイ記録会",
     description: "スイミング記録会の記録閲覧",
     start_url: "/",
     display: "standalone",
