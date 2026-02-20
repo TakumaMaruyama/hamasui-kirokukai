@@ -854,7 +854,7 @@ export async function renderChallengeRankingPdf({
                 const gradeLabel = buildChallengeGradeLabel(gradeGroup.grade);
 
                 return (
-                  <View key={`${eventGroup.eventTitle}-${gradeGroup.grade}`} style={styles.challengeGradeSection}>
+                  <View key={`${eventGroup.eventTitle}-${gradeGroup.grade}`} style={styles.challengeGradeSection} wrap={false}>
                     <View style={styles.challengeGradeColumns}>
                       {buildChallengeGenderTable({
                         side: "male",
