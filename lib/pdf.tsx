@@ -3,7 +3,8 @@ import path from "node:path";
 import { Gender } from "@prisma/client";
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
-import type { ChallengeEventRankingGroup, RankingEntry, RankingGroup } from "./ranking-report";
+import type { ChallengeEventRankingGroup, RankingGroup } from "./ranking-report";
+import { buildChallengeRankingTableRows, type ChallengeRankingTableRow } from "./challenge-ranking-layout";
 import { formatTimeForDocument } from "./display-time";
 import { formatGradeLabel, formatGradeShortLabel } from "./grade";
 import { paginateRankingGroups } from "./ranking-pagination";
@@ -427,16 +428,6 @@ function challengeHeaderPalette(side: "male" | "female"): { background: string; 
   };
 }
 
-function padChallengeEntries(entries: RankingEntry[], count: number): Array<RankingEntry | null> {
-  const padded: Array<RankingEntry | null> = [...entries];
-
-  while (padded.length < count) {
-    padded.push(null);
-  }
-
-  return padded;
-}
-
 function buildChallengeGradeLabel(grade: number): string {
   return formatGradeShortLabel(grade);
 }
@@ -450,7 +441,7 @@ function buildChallengeGenderTable({
 }: {
   side: "male" | "female";
   gradeLabel: string;
-  entries: Array<RankingEntry | null>;
+  entries: ChallengeRankingTableRow[];
   keyPrefix: string;
   tableStyle: any;
 }): ReactElement {
@@ -468,10 +459,10 @@ function buildChallengeGenderTable({
           key={`${keyPrefix}-${index}`}
           style={index === entries.length - 1 ? [styles.challengeTableRow, styles.challengeTableRowLast] : styles.challengeTableRow}
         >
-          <Text style={[styles.challengeCell, styles.challengeCellRank]}>{entry ? entry.rank : ""}</Text>
-          <Text style={[styles.challengeCell, styles.challengeCellName]}>{entry?.displayName || entry?.fullName || ""}</Text>
+          <Text style={[styles.challengeCell, styles.challengeCellRank]}>{entry.rankLabel}</Text>
+          <Text style={[styles.challengeCell, styles.challengeCellName]}>{entry.entry?.displayName || entry.entry?.fullName || ""}</Text>
           <Text style={[styles.challengeCell, styles.challengeCellTime]}>
-            {entry ? formatTimeForDocument({ timeText: entry.timeText }) : ""}
+            {entry.entry ? formatTimeForDocument({ timeText: entry.entry.timeText }) : ""}
           </Text>
         </View>
       ))}
@@ -858,13 +849,12 @@ export async function renderChallengeRankingPdf({
             <View key={eventGroup.eventTitle} style={styles.challengeEventSection}>
               <Text style={styles.challengeEventTitle}>{eventGroup.eventTitle}</Text>
               {eventGroup.gradeGroups.map((gradeGroup) => {
-                const rowCount = Math.max(gradeGroup.maleEntries.length, gradeGroup.femaleEntries.length, 1);
-                const maleRows = padChallengeEntries(gradeGroup.maleEntries, rowCount);
-                const femaleRows = padChallengeEntries(gradeGroup.femaleEntries, rowCount);
+                const maleRows = buildChallengeRankingTableRows(gradeGroup.maleEntries, { minRank: 1, maxRank: 3 });
+                const femaleRows = buildChallengeRankingTableRows(gradeGroup.femaleEntries, { minRank: 1, maxRank: 3 });
                 const gradeLabel = buildChallengeGradeLabel(gradeGroup.grade);
 
                 return (
-                  <View key={`${eventGroup.eventTitle}-${gradeGroup.grade}`} style={styles.challengeGradeSection} wrap={false}>
+                  <View key={`${eventGroup.eventTitle}-${gradeGroup.grade}`} style={styles.challengeGradeSection}>
                     <View style={styles.challengeGradeColumns}>
                       {buildChallengeGenderTable({
                         side: "male",

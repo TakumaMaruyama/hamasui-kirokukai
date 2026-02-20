@@ -55,10 +55,18 @@ export type ChallengeEventRankingGroup = {
 };
 
 export type PreschoolNameMode = "none" | "kanaOnly" | "nameAndKana";
+export type ChallengeGradeRangeMode = "existing" | "minToMax";
 
 export type RankingDisplayOptions = {
   preschoolNameMode?: PreschoolNameMode;
   preschoolMaxGrade?: number;
+};
+
+export type ChallengeRankingBuildOptions = RankingDisplayOptions & {
+  minRank?: number;
+  maxRank?: number;
+  gradeRangeMode?: ChallengeGradeRangeMode;
+  excludeOtherGender?: boolean;
 };
 
 const GENDER_ORDER: Record<Gender, number> = {
@@ -112,6 +120,38 @@ function sortRankingEntries(entries: RankingEntry[]): RankingEntry[] {
 
     return a.fullName.localeCompare(b.fullName, "ja");
   });
+}
+
+function isRankInRange(rank: number, minRank?: number, maxRank?: number): boolean {
+  if (!Number.isFinite(rank) || rank <= 0) {
+    return false;
+  }
+
+  if (typeof minRank === "number" && rank < minRank) {
+    return false;
+  }
+
+  if (typeof maxRank === "number" && rank > maxRank) {
+    return false;
+  }
+
+  return true;
+}
+
+function buildGradeSequence(grades: number[], mode: ChallengeGradeRangeMode): number[] {
+  const sortedUnique = [...new Set(grades)].sort((a, b) => a - b);
+  if (mode !== "minToMax" || sortedUnique.length === 0) {
+    return sortedUnique;
+  }
+
+  const minGrade = sortedUnique[0] as number;
+  const maxGrade = sortedUnique[sortedUnique.length - 1] as number;
+  const range: number[] = [];
+  for (let grade = minGrade; grade <= maxGrade; grade += 1) {
+    range.push(grade);
+  }
+
+  return range;
 }
 
 export function buildMeetRankingGroups(
@@ -168,11 +208,23 @@ export function buildMeetRankingGroups(
 
 export function buildChallengeEventRankingGroups(
   results: RankingSourceResult[],
-  options: RankingDisplayOptions = {}
+  options: ChallengeRankingBuildOptions = {}
 ): ChallengeEventRankingGroup[] {
+  const minRank = options.minRank;
+  const maxRank = options.maxRank;
+  const gradeRangeMode = options.gradeRangeMode ?? "existing";
+  const excludeOtherGender = options.excludeOtherGender ?? false;
   const eventMap = new Map<string, Map<number, ChallengeGradeRankingGroup>>();
 
   for (const result of results) {
+    if (!isRankInRange(result.rank, minRank, maxRank)) {
+      continue;
+    }
+
+    if (excludeOtherGender && result.event.gender === "other") {
+      continue;
+    }
+
     const eventTitle = result.event.title;
 
     if (!eventMap.has(eventTitle)) {
@@ -214,16 +266,20 @@ export function buildChallengeEventRankingGroups(
   }
 
   return Array.from(eventMap.entries())
-    .map(([eventTitle, byGrade]) => ({
-      eventTitle,
-      gradeGroups: Array.from(byGrade.values())
-        .map((gradeGroup) => ({
-          ...gradeGroup,
-          maleEntries: sortRankingEntries(gradeGroup.maleEntries),
-          femaleEntries: sortRankingEntries(gradeGroup.femaleEntries)
-        }))
-        .sort((a, b) => a.grade - b.grade)
-    }))
+    .map(([eventTitle, byGrade]) => {
+      const grades = buildGradeSequence(Array.from(byGrade.keys()), gradeRangeMode);
+      return {
+        eventTitle,
+        gradeGroups: grades.map((grade) => {
+          const existing = byGrade.get(grade);
+          return {
+            grade,
+            maleEntries: sortRankingEntries(existing?.maleEntries ?? []),
+            femaleEntries: sortRankingEntries(existing?.femaleEntries ?? [])
+          };
+        })
+      };
+    })
     .sort((a, b) => a.eventTitle.localeCompare(b.eventTitle, "ja", { numeric: true }));
 }
 

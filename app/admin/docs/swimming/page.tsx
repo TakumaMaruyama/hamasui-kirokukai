@@ -8,6 +8,9 @@ export default function SwimmingDocsPage() {
         <p className="notice">
           記録証・賞状は年・月・曜日で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
         </p>
+        <p className="notice">
+          ランキングは種目ごとに男女左右で1〜3位を出力し、学年は最小学年から最大学年まで欠番なしで表示されます。
+        </p>
       </header>
       <div className="card">
         <DocsAction
@@ -21,7 +24,7 @@ export default function SwimmingDocsPage() {
           filename="swimming_certificates.zip"
         />
         <DocsAction
-          title="ランキングPDFを生成（月ごと）"
+          title="ランキングPDFを生成（月ごと・男女左右1〜3位）"
           endpoint="/api/admin/docs/swimming/rankings"
           filename="swimming_rankings.zip"
           allowFullName={false}

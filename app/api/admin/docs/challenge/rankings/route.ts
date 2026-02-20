@@ -81,7 +81,11 @@ export async function POST(request: Request) {
 
     const groups = buildChallengeEventRankingGroups(rankedRows, {
       preschoolNameMode: "kanaOnly",
-      preschoolMaxGrade: 3
+      preschoolMaxGrade: 3,
+      minRank: 1,
+      maxRank: 3,
+      gradeRangeMode: "minToMax",
+      excludeOtherGender: true
     });
     if (groups.length === 0) {
       return NextResponse.json({ message: "条件に一致するランキングデータがありません" }, { status: 400 });

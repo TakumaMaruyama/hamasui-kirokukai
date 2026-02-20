@@ -215,4 +215,77 @@ describe("buildChallengeEventRankingGroups", () => {
     expect(groups[0]?.gradeGroups[0]?.femaleEntries[0]?.displayName).toBe("鈴木 花子");
     expect(groups[0]?.gradeGroups[1]?.maleEntries[0]?.displayName).toBe("高橋 次郎");
   });
+
+  it("filters challenge entries by rank range and excludes other gender when configured", () => {
+    const groups = buildChallengeEventRankingGroups(
+      [
+        {
+          rank: 1,
+          timeText: "20.00",
+          athlete: { fullName: "男子1位" },
+          event: { id: "e1", title: "15mキック", grade: 2, gender: "male" }
+        },
+        {
+          rank: 2,
+          timeText: "21.00",
+          athlete: { fullName: "女子2位" },
+          event: { id: "e2", title: "15mキック", grade: 2, gender: "female" }
+        },
+        {
+          rank: 3,
+          timeText: "22.00",
+          athlete: { fullName: "女子3位" },
+          event: { id: "e3", title: "15mキック", grade: 2, gender: "female" }
+        },
+        {
+          rank: 4,
+          timeText: "23.00",
+          athlete: { fullName: "男子4位" },
+          event: { id: "e4", title: "15mキック", grade: 2, gender: "male" }
+        },
+        {
+          rank: 2,
+          timeText: "21.50",
+          athlete: { fullName: "その他2位" },
+          event: { id: "e5", title: "15mキック", grade: 2, gender: "other" }
+        }
+      ],
+      {
+        minRank: 1,
+        maxRank: 3,
+        excludeOtherGender: true
+      }
+    );
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["男子1位"]);
+    expect(groups[0]?.gradeGroups[0]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["女子2位", "女子3位"]);
+  });
+
+  it("fills missing grades continuously when gradeRangeMode is minToMax", () => {
+    const groups = buildChallengeEventRankingGroups(
+      [
+        {
+          rank: 1,
+          timeText: "20.00",
+          athlete: { fullName: "年少" },
+          event: { id: "e1", title: "15mキック", grade: 1, gender: "male" }
+        },
+        {
+          rank: 1,
+          timeText: "21.00",
+          athlete: { fullName: "年長" },
+          event: { id: "e2", title: "15mキック", grade: 3, gender: "female" }
+        }
+      ],
+      {
+        gradeRangeMode: "minToMax"
+      }
+    );
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.gradeGroups.map((group) => group.grade)).toEqual([1, 2, 3]);
+    expect(groups[0]?.gradeGroups[1]?.maleEntries).toHaveLength(0);
+    expect(groups[0]?.gradeGroups[1]?.femaleEntries).toHaveLength(0);
+  });
 });

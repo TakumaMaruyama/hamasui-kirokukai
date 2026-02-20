@@ -64,8 +64,10 @@ CSVの program 列は存在しない。取込時の画面/APIパスで program �
 - `POST /api/admin/docs/*` はJSONで条件指定できる（任意）。
 - `year` + `month` + `weekday` で「指定年月の曜日ごと」に出力可能。
 - `year` + `month` + `fullName` で「特定の子どもの指定年月」を出力可能（`weekday` 併用可）。
-- ランキングPDF（`/api/admin/docs/swimming/rankings`）は、記録会ごとに1ファイル生成する（種目ごとの別ファイルは作らない）。
-- チャレンジランキングPDF（`/api/admin/docs/challenge/rankings`）は年月指定必須で、同月・同種目・同学年・同性別の全順位を生成する。
+- 月次ランキングPDF（`/api/admin/docs/swimming/rankings` と `/api/admin/docs/challenge/rankings`）は年月指定必須。
+- 月次ランキングPDFはA4で種目ごとに男女左右2列表示、各学年の1〜3位を出力する（同順位は全員掲載）。
+- 月次ランキングPDFの学年は種目ごとに最小学年〜最大学年を連続表示し、欠番学年も空欄で出力する。
+- 月次ランキングPDFでは `gender = other` は出力対象外とする。
 - チャレンジCSV取り込みは学年 `1..15`（年少〜高校3年生）のみを有効とし、範囲外はスキップして件数を通知する。
 
 ## DBスキーマ要約
