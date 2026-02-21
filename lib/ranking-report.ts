@@ -4,6 +4,7 @@ export type RankingSourceResult = {
   rank: number;
   timeText: string;
   isNewRecordInTargetMonth?: boolean;
+  recordMonthLabel?: string;
   athlete: { fullName: string; fullNameKana?: string | null };
   event: {
     id: string;
@@ -37,6 +38,7 @@ export type RankingEntry = {
   displayName: string;
   timeText: string;
   isNewRecordInTargetMonth?: boolean;
+  recordMonthLabel?: string;
 };
 
 export type RankingGroup = {
@@ -213,6 +215,10 @@ function isWithinRange(date: Date, start: Date, end: Date): boolean {
   return time >= start.getTime() && time < end.getTime();
 }
 
+function formatHeldMonthLabel(date: Date): string {
+  return `${date.getUTCFullYear()}年${date.getUTCMonth() + 1}月`;
+}
+
 function buildGradeSequence(grades: number[], mode: ChallengeGradeRangeMode): number[] {
   const sortedUnique = [...new Set(grades)].sort((a, b) => a - b);
   if (mode !== "minToMax" || sortedUnique.length === 0) {
@@ -259,6 +265,7 @@ export function buildMeetRankingGroups(
         options
       ),
       timeText: result.timeText,
+      ...(result.recordMonthLabel ? { recordMonthLabel: result.recordMonthLabel } : {}),
       ...(result.isNewRecordInTargetMonth ? { isNewRecordInTargetMonth: true } : {})
     });
   }
@@ -333,6 +340,7 @@ export function buildChallengeEventRankingGroups(
         options
       ),
       timeText: result.timeText,
+      ...(result.recordMonthLabel ? { recordMonthLabel: result.recordMonthLabel } : {}),
       ...(result.isNewRecordInTargetMonth ? { isNewRecordInTargetMonth: true } : {})
     };
 
@@ -447,6 +455,7 @@ function buildHistoricalFirstTopRows(
       topRows.push({
         rank: 1,
         timeText: entry.timeText,
+        recordMonthLabel: formatHeldMonthLabel(entry.meet.heldOn),
         ...(isNewRecordInTargetMonth ? { isNewRecordInTargetMonth: true } : {}),
         athlete: { fullName: entry.athlete.fullName },
         event: {

@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     const buffer = await renderChallengeRankingPdf({
       periodLabel,
       groups,
-      highlightLegend: "★はこの月に新しく歴代1位になった記録",
+      highlightLegend: "重要: ★NEW はこの月に新しく歴代1位になった記録",
       rankRange: { min: 1, max: 1 }
     });
     const name = `${filter.year}年${filter.month}月_swimming_historical_firsts.pdf`;

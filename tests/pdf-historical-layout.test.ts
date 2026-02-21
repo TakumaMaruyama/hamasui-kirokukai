@@ -26,6 +26,35 @@ vi.mock("@react-pdf/renderer", () => ({
 }));
 
 describe("renderChallengeRankingPdf historical layout", () => {
+  function collectTextNodes(node: unknown): string[] {
+    const texts: string[] = [];
+
+    const walk = (value: unknown) => {
+      if (value === null || typeof value === "undefined" || typeof value === "boolean") {
+        return;
+      }
+
+      if (typeof value === "string" || typeof value === "number") {
+        texts.push(String(value));
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          walk(child);
+        }
+        return;
+      }
+
+      if (typeof value === "object" && "props" in (value as any)) {
+        walk((value as any).props?.children);
+      }
+    };
+
+    walk(node);
+    return texts;
+  }
+
   beforeEach(() => {
     mockState.lastDocument = null;
   });
@@ -67,5 +96,44 @@ describe("renderChallengeRankingPdf historical layout", () => {
     const pages = React.Children.toArray(root.props.children) as any[];
     expect(pages).toHaveLength(groups.length);
     expect(pages.every((page) => page.type === "Page")).toBe(true);
+  });
+
+  it("renders NEW marker, legend text, and record year-month", async () => {
+    const groups: ChallengeEventRankingGroup[] = [
+      {
+        eventTitle: "15mクロール",
+        gradeGroups: [
+          {
+            grade: 3,
+            maleEntries: [
+              {
+                rank: 1,
+                fullName: "新記録者",
+                displayName: "新記録者",
+                timeText: "18.00",
+                isNewRecordInTargetMonth: true,
+                recordMonthLabel: "2025年9月"
+              }
+            ],
+            femaleEntries: []
+          }
+        ]
+      }
+    ];
+
+    await renderChallengeRankingPdf({
+      periodLabel: "2025年9月 歴代1位記録一覧",
+      groups,
+      highlightLegend: "重要: ★NEW はこの月に新しく歴代1位になった記録",
+      rankRange: { min: 1, max: 1 }
+    });
+
+    const root = mockState.lastDocument as any;
+    const texts = collectTextNodes(root);
+
+    expect(texts.some((text) => text.includes("重要: ★NEW はこの月に新しく歴代1位になった記録"))).toBe(true);
+    expect(texts.some((text) => text.includes("★NEW 新記録者"))).toBe(true);
+    expect(texts.some((text) => text.includes("タイム・年月"))).toBe(true);
+    expect(texts.some((text) => text.includes("2025年9月"))).toBe(true);
   });
 });

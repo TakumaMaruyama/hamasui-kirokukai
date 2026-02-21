@@ -238,14 +238,25 @@ const styles = StyleSheet.create({
     width: "33%",
     textAlign: "center"
   },
+  challengeCellTimeWithMonth: {
+    lineHeight: 1.3
+  },
   challengeHeaderText: {
     fontSize: 10,
     fontWeight: 700
   },
   challengeLegend: {
-    marginBottom: 8,
-    fontSize: 10,
-    color: "#555555"
+    marginBottom: 10,
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#4a2f00",
+    backgroundColor: "#fff2b3",
+    borderWidth: 1,
+    borderColor: "#e2b400",
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    textAlign: "center"
   },
   empty: {
     marginTop: 24,
@@ -444,10 +455,23 @@ function formatChallengeEntryName(entry: RankingEntry | null): string {
 
   const name = entry.displayName || entry.fullName;
   if (entry.isNewRecordInTargetMonth) {
-    return `★${name}`;
+    return `★NEW ${name}`;
   }
 
   return name;
+}
+
+function formatChallengeEntryTime(entry: RankingEntry | null): string {
+  if (!entry) {
+    return "";
+  }
+
+  const timeText = formatTimeForDocument({ timeText: entry.timeText });
+  if (!entry.recordMonthLabel) {
+    return timeText;
+  }
+
+  return `${timeText}\n${entry.recordMonthLabel}`;
 }
 
 function buildChallengeGenderTable({
@@ -464,13 +488,16 @@ function buildChallengeGenderTable({
   tableStyle: any;
 }): ReactElement {
   const palette = challengeHeaderPalette(side);
+  const hasRecordMonth = entries.some((row) => Boolean(row.entry?.recordMonthLabel));
 
   return (
     <View style={[styles.challengeGenderTable, tableStyle]}>
       <View style={[styles.challengeTableRow, { backgroundColor: palette.background }]}>
         <Text style={[styles.challengeCell, styles.challengeCellRank, styles.challengeHeaderText, { color: palette.text }]}>{gradeLabel}</Text>
         <Text style={[styles.challengeCell, styles.challengeCellName, styles.challengeHeaderText, { color: palette.text }]}>氏名</Text>
-        <Text style={[styles.challengeCell, styles.challengeCellTime, styles.challengeHeaderText, { color: palette.text }]}>タイム</Text>
+        <Text style={[styles.challengeCell, styles.challengeCellTime, styles.challengeHeaderText, { color: palette.text }]}>
+          {hasRecordMonth ? "タイム・年月" : "タイム"}
+        </Text>
       </View>
       {entries.map((entry, index) => (
         <View
@@ -479,8 +506,8 @@ function buildChallengeGenderTable({
         >
           <Text style={[styles.challengeCell, styles.challengeCellRank]}>{entry.rankLabel}</Text>
           <Text style={[styles.challengeCell, styles.challengeCellName]}>{formatChallengeEntryName(entry.entry)}</Text>
-          <Text style={[styles.challengeCell, styles.challengeCellTime]}>
-            {entry.entry ? formatTimeForDocument({ timeText: entry.entry.timeText }) : ""}
+          <Text style={hasRecordMonth ? [styles.challengeCell, styles.challengeCellTime, styles.challengeCellTimeWithMonth] : [styles.challengeCell, styles.challengeCellTime]}>
+            {formatChallengeEntryTime(entry.entry)}
           </Text>
         </View>
       ))}

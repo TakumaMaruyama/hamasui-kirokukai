@@ -204,6 +204,21 @@ describe("buildHistoricalFirstChallengeGroups", () => {
     expect(maleEntries.every((entry) => entry.isNewRecordInTargetMonth)).toBe(true);
   });
 
+  it("includes held year-month in historical first entries", () => {
+    const groups = buildHistoricalFirstChallengeGroups([
+      {
+        timeMs: 38000,
+        timeText: "00:38.00",
+        athlete: { id: "new", fullName: "新記録者" },
+        event: { title: "25mクロール", distanceM: 25, style: "クロール", grade: 5, gender: "male" },
+        meet: { heldOn: new Date("2025-09-10T00:00:00.000Z") }
+      }
+    ]);
+
+    const entry = groups[0]?.gradeGroups[0]?.maleEntries[0];
+    expect(entry?.recordMonthLabel).toBe("2025年9月");
+  });
+
   it("uses existing grade groups for historical output and does not fill missing grades", () => {
     const groups = buildHistoricalFirstChallengeGroups([
       {
