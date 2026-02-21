@@ -238,6 +238,94 @@ describe("buildChallengeEventRankingGroups", () => {
     expect(groups[1]?.eventTitle).toBe("25mクロール");
   });
 
+  it("sorts event groups by the fixed swimming event order first", () => {
+    const groups = buildChallengeEventRankingGroups([
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "平泳ぎ30" },
+        event: { id: "e6", title: "30m平泳ぎ", distanceM: 30, style: "平泳ぎ", grade: 3, gender: "male" }
+      },
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "板キック15" },
+        event: { id: "e1", title: "15m板キック", distanceM: 15, style: "キック", grade: 3, gender: "male" }
+      },
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "板クロール15" },
+        event: { id: "e2", title: "15m板クロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" }
+      },
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "クロール30" },
+        event: { id: "e4", title: "30mクロール", distanceM: 30, style: "クロール", grade: 3, gender: "male" }
+      },
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "クロール15" },
+        event: { id: "e3", title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" }
+      },
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "平泳ぎ15" },
+        event: { id: "e5", title: "15m平泳ぎ", distanceM: 15, style: "平泳ぎ", grade: 3, gender: "male" }
+      }
+    ]);
+
+    expect(groups.map((group) => group.eventTitle)).toEqual([
+      "15m板キック",
+      "15m板クロール",
+      "15mクロール",
+      "30mクロール",
+      "15m平泳ぎ",
+      "30m平泳ぎ"
+    ]);
+  });
+
+  it("places non-fixed events after the fixed event list", () => {
+    const groups = buildChallengeEventRankingGroups([
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "固定種目" },
+        event: { id: "e1", title: "15m板キック", distanceM: 15, style: "キック", grade: 3, gender: "male" }
+      },
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "対象外種目" },
+        event: { id: "e2", title: "10mテスト", distanceM: 10, style: "other", grade: 3, gender: "male" }
+      }
+    ]);
+
+    expect(groups.map((group) => group.eventTitle)).toEqual(["15m板キック", "10mテスト"]);
+  });
+
+  it("keeps fixed ordering even when titles use full-width and spacing variants", () => {
+    const groups = buildChallengeEventRankingGroups([
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "板キック" },
+        event: { id: "e1", title: "15ｍ  板キック", distanceM: 15, style: "キック", grade: 3, gender: "male" }
+      },
+      {
+        rank: 1,
+        timeText: "20.00",
+        athlete: { fullName: "板クロール" },
+        event: { id: "e2", title: "15M 板クロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" }
+      }
+    ]);
+
+    expect(groups.map((group) => group.eventTitle)).toEqual(["15ｍ 板キック", "15M 板クロール"]);
+  });
+
   it("merges challenge rows with title variants into one event group", () => {
     const groups = buildChallengeEventRankingGroups([
       {

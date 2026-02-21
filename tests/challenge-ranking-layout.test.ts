@@ -55,4 +55,36 @@ describe("buildChallengeRankingTableRows", () => {
     expect(rows[2]?.entry?.fullName).toBe("3位A");
     expect(rows[3]?.entry?.fullName).toBe("3位B");
   });
+
+  it("supports limiting rows to first place only", () => {
+    const rows = buildChallengeRankingTableRows(
+      [
+        {
+          rank: 1,
+          fullName: "1位選手",
+          displayName: "1位選手",
+          timeText: "18.00"
+        },
+        {
+          rank: 2,
+          fullName: "2位選手",
+          displayName: "2位選手",
+          timeText: "19.00"
+        }
+      ],
+      { minRank: 1, maxRank: 1 }
+    );
+
+    expect(rows).toEqual([
+      {
+        rankLabel: "1位",
+        entry: {
+          rank: 1,
+          fullName: "1位選手",
+          displayName: "1位選手",
+          timeText: "18.00"
+        }
+      }
+    ]);
+  });
 });

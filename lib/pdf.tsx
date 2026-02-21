@@ -852,26 +852,37 @@ export async function renderRankingPdf({
 export async function renderChallengeRankingPdf({
   periodLabel,
   groups,
-  highlightLegend
+  highlightLegend,
+  rankRange
 }: {
   periodLabel: string;
   groups: ChallengeEventRankingGroup[];
   highlightLegend?: string;
+  rankRange?: { min: number; max: number };
 }): Promise<Buffer> {
+  const minRank = Math.max(1, Math.floor(rankRange?.min ?? 1));
+  const maxRank = Math.max(minRank, Math.floor(rankRange?.max ?? 3));
+
   return renderPdfDocument(
     <Document>
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>{periodLabel} ランキング</Text>
-        {highlightLegend ? <Text style={styles.challengeLegend}>{highlightLegend}</Text> : null}
-        {groups.length === 0 ? (
+      {groups.length === 0 ? (
+        <Page size="A4" style={styles.page}>
+          <Text style={styles.title}>{periodLabel} ランキング</Text>
           <Text style={styles.empty}>ランキング対象データがありません。</Text>
-        ) : (
-          groups.map((eventGroup) => (
+        </Page>
+      ) : (
+        groups.map((eventGroup, index) => (
+          <Page key={`${periodLabel}-${eventGroup.eventTitle}-${index}`} size="A4" style={styles.page}>
+            <Text style={styles.title}>
+              {periodLabel} ランキング
+              {groups.length > 1 ? ` (${index + 1}/${groups.length})` : ""}
+            </Text>
+            {highlightLegend ? <Text style={styles.challengeLegend}>{highlightLegend}</Text> : null}
             <View key={eventGroup.eventTitle} style={styles.challengeEventSection}>
               <Text style={styles.challengeEventTitle}>{eventGroup.eventTitle}</Text>
               {eventGroup.gradeGroups.map((gradeGroup) => {
-                const maleRows = buildChallengeRankingTableRows(gradeGroup.maleEntries, { minRank: 1, maxRank: 3 });
-                const femaleRows = buildChallengeRankingTableRows(gradeGroup.femaleEntries, { minRank: 1, maxRank: 3 });
+                const maleRows = buildChallengeRankingTableRows(gradeGroup.maleEntries, { minRank, maxRank });
+                const femaleRows = buildChallengeRankingTableRows(gradeGroup.femaleEntries, { minRank, maxRank });
                 const gradeLabel = buildChallengeGradeLabel(gradeGroup.grade);
 
                 return (
@@ -896,9 +907,9 @@ export async function renderChallengeRankingPdf({
                 );
               })}
             </View>
-          ))
-        )}
-      </Page>
+          </Page>
+        ))
+      )}
     </Document>
   );
 }

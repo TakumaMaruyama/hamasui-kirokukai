@@ -87,6 +87,14 @@ const GENDER_ORDER: Record<Gender, number> = {
 };
 
 const DEFAULT_PRESCHOOL_MAX_GRADE = 3;
+const FIXED_EVENT_ORDER = [
+  "15m板キック",
+  "15m板クロール",
+  "15mクロール",
+  "30mクロール",
+  "15m平泳ぎ",
+  "30m平泳ぎ"
+] as const;
 
 function normalizeKana(value: string | null | undefined): string {
   return value?.replace(/\s+/g, " ").trim() ?? "";
@@ -142,6 +150,10 @@ function normalizeEventTitle(value: string): string {
     .toLowerCase();
 }
 
+function normalizeEventTitleForOrder(value: string): string {
+  return normalizeEventTitle(value).replace(/\s+/g, "");
+}
+
 function normalizeEventTitleForDisplay(value: string): string {
   return value
     .replace(/\u3000/g, " ")
@@ -149,9 +161,35 @@ function normalizeEventTitleForDisplay(value: string): string {
     .trim();
 }
 
+const FIXED_EVENT_ORDER_MAP = new Map<string, number>(
+  FIXED_EVENT_ORDER.map((title, index) => [normalizeEventTitleForOrder(title), index])
+);
+
+function compareChallengeEventTitles(left: string, right: string): number {
+  const leftIndex = FIXED_EVENT_ORDER_MAP.get(normalizeEventTitleForOrder(left));
+  const rightIndex = FIXED_EVENT_ORDER_MAP.get(normalizeEventTitleForOrder(right));
+
+  const leftInFixed = typeof leftIndex === "number";
+  const rightInFixed = typeof rightIndex === "number";
+
+  if (leftInFixed && rightInFixed && leftIndex !== rightIndex) {
+    return leftIndex - rightIndex;
+  }
+
+  if (leftInFixed && !rightInFixed) {
+    return -1;
+  }
+
+  if (!leftInFixed && rightInFixed) {
+    return 1;
+  }
+
+  return left.localeCompare(right, "ja", { numeric: true });
+}
+
 function toChallengeEventGroupKey(event: RankingSourceResult["event"]): string {
   const distancePart = Number.isFinite(event.distanceM) ? String(event.distanceM) : "";
-  return `${normalizeEventTitle(event.title)}:${distancePart}`;
+  return `${normalizeEventTitleForOrder(event.title)}:${distancePart}`;
 }
 
 function isRankInRange(rank: number, minRank?: number, maxRank?: number): boolean {
@@ -322,7 +360,7 @@ export function buildChallengeEventRankingGroups(
         })
       };
     })
-    .sort((a, b) => a.eventTitle.localeCompare(b.eventTitle, "ja", { numeric: true }));
+    .sort((a, b) => compareChallengeEventTitles(a.eventTitle, b.eventTitle));
 }
 
 function toEventClassKey(result: HistoricalFirstSourceResult): string {
