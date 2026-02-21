@@ -3,10 +3,13 @@ import { Gender } from "@prisma/client";
 export type RankingSourceResult = {
   rank: number;
   timeText: string;
+  isNewRecordInTargetMonth?: boolean;
   athlete: { fullName: string; fullNameKana?: string | null };
   event: {
     id: string;
     title: string;
+    distanceM?: number;
+    style?: string;
     grade: number;
     gender: Gender;
   };
@@ -15,7 +18,7 @@ export type RankingSourceResult = {
 export type HistoricalFirstSourceResult = {
   timeMs: number;
   timeText: string;
-  athlete: { fullName: string };
+  athlete: { id?: string; fullName: string };
   event: {
     title: string;
     distanceM: number;
@@ -33,6 +36,7 @@ export type RankingEntry = {
   fullName: string;
   displayName: string;
   timeText: string;
+  isNewRecordInTargetMonth?: boolean;
 };
 
 export type RankingGroup = {
@@ -65,6 +69,13 @@ export type RankingDisplayOptions = {
 export type ChallengeRankingBuildOptions = RankingDisplayOptions & {
   minRank?: number;
   maxRank?: number;
+  gradeRangeMode?: ChallengeGradeRangeMode;
+  excludeOtherGender?: boolean;
+};
+
+export type HistoricalFirstChallengeBuildOptions = {
+  targetMonthStart?: Date;
+  targetMonthEnd?: Date;
   gradeRangeMode?: ChallengeGradeRangeMode;
   excludeOtherGender?: boolean;
 };
@@ -122,6 +133,27 @@ function sortRankingEntries(entries: RankingEntry[]): RankingEntry[] {
   });
 }
 
+function normalizeEventTitle(value: string): string {
+  return value
+    .replace(/\u3000/g, " ")
+    .replace(/[！-～]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0))
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function normalizeEventTitleForDisplay(value: string): string {
+  return value
+    .replace(/\u3000/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function toChallengeEventGroupKey(event: RankingSourceResult["event"]): string {
+  const distancePart = Number.isFinite(event.distanceM) ? String(event.distanceM) : "";
+  return `${normalizeEventTitle(event.title)}:${distancePart}`;
+}
+
 function isRankInRange(rank: number, minRank?: number, maxRank?: number): boolean {
   if (!Number.isFinite(rank) || rank <= 0) {
     return false;
@@ -136,6 +168,11 @@ function isRankInRange(rank: number, minRank?: number, maxRank?: number): boolea
   }
 
   return true;
+}
+
+function isWithinRange(date: Date, start: Date, end: Date): boolean {
+  const time = date.getTime();
+  return time >= start.getTime() && time < end.getTime();
 }
 
 function buildGradeSequence(grades: number[], mode: ChallengeGradeRangeMode): number[] {
@@ -183,7 +220,8 @@ export function buildMeetRankingGroups(
         },
         options
       ),
-      timeText: result.timeText
+      timeText: result.timeText,
+      ...(result.isNewRecordInTargetMonth ? { isNewRecordInTargetMonth: true } : {})
     });
   }
 
@@ -214,7 +252,7 @@ export function buildChallengeEventRankingGroups(
   const maxRank = options.maxRank;
   const gradeRangeMode = options.gradeRangeMode ?? "existing";
   const excludeOtherGender = options.excludeOtherGender ?? false;
-  const eventMap = new Map<string, Map<number, ChallengeGradeRankingGroup>>();
+  const eventMap = new Map<string, { eventTitle: string; byGrade: Map<number, ChallengeGradeRankingGroup> }>();
 
   for (const result of results) {
     if (!isRankInRange(result.rank, minRank, maxRank)) {
@@ -225,13 +263,16 @@ export function buildChallengeEventRankingGroups(
       continue;
     }
 
-    const eventTitle = result.event.title;
-
-    if (!eventMap.has(eventTitle)) {
-      eventMap.set(eventTitle, new Map<number, ChallengeGradeRankingGroup>());
+    const eventKey = toChallengeEventGroupKey(result.event);
+    if (!eventMap.has(eventKey)) {
+      eventMap.set(eventKey, {
+        eventTitle: normalizeEventTitleForDisplay(result.event.title),
+        byGrade: new Map<number, ChallengeGradeRankingGroup>()
+      });
     }
 
-    const byGrade = eventMap.get(eventTitle)!;
+    const eventGroup = eventMap.get(eventKey)!;
+    const byGrade = eventGroup.byGrade;
 
     if (!byGrade.has(result.event.grade)) {
       byGrade.set(result.event.grade, {
@@ -253,7 +294,8 @@ export function buildChallengeEventRankingGroups(
         },
         options
       ),
-      timeText: result.timeText
+      timeText: result.timeText,
+      ...(result.isNewRecordInTargetMonth ? { isNewRecordInTargetMonth: true } : {})
     };
 
     if (result.event.gender === "male") {
@@ -265,8 +307,8 @@ export function buildChallengeEventRankingGroups(
     gradeGroup.femaleEntries.push(entry);
   }
 
-  return Array.from(eventMap.entries())
-    .map(([eventTitle, byGrade]) => {
+  return Array.from(eventMap.values())
+    .map(({ eventTitle, byGrade }) => {
       const grades = buildGradeSequence(Array.from(byGrade.keys()), gradeRangeMode);
       return {
         eventTitle,
@@ -293,7 +335,34 @@ function toEventClassKey(result: HistoricalFirstSourceResult): string {
   ].join(":");
 }
 
-export function buildHistoricalFirstRankingGroups(results: HistoricalFirstSourceResult[]): RankingGroup[] {
+function sortHistoricalEntries(entries: HistoricalFirstSourceResult[]): HistoricalFirstSourceResult[] {
+  return [...entries].sort((a, b) => {
+    if (a.timeMs !== b.timeMs) {
+      return a.timeMs - b.timeMs;
+    }
+
+    const dateDiff = a.meet.heldOn.getTime() - b.meet.heldOn.getTime();
+    if (dateDiff !== 0) {
+      return dateDiff;
+    }
+
+    return a.athlete.fullName.localeCompare(b.athlete.fullName, "ja");
+  });
+}
+
+function toHistoricalAthleteKey(input: HistoricalFirstSourceResult["athlete"]): string {
+  const athleteId = input.id?.trim();
+  if (athleteId) {
+    return `id:${athleteId}`;
+  }
+
+  return `name:${input.fullName}`;
+}
+
+function buildHistoricalFirstTopRows(
+  results: HistoricalFirstSourceResult[],
+  options: Pick<HistoricalFirstChallengeBuildOptions, "targetMonthStart" | "targetMonthEnd"> = {}
+): RankingSourceResult[] {
   const byEventClass = new Map<string, HistoricalFirstSourceResult[]>();
 
   for (const result of results) {
@@ -306,21 +375,11 @@ export function buildHistoricalFirstRankingGroups(results: HistoricalFirstSource
   }
 
   const topRows: RankingSourceResult[] = [];
+  const targetMonthStart = options.targetMonthStart;
+  const targetMonthEnd = options.targetMonthEnd;
 
   for (const [eventKey, entries] of byEventClass.entries()) {
-    const sorted = [...entries].sort((a, b) => {
-      if (a.timeMs !== b.timeMs) {
-        return a.timeMs - b.timeMs;
-      }
-
-      const dateDiff = a.meet.heldOn.getTime() - b.meet.heldOn.getTime();
-      if (dateDiff !== 0) {
-        return dateDiff;
-      }
-
-      return a.athlete.fullName.localeCompare(b.athlete.fullName, "ja");
-    });
-
+    const sorted = sortHistoricalEntries(entries);
     const firstTime = sorted[0]?.timeMs;
     if (typeof firstTime !== "number") {
       continue;
@@ -331,13 +390,32 @@ export function buildHistoricalFirstRankingGroups(results: HistoricalFirstSource
         break;
       }
 
+      const isInTargetMonth =
+        targetMonthStart && targetMonthEnd
+          ? isWithinRange(entry.meet.heldOn, targetMonthStart, targetMonthEnd)
+          : false;
+      const athleteKey = toHistoricalAthleteKey(entry.athlete);
+      const hasPriorTopForAthlete =
+        isInTargetMonth && targetMonthStart
+          ? entries.some(
+              (candidate) =>
+                toHistoricalAthleteKey(candidate.athlete) === athleteKey &&
+                candidate.timeMs === firstTime &&
+                candidate.meet.heldOn.getTime() < targetMonthStart.getTime()
+            )
+          : false;
+      const isNewRecordInTargetMonth = Boolean(isInTargetMonth && !hasPriorTopForAthlete);
+
       topRows.push({
         rank: 1,
         timeText: entry.timeText,
+        ...(isNewRecordInTargetMonth ? { isNewRecordInTargetMonth: true } : {}),
         athlete: { fullName: entry.athlete.fullName },
         event: {
           id: eventKey,
           title: entry.event.title,
+          distanceM: entry.event.distanceM,
+          style: entry.event.style,
           grade: entry.event.grade,
           gender: entry.event.gender
         }
@@ -345,7 +423,31 @@ export function buildHistoricalFirstRankingGroups(results: HistoricalFirstSource
     }
   }
 
+  return topRows;
+}
+
+export function buildHistoricalFirstRankingGroups(results: HistoricalFirstSourceResult[]): RankingGroup[] {
+  const topRows = buildHistoricalFirstTopRows(results);
+
   return buildMeetRankingGroups(topRows, {
     preschoolNameMode: "none"
+  });
+}
+
+export function buildHistoricalFirstChallengeGroups(
+  results: HistoricalFirstSourceResult[],
+  options: HistoricalFirstChallengeBuildOptions = {}
+): ChallengeEventRankingGroup[] {
+  const topRows = buildHistoricalFirstTopRows(results, {
+    targetMonthStart: options.targetMonthStart,
+    targetMonthEnd: options.targetMonthEnd
+  });
+
+  return buildChallengeEventRankingGroups(topRows, {
+    preschoolNameMode: "none",
+    minRank: 1,
+    maxRank: 1,
+    gradeRangeMode: options.gradeRangeMode ?? "minToMax",
+    excludeOtherGender: options.excludeOtherGender ?? true
   });
 }

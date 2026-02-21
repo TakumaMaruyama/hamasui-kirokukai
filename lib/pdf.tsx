@@ -3,7 +3,7 @@ import path from "node:path";
 import { Gender } from "@prisma/client";
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
-import type { ChallengeEventRankingGroup, RankingGroup } from "./ranking-report";
+import type { ChallengeEventRankingGroup, RankingEntry, RankingGroup } from "./ranking-report";
 import { buildChallengeRankingTableRows, type ChallengeRankingTableRow } from "./challenge-ranking-layout";
 import { formatTimeForDocument } from "./display-time";
 import { formatGradeLabel, formatGradeShortLabel } from "./grade";
@@ -242,6 +242,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 700
   },
+  challengeLegend: {
+    marginBottom: 8,
+    fontSize: 10,
+    color: "#555555"
+  },
   empty: {
     marginTop: 24,
     textAlign: "center",
@@ -432,6 +437,19 @@ function buildChallengeGradeLabel(grade: number): string {
   return formatGradeShortLabel(grade);
 }
 
+function formatChallengeEntryName(entry: RankingEntry | null): string {
+  if (!entry) {
+    return "";
+  }
+
+  const name = entry.displayName || entry.fullName;
+  if (entry.isNewRecordInTargetMonth) {
+    return `★${name}`;
+  }
+
+  return name;
+}
+
 function buildChallengeGenderTable({
   side,
   gradeLabel,
@@ -460,7 +478,7 @@ function buildChallengeGenderTable({
           style={index === entries.length - 1 ? [styles.challengeTableRow, styles.challengeTableRowLast] : styles.challengeTableRow}
         >
           <Text style={[styles.challengeCell, styles.challengeCellRank]}>{entry.rankLabel}</Text>
-          <Text style={[styles.challengeCell, styles.challengeCellName]}>{entry.entry?.displayName || entry.entry?.fullName || ""}</Text>
+          <Text style={[styles.challengeCell, styles.challengeCellName]}>{formatChallengeEntryName(entry.entry)}</Text>
           <Text style={[styles.challengeCell, styles.challengeCellTime]}>
             {entry.entry ? formatTimeForDocument({ timeText: entry.entry.timeText }) : ""}
           </Text>
@@ -833,15 +851,18 @@ export async function renderRankingPdf({
 
 export async function renderChallengeRankingPdf({
   periodLabel,
-  groups
+  groups,
+  highlightLegend
 }: {
   periodLabel: string;
   groups: ChallengeEventRankingGroup[];
+  highlightLegend?: string;
 }): Promise<Buffer> {
   return renderPdfDocument(
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>{periodLabel} ランキング</Text>
+        {highlightLegend ? <Text style={styles.challengeLegend}>{highlightLegend}</Text> : null}
         {groups.length === 0 ? (
           <Text style={styles.empty}>ランキング対象データがありません。</Text>
         ) : (

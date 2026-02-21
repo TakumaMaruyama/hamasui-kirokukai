@@ -1,28 +1,47 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { renderRankingPdf } from "@/lib/pdf";
+import { renderChallengeRankingPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
-import { buildHistoricalFirstRankingGroups } from "@/lib/ranking-report";
+import { parseDocsFilterInput } from "@/lib/docs-filter";
+import { buildHistoricalFirstChallengeGroups } from "@/lib/ranking-report";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+export async function POST(request: Request) {
   if (!isAdminAuthenticated()) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
+  const rawBody = await request
+    .json()
+    .catch(() => ({}));
+  const parsedFilter = parseDocsFilterInput(rawBody);
+
+  if (!parsedFilter.ok) {
+    return NextResponse.json({ message: parsedFilter.message }, { status: 400 });
+  }
+
   try {
+    const filter = parsedFilter.value;
+    if (!filter.hasMonthFilter || !filter.monthStart || !filter.monthEnd || !filter.year || !filter.month) {
+      return NextResponse.json({ message: "歴代1位出力には年・月の指定が必要です" }, { status: 400 });
+    }
+
     const rows = await prisma.result.findMany({
       where: {
         meet: {
-          program: "swimming"
+          program: "swimming",
+          heldOn: {
+            lt: filter.monthEnd
+          }
         }
       },
       include: {
         athlete: {
           select: {
+            id: true,
             fullName: true
           }
         },
@@ -39,11 +58,12 @@ export async function POST() {
       return NextResponse.json({ message: "ランキング対象データがありません" }, { status: 400 });
     }
 
-    const groups = buildHistoricalFirstRankingGroups(
+    const groups = buildHistoricalFirstChallengeGroups(
       rows.map((row) => ({
         timeMs: row.timeMs,
         timeText: row.timeText,
         athlete: {
+          id: row.athlete.id,
           fullName: row.athlete.fullName
         },
         event: {
@@ -56,16 +76,26 @@ export async function POST() {
         meet: {
           heldOn: row.meet.heldOn
         }
-      }))
+      })),
+      {
+        targetMonthStart: filter.monthStart,
+        targetMonthEnd: filter.monthEnd,
+        gradeRangeMode: "minToMax",
+        excludeOtherGender: true
+      }
     );
 
     if (groups.length === 0) {
       return NextResponse.json({ message: "ランキング対象データがありません" }, { status: 400 });
     }
 
-    const periodLabel = "歴代1位記録一覧";
-    const buffer = await renderRankingPdf({ periodLabel, groups });
-    const name = "swimming_historical_firsts.pdf";
+    const periodLabel = `${filter.year}年${filter.month}月 歴代1位記録一覧`;
+    const buffer = await renderChallengeRankingPdf({
+      periodLabel,
+      groups,
+      highlightLegend: "★はこの月に新しく歴代1位になった記録"
+    });
+    const name = `${filter.year}年${filter.month}月_swimming_historical_firsts.pdf`;
     const storageKey = await saveBuffer(`swimming/historical-firsts/${name}`, buffer);
 
     await prisma.generatedDoc.create({

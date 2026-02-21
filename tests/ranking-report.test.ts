@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildChallengeEventRankingGroups,
+  buildHistoricalFirstChallengeGroups,
   buildHistoricalFirstRankingGroups,
   buildMeetRankingGroups
 } from "../lib/ranking-report";
@@ -119,6 +120,75 @@ describe("buildHistoricalFirstRankingGroups", () => {
   });
 });
 
+describe("buildHistoricalFirstChallengeGroups", () => {
+  it("groups historical first records by event and splits male/female columns", () => {
+    const groups = buildHistoricalFirstChallengeGroups(
+      [
+        {
+          timeMs: 39000,
+          timeText: "00:39.00",
+          athlete: { id: "a1", fullName: "男子1位" },
+          event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" },
+          meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+        },
+        {
+          timeMs: 41000,
+          timeText: "00:41.00",
+          athlete: { id: "b1", fullName: "女子1位" },
+          event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "female" },
+          meet: { heldOn: new Date("2025-07-10T00:00:00.000Z") }
+        }
+      ],
+      {
+        targetMonthStart: new Date("2025-09-01T00:00:00.000Z"),
+        targetMonthEnd: new Date("2025-10-01T00:00:00.000Z")
+      }
+    );
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.eventTitle).toBe("15mクロール");
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["男子1位"]);
+    expect(groups[0]?.gradeGroups[0]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["女子1位"]);
+  });
+
+  it("marks swimmers who newly became all-time first in the target month", () => {
+    const groups = buildHistoricalFirstChallengeGroups(
+      [
+        {
+          timeMs: 39000,
+          timeText: "00:39.00",
+          athlete: { id: "old", fullName: "旧記録者" },
+          event: { title: "25mクロール", distanceM: 25, style: "クロール", grade: 5, gender: "male" },
+          meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+        },
+        {
+          timeMs: 38000,
+          timeText: "00:38.00",
+          athlete: { id: "new", fullName: "新記録者" },
+          event: { title: "25mクロール", distanceM: 25, style: "クロール", grade: 5, gender: "male" },
+          meet: { heldOn: new Date("2025-09-10T00:00:00.000Z") }
+        },
+        {
+          timeMs: 38000,
+          timeText: "00:38.00",
+          athlete: { id: "tie", fullName: "同タイ記録者" },
+          event: { title: "25mクロール", distanceM: 25, style: "クロール", grade: 5, gender: "male" },
+          meet: { heldOn: new Date("2025-09-20T00:00:00.000Z") }
+        }
+      ],
+      {
+        targetMonthStart: new Date("2025-09-01T00:00:00.000Z"),
+        targetMonthEnd: new Date("2025-10-01T00:00:00.000Z")
+      }
+    );
+
+    expect(groups).toHaveLength(1);
+    const maleEntries = groups[0]?.gradeGroups[0]?.maleEntries ?? [];
+    expect(maleEntries.map((entry) => entry.fullName)).toEqual(["新記録者", "同タイ記録者"]);
+    expect(maleEntries.every((entry) => entry.isNewRecordInTargetMonth)).toBe(true);
+  });
+});
+
 describe("buildChallengeEventRankingGroups", () => {
   it("groups by event title and grade, splitting male/female columns", () => {
     const groups = buildChallengeEventRankingGroups([
@@ -166,6 +236,34 @@ describe("buildChallengeEventRankingGroups", () => {
     expect(groups[0]?.gradeGroups[1]?.maleEntries[0]?.fullName).toBe("増山 連人");
     expect(groups[0]?.gradeGroups[1]?.femaleEntries[0]?.fullName).toBe("上原 梨菜");
     expect(groups[1]?.eventTitle).toBe("25mクロール");
+  });
+
+  it("merges challenge rows with title variants into one event group", () => {
+    const groups = buildChallengeEventRankingGroups([
+      {
+        rank: 1,
+        timeText: "18.00",
+        athlete: { fullName: "1位" },
+        event: { id: "e1", title: "25m クロール", distanceM: 25, style: "free", grade: 5, gender: "male" }
+      },
+      {
+        rank: 2,
+        timeText: "19.00",
+        athlete: { fullName: "2位" },
+        event: { id: "e2", title: "25ｍ  クロール", distanceM: 25, style: "free", grade: 5, gender: "male" }
+      },
+      {
+        rank: 3,
+        timeText: "20.00",
+        athlete: { fullName: "3位" },
+        event: { id: "e3", title: "25M　クロール", distanceM: 25, style: "free", grade: 5, gender: "male" }
+      }
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.eventTitle).toBe("25m クロール");
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.rank)).toEqual([1, 2, 3]);
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["1位", "2位", "3位"]);
   });
 
   it("keeps right column for non-male gender data", () => {

@@ -31,10 +31,9 @@ export default function SwimmingDocsPage() {
           allowWeekday={false}
         />
         <DocsAction
-          title="歴代1位記録一覧PDFを生成"
+          title="歴代1位記録一覧PDFを生成（月末時点・新規1位に★）"
           endpoint="/api/admin/docs/swimming/historical-firsts"
           filename="swimming_historical_firsts.zip"
-          allowYearMonth={false}
           allowFullName={false}
           allowWeekday={false}
         />
