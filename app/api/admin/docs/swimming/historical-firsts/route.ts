@@ -91,22 +91,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "ランキング対象データがありません" }, { status: 400 });
     }
 
-    const newRecordCount = groups.reduce((total, eventGroup) => {
-      return (
-        total +
-        eventGroup.gradeGroups.reduce((gradeTotal, gradeGroup) => {
-          const maleCount = gradeGroup.maleEntries.filter((entry) => entry.isNewRecordInTargetMonth).length;
-          const femaleCount = gradeGroup.femaleEntries.filter((entry) => entry.isNewRecordInTargetMonth).length;
-          return gradeTotal + maleCount + femaleCount;
-        }, 0)
-      );
-    }, 0);
-
     const periodLabel = `${filter.year}年${filter.month}月 歴代1位記録一覧`;
     const buffer = await renderChallengeRankingPdf({
       periodLabel,
       groups,
-      highlightLegend: `[NEW] はこの月に新しく歴代1位になった記録（今月${newRecordCount}件）`,
+      highlightLegend: "NEW はこの月に新しく歴代1位になった記録",
       rankRange: { min: 1, max: 1 }
     });
     const name = `${filter.year}年${filter.month}月_swimming_historical_firsts.pdf`;

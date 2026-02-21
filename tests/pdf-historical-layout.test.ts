@@ -124,15 +124,17 @@ describe("renderChallengeRankingPdf historical layout", () => {
     await renderChallengeRankingPdf({
       periodLabel: "2025年9月 歴代1位記録一覧",
       groups,
-      highlightLegend: "[NEW] はこの月に新しく歴代1位になった記録（今月1件）",
+      highlightLegend: "NEW はこの月に新しく歴代1位になった記録",
       rankRange: { min: 1, max: 1 }
     });
 
     const root = mockState.lastDocument as any;
     const texts = collectTextNodes(root);
 
-    expect(texts.some((text) => text.includes("[NEW] はこの月に新しく歴代1位になった記録（今月1件）"))).toBe(true);
-    expect(texts.some((text) => text.includes("[NEW] 新記録者"))).toBe(true);
+    expect(texts.some((text) => text.includes("NEW"))).toBe(true);
+    expect(texts.some((text) => text.includes("はこの月に新しく歴代1位になった記録"))).toBe(true);
+    expect(texts.some((text) => text.includes("新記録者"))).toBe(true);
+    expect(texts.filter((text) => text.includes("NEW")).length).toBeGreaterThanOrEqual(2);
     expect(texts.some((text) => text.includes("タイム・年月"))).toBe(true);
     expect(texts.some((text) => text.includes("2025年9月"))).toBe(true);
   });

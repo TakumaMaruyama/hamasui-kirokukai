@@ -237,6 +237,9 @@ const styles = StyleSheet.create({
   challengeCellName: {
     width: "50%"
   },
+  challengeCellNameWithNew: {
+    lineHeight: 1.3
+  },
   challengeCellTime: {
     width: "33%",
     textAlign: "center"
@@ -260,6 +263,18 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     textAlign: "center"
+  },
+  challengeLegendNew: {
+    color: "#d10000"
+  },
+  challengeNewMarker: {
+    color: "#d10000",
+    fontSize: 8,
+    fontWeight: 700
+  },
+  challengeRecordMonthLabel: {
+    color: "#6b7280",
+    fontSize: 8
   },
   empty: {
     marginTop: 24,
@@ -456,25 +471,27 @@ function formatChallengeEntryName(entry: RankingEntry | null): string {
     return "";
   }
 
-  const name = entry.displayName || entry.fullName;
-  if (entry.isNewRecordInTargetMonth) {
-    return `[NEW] ${name}`;
-  }
-
-  return name;
+  return entry.displayName || entry.fullName;
 }
 
-function formatChallengeEntryTime(entry: RankingEntry | null): string {
-  if (!entry) {
-    return "";
+function renderChallengeLegendText(legend: string): ReactElement {
+  const marker = "NEW";
+  const markerIndex = legend.indexOf(marker);
+
+  if (markerIndex < 0) {
+    return <Text style={styles.challengeLegend}>{legend}</Text>;
   }
 
-  const timeText = formatTimeForDocument({ timeText: entry.timeText });
-  if (!entry.recordMonthLabel) {
-    return timeText;
-  }
+  const before = legend.slice(0, markerIndex);
+  const after = legend.slice(markerIndex + marker.length);
 
-  return `${timeText}\n${entry.recordMonthLabel}`;
+  return (
+    <Text style={styles.challengeLegend}>
+      {before}
+      <Text style={styles.challengeLegendNew}>{marker}</Text>
+      {after}
+    </Text>
+  );
 }
 
 function buildChallengeGenderTable({
@@ -512,9 +529,19 @@ function buildChallengeGenderTable({
           ]}
         >
           <Text style={[styles.challengeCell, styles.challengeCellRank]}>{entry.rankLabel}</Text>
-          <Text style={[styles.challengeCell, styles.challengeCellName]}>{formatChallengeEntryName(entry.entry)}</Text>
+          <Text
+            style={
+              entry.entry?.isNewRecordInTargetMonth
+                ? [styles.challengeCell, styles.challengeCellName, styles.challengeCellNameWithNew]
+                : [styles.challengeCell, styles.challengeCellName]
+            }
+          >
+            {formatChallengeEntryName(entry.entry)}
+            {entry.entry?.isNewRecordInTargetMonth ? <Text style={styles.challengeNewMarker}>{"\n"}NEW</Text> : null}
+          </Text>
           <Text style={hasRecordMonth ? [styles.challengeCell, styles.challengeCellTime, styles.challengeCellTimeWithMonth] : [styles.challengeCell, styles.challengeCellTime]}>
-            {formatChallengeEntryTime(entry.entry)}
+            {entry.entry ? formatTimeForDocument({ timeText: entry.entry.timeText }) : ""}
+            {entry.entry?.recordMonthLabel ? <Text style={styles.challengeRecordMonthLabel}>{"\n"}{entry.entry.recordMonthLabel}</Text> : null}
           </Text>
         </View>
       ))}
@@ -911,7 +938,7 @@ export async function renderChallengeRankingPdf({
               {periodLabel} ランキング
               {groups.length > 1 ? ` (${index + 1}/${groups.length})` : ""}
             </Text>
-            {highlightLegend ? <Text style={styles.challengeLegend}>{highlightLegend}</Text> : null}
+            {highlightLegend ? renderChallengeLegendText(highlightLegend) : null}
             <View key={eventGroup.eventTitle} style={styles.challengeEventSection}>
               <Text style={styles.challengeEventTitle}>{eventGroup.eventTitle}</Text>
               {eventGroup.gradeGroups.map((gradeGroup) => {
