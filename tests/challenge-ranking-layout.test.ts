@@ -87,4 +87,33 @@ describe("buildChallengeRankingTableRows", () => {
       }
     ]);
   });
+
+  it("keeps all tied first-place rows when limited to first place only", () => {
+    const rows = buildChallengeRankingTableRows(
+      [
+        {
+          rank: 1,
+          fullName: "1位A",
+          displayName: "1位A",
+          timeText: "18.00"
+        },
+        {
+          rank: 1,
+          fullName: "1位B",
+          displayName: "1位B",
+          timeText: "18.00"
+        },
+        {
+          rank: 2,
+          fullName: "2位",
+          displayName: "2位",
+          timeText: "19.00"
+        }
+      ],
+      { minRank: 1, maxRank: 1 }
+    );
+
+    expect(rows.map((row) => row.rankLabel)).toEqual(["1位", "1位"]);
+    expect(rows.map((row) => row.entry?.fullName ?? "")).toEqual(["1位A", "1位B"]);
+  });
 });

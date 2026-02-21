@@ -151,6 +151,22 @@ describe("buildHistoricalFirstChallengeGroups", () => {
     expect(groups[0]?.gradeGroups[0]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["女子1位"]);
   });
 
+  it("keeps empty right column data when only one gender has records", () => {
+    const groups = buildHistoricalFirstChallengeGroups([
+      {
+        timeMs: 39000,
+        timeText: "00:39.00",
+        athlete: { id: "a1", fullName: "男子のみ" },
+        event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 3, gender: "male" },
+        meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+      }
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["男子のみ"]);
+    expect(groups[0]?.gradeGroups[0]?.femaleEntries).toEqual([]);
+  });
+
   it("marks swimmers who newly became all-time first in the target month", () => {
     const groups = buildHistoricalFirstChallengeGroups(
       [
@@ -186,6 +202,86 @@ describe("buildHistoricalFirstChallengeGroups", () => {
     const maleEntries = groups[0]?.gradeGroups[0]?.maleEntries ?? [];
     expect(maleEntries.map((entry) => entry.fullName)).toEqual(["新記録者", "同タイ記録者"]);
     expect(maleEntries.every((entry) => entry.isNewRecordInTargetMonth)).toBe(true);
+  });
+
+  it("uses existing grade groups for historical output and does not fill missing grades", () => {
+    const groups = buildHistoricalFirstChallengeGroups([
+      {
+        timeMs: 25000,
+        timeText: "00:25.00",
+        athlete: { id: "g1", fullName: "年少1位" },
+        event: { title: "15m板キック", distanceM: 15, style: "板キック", grade: 1, gender: "male" },
+        meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+      },
+      {
+        timeMs: 24000,
+        timeText: "00:24.00",
+        athlete: { id: "g3", fullName: "年長1位" },
+        event: { title: "15m板キック", distanceM: 15, style: "板キック", grade: 3, gender: "female" },
+        meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+      }
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.gradeGroups.map((group) => group.grade)).toEqual([1, 3]);
+  });
+
+  it("normalizes historical event class keys so title variants do not create duplicate first rows", () => {
+    const groups = buildHistoricalFirstChallengeGroups([
+      {
+        timeMs: 18000,
+        timeText: "00:18.00",
+        athlete: { id: "fast", fullName: "最速選手" },
+        event: { title: "15m クロール", distanceM: 15, style: "クロール", grade: 5, gender: "male" },
+        meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+      },
+      {
+        timeMs: 20000,
+        timeText: "00:20.00",
+        athlete: { id: "slow", fullName: "遅い選手" },
+        event: { title: "15ｍクロール", distanceM: 15, style: "クロール", grade: 5, gender: "male" },
+        meet: { heldOn: new Date("2025-08-20T00:00:00.000Z") }
+      }
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["最速選手"]);
+  });
+
+  it("does not mark repeated top records in target month when the same swimmer already held the top before month", () => {
+    const groups = buildHistoricalFirstChallengeGroups(
+      [
+        {
+          timeMs: 18000,
+          timeText: "00:18.00",
+          athlete: { id: "a", fullName: "既存トップ保持者" },
+          event: { title: "30mクロール", distanceM: 30, style: "クロール", grade: 4, gender: "male" },
+          meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+        },
+        {
+          timeMs: 18000,
+          timeText: "00:18.00",
+          athlete: { id: "a", fullName: "既存トップ保持者" },
+          event: { title: "30mクロール", distanceM: 30, style: "クロール", grade: 4, gender: "male" },
+          meet: { heldOn: new Date("2025-09-05T00:00:00.000Z") }
+        },
+        {
+          timeMs: 18000,
+          timeText: "00:18.00",
+          athlete: { id: "b", fullName: "新規同タイ到達者" },
+          event: { title: "30mクロール", distanceM: 30, style: "クロール", grade: 4, gender: "male" },
+          meet: { heldOn: new Date("2025-09-20T00:00:00.000Z") }
+        }
+      ],
+      {
+        targetMonthStart: new Date("2025-09-01T00:00:00.000Z"),
+        targetMonthEnd: new Date("2025-10-01T00:00:00.000Z")
+      }
+    );
+
+    const maleEntries = groups[0]?.gradeGroups[0]?.maleEntries ?? [];
+    expect(maleEntries.map((entry) => entry.fullName)).toEqual(["既存トップ保持者", "既存トップ保持者", "新規同タイ到達者"]);
+    expect(maleEntries.map((entry) => Boolean(entry.isNewRecordInTargetMonth))).toEqual([false, false, true]);
   });
 });
 

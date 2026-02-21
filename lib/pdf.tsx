@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { Gender } from "@prisma/client";
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
-import type { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 import type { ChallengeEventRankingGroup, RankingEntry, RankingGroup } from "./ranking-report";
 import { buildChallengeRankingTableRows, type ChallengeRankingTableRow } from "./challenge-ranking-layout";
 import { formatTimeForDocument } from "./display-time";

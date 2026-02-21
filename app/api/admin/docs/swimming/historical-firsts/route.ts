@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       {
         targetMonthStart: filter.monthStart,
         targetMonthEnd: filter.monthEnd,
-        gradeRangeMode: "minToMax",
+        gradeRangeMode: "existing",
         excludeOtherGender: true
       }
     );

@@ -365,7 +365,7 @@ export function buildChallengeEventRankingGroups(
 
 function toEventClassKey(result: HistoricalFirstSourceResult): string {
   return [
-    result.event.title,
+    normalizeEventTitleForOrder(result.event.title),
     result.event.distanceM,
     result.event.style,
     result.event.grade,
@@ -485,7 +485,7 @@ export function buildHistoricalFirstChallengeGroups(
     preschoolNameMode: "none",
     minRank: 1,
     maxRank: 1,
-    gradeRangeMode: options.gradeRangeMode ?? "minToMax",
+    gradeRangeMode: options.gradeRangeMode ?? "existing",
     excludeOtherGender: options.excludeOtherGender ?? true
   });
 }
