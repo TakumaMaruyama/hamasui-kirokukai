@@ -219,6 +219,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#252933"
   },
+  challengeTableRowNewRecord: {
+    backgroundColor: "#fff7d6"
+  },
   challengeTableRowLast: {
     borderBottomWidth: 0
   },
@@ -455,7 +458,7 @@ function formatChallengeEntryName(entry: RankingEntry | null): string {
 
   const name = entry.displayName || entry.fullName;
   if (entry.isNewRecordInTargetMonth) {
-    return `★NEW ${name}`;
+    return `[NEW] ${name}`;
   }
 
   return name;
@@ -502,7 +505,11 @@ function buildChallengeGenderTable({
       {entries.map((entry, index) => (
         <View
           key={`${keyPrefix}-${index}`}
-          style={index === entries.length - 1 ? [styles.challengeTableRow, styles.challengeTableRowLast] : styles.challengeTableRow}
+          style={[
+            styles.challengeTableRow,
+            ...(index === entries.length - 1 ? [styles.challengeTableRowLast] : []),
+            ...(entry.entry?.isNewRecordInTargetMonth ? [styles.challengeTableRowNewRecord] : [])
+          ]}
         >
           <Text style={[styles.challengeCell, styles.challengeCellRank]}>{entry.rankLabel}</Text>
           <Text style={[styles.challengeCell, styles.challengeCellName]}>{formatChallengeEntryName(entry.entry)}</Text>

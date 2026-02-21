@@ -298,6 +298,44 @@ describe("buildHistoricalFirstChallengeGroups", () => {
     expect(maleEntries.map((entry) => entry.fullName)).toEqual(["既存トップ保持者", "既存トップ保持者", "新規同タイ到達者"]);
     expect(maleEntries.map((entry) => Boolean(entry.isNewRecordInTargetMonth))).toEqual([false, false, true]);
   });
+
+  it("supports fixed grade sequence for historical output and excludes grades outside the sequence", () => {
+    const groups = buildHistoricalFirstChallengeGroups(
+      [
+        {
+          timeMs: 20000,
+          timeText: "00:20.00",
+          athlete: { id: "g0", fullName: "年少々" },
+          event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 0, gender: "male" },
+          meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+        },
+        {
+          timeMs: 19000,
+          timeText: "00:19.00",
+          athlete: { id: "g9", fullName: "小6" },
+          event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 9, gender: "female" },
+          meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+        },
+        {
+          timeMs: 18000,
+          timeText: "00:18.00",
+          athlete: { id: "g10", fullName: "中1" },
+          event: { title: "15mクロール", distanceM: 15, style: "クロール", grade: 10, gender: "male" },
+          meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+        }
+      ],
+      {
+        gradeSequence: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      }
+    );
+
+    expect(groups).toHaveLength(1);
+    const gradeGroups = groups[0]?.gradeGroups ?? [];
+    expect(gradeGroups.map((group) => group.grade)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["年少々"]);
+    expect(gradeGroups[9]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["小6"]);
+    expect(gradeGroups.some((group) => group.maleEntries.some((entry) => entry.fullName === "中1"))).toBe(false);
+  });
 });
 
 describe("buildChallengeEventRankingGroups", () => {
@@ -584,5 +622,33 @@ describe("buildChallengeEventRankingGroups", () => {
     expect(groups[0]?.gradeGroups.map((group) => group.grade)).toEqual([1, 2, 3]);
     expect(groups[0]?.gradeGroups[1]?.maleEntries).toHaveLength(0);
     expect(groups[0]?.gradeGroups[1]?.femaleEntries).toHaveLength(0);
+  });
+
+  it("uses explicit grade sequence when provided", () => {
+    const groups = buildChallengeEventRankingGroups(
+      [
+        {
+          rank: 1,
+          timeText: "20.00",
+          athlete: { fullName: "年中" },
+          event: { id: "e1", title: "15mキック", grade: 2, gender: "male" }
+        },
+        {
+          rank: 1,
+          timeText: "21.00",
+          athlete: { fullName: "中1" },
+          event: { id: "e2", title: "15mキック", grade: 10, gender: "female" }
+        }
+      ],
+      {
+        gradeRangeMode: "minToMax",
+        gradeSequence: [0, 1, 2, 3]
+      }
+    );
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.gradeGroups.map((group) => group.grade)).toEqual([0, 1, 2, 3]);
+    expect(groups[0]?.gradeGroups[2]?.maleEntries.map((entry) => entry.fullName)).toEqual(["年中"]);
+    expect(groups[0]?.gradeGroups.some((group) => group.femaleEntries.some((entry) => entry.fullName === "中1"))).toBe(false);
   });
 });

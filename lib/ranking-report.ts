@@ -72,6 +72,7 @@ export type ChallengeRankingBuildOptions = RankingDisplayOptions & {
   minRank?: number;
   maxRank?: number;
   gradeRangeMode?: ChallengeGradeRangeMode;
+  gradeSequence?: number[];
   excludeOtherGender?: boolean;
 };
 
@@ -79,6 +80,7 @@ export type HistoricalFirstChallengeBuildOptions = {
   targetMonthStart?: Date;
   targetMonthEnd?: Date;
   gradeRangeMode?: ChallengeGradeRangeMode;
+  gradeSequence?: number[];
   excludeOtherGender?: boolean;
 };
 
@@ -235,6 +237,27 @@ function buildGradeSequence(grades: number[], mode: ChallengeGradeRangeMode): nu
   return range;
 }
 
+function normalizeGradeSequence(gradeSequence: number[]): number[] {
+  const normalized: number[] = [];
+  const seen = new Set<number>();
+
+  for (const grade of gradeSequence) {
+    if (!Number.isFinite(grade)) {
+      continue;
+    }
+
+    const normalizedGrade = Math.floor(grade);
+    if (seen.has(normalizedGrade)) {
+      continue;
+    }
+
+    seen.add(normalizedGrade);
+    normalized.push(normalizedGrade);
+  }
+
+  return normalized;
+}
+
 export function buildMeetRankingGroups(
   results: RankingSourceResult[],
   options: RankingDisplayOptions = {}
@@ -296,6 +319,10 @@ export function buildChallengeEventRankingGroups(
   const minRank = options.minRank;
   const maxRank = options.maxRank;
   const gradeRangeMode = options.gradeRangeMode ?? "existing";
+  const gradeSequence = Array.isArray(options.gradeSequence)
+    ? normalizeGradeSequence(options.gradeSequence)
+    : undefined;
+  const gradeSet = gradeSequence ? new Set(gradeSequence) : undefined;
   const excludeOtherGender = options.excludeOtherGender ?? false;
   const eventMap = new Map<string, { eventTitle: string; byGrade: Map<number, ChallengeGradeRankingGroup> }>();
 
@@ -305,6 +332,10 @@ export function buildChallengeEventRankingGroups(
     }
 
     if (excludeOtherGender && result.event.gender === "other") {
+      continue;
+    }
+
+    if (gradeSet && !gradeSet.has(result.event.grade)) {
       continue;
     }
 
@@ -355,7 +386,7 @@ export function buildChallengeEventRankingGroups(
 
   return Array.from(eventMap.values())
     .map(({ eventTitle, byGrade }) => {
-      const grades = buildGradeSequence(Array.from(byGrade.keys()), gradeRangeMode);
+      const grades = gradeSequence ?? buildGradeSequence(Array.from(byGrade.keys()), gradeRangeMode);
       return {
         eventTitle,
         gradeGroups: grades.map((grade) => {
@@ -495,6 +526,7 @@ export function buildHistoricalFirstChallengeGroups(
     minRank: 1,
     maxRank: 1,
     gradeRangeMode: options.gradeRangeMode ?? "existing",
+    gradeSequence: options.gradeSequence,
     excludeOtherGender: options.excludeOtherGender ?? true
   });
 }
