@@ -43,7 +43,8 @@ export async function POST(request: Request) {
         athlete: {
           select: {
             id: true,
-            fullName: true
+            fullName: true,
+            fullNameKana: true
           }
         },
         event: true,
@@ -65,7 +66,8 @@ export async function POST(request: Request) {
         timeText: row.timeText,
         athlete: {
           id: row.athlete.id,
-          fullName: row.athlete.fullName
+          fullName: row.athlete.fullName,
+          fullNameKana: row.athlete.fullNameKana
         },
         event: {
           title: row.event.title,

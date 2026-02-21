@@ -336,6 +336,32 @@ describe("buildHistoricalFirstChallengeGroups", () => {
     expect(gradeGroups[9]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["小6"]);
     expect(gradeGroups.some((group) => group.maleEntries.some((entry) => entry.fullName === "中1"))).toBe(false);
   });
+
+  it("uses kana display name for preschool grades in historical challenge groups", () => {
+    const groups = buildHistoricalFirstChallengeGroups([
+      {
+        timeMs: 25000,
+        timeText: "00:25.00",
+        athlete: { id: "p1", fullName: "園児 太郎", fullNameKana: "えんじ たろう" },
+        event: { title: "15m板キック", distanceM: 15, style: "板キック", grade: 2, gender: "male" },
+        meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+      },
+      {
+        timeMs: 20000,
+        timeText: "00:20.00",
+        athlete: { id: "e1", fullName: "小学生 花子", fullNameKana: "しょうがくせい はなこ" },
+        event: { title: "15m板キック", distanceM: 15, style: "板キック", grade: 4, gender: "female" },
+        meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+      }
+    ]);
+
+    expect(groups).toHaveLength(1);
+    const preschoolEntry = groups[0]?.gradeGroups.find((group) => group.grade === 2)?.maleEntries[0];
+    const elementaryEntry = groups[0]?.gradeGroups.find((group) => group.grade === 4)?.femaleEntries[0];
+
+    expect(preschoolEntry?.displayName).toBe("えんじ たろう");
+    expect(elementaryEntry?.displayName).toBe("小学生 花子");
+  });
 });
 
 describe("buildChallengeEventRankingGroups", () => {

@@ -19,7 +19,7 @@ export type RankingSourceResult = {
 export type HistoricalFirstSourceResult = {
   timeMs: number;
   timeText: string;
-  athlete: { id?: string; fullName: string };
+  athlete: { id?: string; fullName: string; fullNameKana?: string | null };
   event: {
     title: string;
     distanceM: number;
@@ -488,7 +488,7 @@ function buildHistoricalFirstTopRows(
         timeText: entry.timeText,
         recordMonthLabel: formatHeldMonthLabel(entry.meet.heldOn),
         ...(isNewRecordInTargetMonth ? { isNewRecordInTargetMonth: true } : {}),
-        athlete: { fullName: entry.athlete.fullName },
+        athlete: { fullName: entry.athlete.fullName, fullNameKana: entry.athlete.fullNameKana },
         event: {
           id: eventKey,
           title: entry.event.title,
@@ -522,7 +522,8 @@ export function buildHistoricalFirstChallengeGroups(
   });
 
   return buildChallengeEventRankingGroups(topRows, {
-    preschoolNameMode: "none",
+    preschoolNameMode: "kanaOnly",
+    preschoolMaxGrade: DEFAULT_PRESCHOOL_MAX_GRADE,
     minRank: 1,
     maxRank: 1,
     gradeRangeMode: options.gradeRangeMode ?? "existing",
