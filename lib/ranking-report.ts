@@ -104,6 +104,10 @@ function normalizeKana(value: string | null | undefined): string {
   return value?.replace(/\s+/g, " ").trim() ?? "";
 }
 
+function normalizeAthleteNameKey(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
 function isPreschoolGrade(grade: number, preschoolMaxGrade: number): boolean {
   return grade >= 0 && grade <= preschoolMaxGrade;
 }
@@ -441,8 +445,15 @@ function buildHistoricalFirstTopRows(
   options: Pick<HistoricalFirstChallengeBuildOptions, "targetMonthStart" | "targetMonthEnd"> = {}
 ): RankingSourceResult[] {
   const byEventClass = new Map<string, HistoricalFirstSourceResult[]>();
+  const kanaByNameKey = new Map<string, string>();
 
   for (const result of results) {
+    const nameKey = normalizeAthleteNameKey(result.athlete.fullName);
+    const fullNameKana = normalizeKana(result.athlete.fullNameKana);
+    if (fullNameKana && !kanaByNameKey.has(nameKey)) {
+      kanaByNameKey.set(nameKey, fullNameKana);
+    }
+
     const key = toEventClassKey(result);
     if (!byEventClass.has(key)) {
       byEventClass.set(key, []);
@@ -482,13 +493,18 @@ function buildHistoricalFirstTopRows(
             )
           : false;
       const isNewRecordInTargetMonth = Boolean(isInTargetMonth && !hasPriorTopForAthlete);
+      const fallbackKana = kanaByNameKey.get(normalizeAthleteNameKey(entry.athlete.fullName)) ?? "";
+      const athleteKana = normalizeKana(entry.athlete.fullNameKana) || fallbackKana;
 
       topRows.push({
         rank: 1,
         timeText: entry.timeText,
         recordMonthLabel: formatHeldMonthLabel(entry.meet.heldOn),
         ...(isNewRecordInTargetMonth ? { isNewRecordInTargetMonth: true } : {}),
-        athlete: { fullName: entry.athlete.fullName, fullNameKana: entry.athlete.fullNameKana },
+        athlete: {
+          fullName: entry.athlete.fullName,
+          ...(athleteKana ? { fullNameKana: athleteKana } : {})
+        },
         event: {
           id: eventKey,
           title: entry.event.title,

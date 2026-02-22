@@ -362,6 +362,28 @@ describe("buildHistoricalFirstChallengeGroups", () => {
     expect(preschoolEntry?.displayName).toBe("えんじ たろう");
     expect(elementaryEntry?.displayName).toBe("小学生 花子");
   });
+
+  it("falls back to kana from other rows with the same name when preschool row kana is missing", () => {
+    const groups = buildHistoricalFirstChallengeGroups([
+      {
+        timeMs: 25000,
+        timeText: "00:25.00",
+        athlete: { id: "p1", fullName: "同名 太郎", fullNameKana: null },
+        event: { title: "15m板キック", distanceM: 15, style: "板キック", grade: 1, gender: "male" },
+        meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+      },
+      {
+        timeMs: 20000,
+        timeText: "00:20.00",
+        athlete: { id: "e1", fullName: "同名 太郎", fullNameKana: "どうめい たろう" },
+        event: { title: "15m板キック", distanceM: 15, style: "板キック", grade: 4, gender: "male" },
+        meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+      }
+    ]);
+
+    const preschoolEntry = groups[0]?.gradeGroups.find((group) => group.grade === 1)?.maleEntries[0];
+    expect(preschoolEntry?.displayName).toBe("どうめい たろう");
+  });
 });
 
 describe("buildChallengeEventRankingGroups", () => {
