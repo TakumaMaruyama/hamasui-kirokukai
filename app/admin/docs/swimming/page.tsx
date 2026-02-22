@@ -4,7 +4,7 @@ export default function SwimmingDocsPage() {
   return (
     <main>
       <header>
-        <h1>スイミングPDF生成</h1>
+        <h1>はまスイ記録証</h1>
         <p className="notice">
           記録証・賞状は年・月・曜日で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
         </p>

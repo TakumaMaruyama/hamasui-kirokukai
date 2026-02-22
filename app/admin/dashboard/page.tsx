@@ -14,27 +14,27 @@ export default function AdminDashboard() {
                     </Link>
                     <Link href="/admin/import/swimming" className="admin-menu-item">
                         <span className="admin-menu-icon">📊</span>
-                        <span className="admin-menu-label">水泳記録インポート</span>
-                    </Link>
-                    <Link href="/admin/import/school" className="admin-menu-item">
-                        <span className="admin-menu-icon">🏫</span>
-                        <span className="admin-menu-label">学校名インポート</span>
+                        <span className="admin-menu-label">一般コース インポート</span>
                     </Link>
                     <Link href="/admin/import/challenge" className="admin-menu-item">
                         <span className="admin-menu-icon">🚀</span>
-                        <span className="admin-menu-label">チャレンジCSV取り込み</span>
+                        <span className="admin-menu-label">チャレンジコース インポート</span>
+                    </Link>
+                    <Link href="/admin/import/school" className="admin-menu-item">
+                        <span className="admin-menu-icon">🏫</span>
+                        <span className="admin-menu-label">小学校水泳授業インポート</span>
                     </Link>
                     <Link href="/admin/publish" className="admin-menu-item">
                         <span className="admin-menu-icon">🔓</span>
-                        <span className="admin-menu-label">公開期間表示管理</span>
+                        <span className="admin-menu-label">公開期間・お知らせ</span>
                     </Link>
                     <Link href="/admin/docs/swimming" className="admin-menu-item">
                         <span className="admin-menu-icon">📄</span>
-                        <span className="admin-menu-label">水泳証明書</span>
+                        <span className="admin-menu-label">はまスイ記録証</span>
                     </Link>
                     <Link href="/admin/docs/school" className="admin-menu-item">
                         <span className="admin-menu-icon">📋</span>
-                        <span className="admin-menu-label">学校証明書</span>
+                        <span className="admin-menu-label">小学校記録証</span>
                     </Link>
                     <Link href="/admin/docs/challenge" className="admin-menu-item">
                         <span className="admin-menu-icon">📈</span>

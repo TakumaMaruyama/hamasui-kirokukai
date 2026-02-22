@@ -4,7 +4,7 @@ export default function SchoolDocsPage() {
   return (
     <main>
       <header>
-        <h1>学校委託PDF生成</h1>
+        <h1>小学校記録証</h1>
         <p className="notice">
           年・月・曜日で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
         </p>

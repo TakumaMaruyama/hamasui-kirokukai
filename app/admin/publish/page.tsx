@@ -46,7 +46,7 @@ export default async function PublishPage() {
     return (
       <main>
         <header>
-          <h1>公開期間表示管理</h1>
+          <h1>公開期間・お知らせ</h1>
           <p className="notice">ユーザー画面に表示する公開期限の案内文とお知らせを設定します。</p>
         </header>
         <div className="card">
@@ -95,7 +95,7 @@ export default async function PublishPage() {
     return (
       <main>
         <header>
-          <h1>公開期間表示管理</h1>
+          <h1>公開期間・お知らせ</h1>
           <p className="notice">公開期間設定テーブルが未作成です。`npx prisma db push` を実行してください。</p>
         </header>
       </main>

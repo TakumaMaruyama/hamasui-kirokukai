@@ -67,7 +67,7 @@ function hasChallengeInRuntimeProgramEnum(): boolean {
 }
 
 function formatAdminDateTime(value: Date): string {
-    return new Intl.DateTimeFormat("ja-JP", {
+  return new Intl.DateTimeFormat("ja-JP", {
         timeZone: "Asia/Tokyo",
         year: "numeric",
         month: "2-digit",
@@ -76,7 +76,11 @@ function formatAdminDateTime(value: Date): string {
         minute: "2-digit",
         second: "2-digit",
         hour12: false
-    }).format(value);
+  }).format(value);
+}
+
+function formatCount(value: number): string {
+    return new Intl.NumberFormat("ja-JP").format(value);
 }
 
 async function deleteMeet(formData: FormData) {
@@ -99,9 +103,18 @@ export default async function MeetsPage({
 
     let meets: MeetWithCount[] = [];
     let loadMessage: string | null = null;
+    let totalResultCount: number | null = null;
+    let totalResultCountMessage: string | null = null;
 
     if (selectedProgram === "challenge" && !hasChallengeInRuntimeProgramEnum()) {
         loadMessage = "チャレンジコースのPrisma Clientが古い可能性があります。アプリを再起動/再デプロイしてください。";
+    }
+
+    try {
+        totalResultCount = await prisma.result.count();
+    } catch (error) {
+        console.error("[admin/meets] failed to load total result count", error);
+        totalResultCountMessage = "データ数合計（全コース）: 取得できません";
     }
 
     try {
@@ -133,6 +146,11 @@ export default async function MeetsPage({
             <header>
                 <h1>記録会管理</h1>
                 <p className="notice">過去の記録会一覧です。CSVインポートで自動作成されます。</p>
+                {totalResultCountMessage ? (
+                    <p className="notice">{totalResultCountMessage}</p>
+                ) : totalResultCount !== null ? (
+                    <p className="notice">データ数合計（全コース）: {formatCount(totalResultCount)}件</p>
+                ) : null}
                 <p className="notice">表示中: {selectedProgramLabel}</p>
                 <p className="notice">同じ年月・曜日を複数回取り込んだ場合は末尾に連番が付き、個別に削除できます。</p>
                 {loadMessage ? (
