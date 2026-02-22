@@ -30,7 +30,7 @@ export default function AdminDashboard() {
                     </Link>
                     <Link href="/admin/docs/swimming" className="admin-menu-item">
                         <span className="admin-menu-icon">📄</span>
-                        <span className="admin-menu-label">はまスイ記録証</span>
+                        <span className="admin-menu-label">一般コース記録証</span>
                     </Link>
                     <Link href="/admin/docs/school" className="admin-menu-item">
                         <span className="admin-menu-icon">📋</span>
