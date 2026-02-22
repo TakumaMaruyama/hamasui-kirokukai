@@ -32,13 +32,13 @@ export default function AdminDashboard() {
                         <span className="admin-menu-icon">📄</span>
                         <span className="admin-menu-label">一般コース記録証</span>
                     </Link>
-                    <Link href="/admin/docs/school" className="admin-menu-item">
-                        <span className="admin-menu-icon">📋</span>
-                        <span className="admin-menu-label">小学校記録証</span>
-                    </Link>
                     <Link href="/admin/docs/challenge" className="admin-menu-item">
                         <span className="admin-menu-icon">📈</span>
                         <span className="admin-menu-label">チャレンジランキング</span>
+                    </Link>
+                    <Link href="/admin/docs/school" className="admin-menu-item">
+                        <span className="admin-menu-icon">📋</span>
+                        <span className="admin-menu-label">小学校記録証</span>
                     </Link>
                     <Link href="/admin/logs" className="admin-menu-item">
                         <span className="admin-menu-icon">📝</span>
