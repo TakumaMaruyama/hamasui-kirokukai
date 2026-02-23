@@ -296,131 +296,131 @@ const styles = StyleSheet.create({
   },
   recordNameValue: {
     position: "absolute",
-    top: 246,
-    left: 118,
-    width: 286,
-    fontSize: 32
+    top: 250,
+    left: 120,
+    width: 260,
+    fontSize: 30
   },
   recordNameKanaValue: {
     position: "absolute",
-    top: 223,
-    left: 118,
-    width: 286,
-    fontSize: 15
+    top: 226,
+    left: 120,
+    width: 260,
+    fontSize: 14
   },
   recordGradeValue: {
     position: "absolute",
-    top: 246,
-    left: 404,
-    width: 120,
+    top: 250,
+    left: 392,
+    width: 96,
     textAlign: "center",
-    fontSize: 32
+    fontSize: 30
   },
   recordEventValue: {
     position: "absolute",
-    top: 349,
-    left: 146,
-    width: 218,
+    top: 358,
+    left: 154,
+    width: 210,
     fontSize: 20,
-    lineHeight: 1.48
+    lineHeight: 1.5
   },
   recordTimeValue: {
     position: "absolute",
-    top: 349,
-    left: 363,
-    width: 181,
+    top: 358,
+    left: 364,
+    width: 188,
     fontSize: 20,
-    lineHeight: 1.48
+    lineHeight: 1.5
   },
   recordGradeLabelValue: {
     position: "absolute",
-    top: 252,
-    left: 404,
-    width: 170,
-    textAlign: "center",
-    fontSize: 22
+    top: 250,
+    left: 330,
+    width: 190,
+    textAlign: "left",
+    fontSize: 20
   },
   recordIssueLabelValue: {
     position: "absolute",
-    top: 699,
+    top: 700,
     left: 0,
     width: A4_WIDTH,
     textAlign: "center",
-    fontSize: 19
+    fontSize: 18
   },
   prizeName: {
     position: "absolute",
-    top: 348,
-    left: 72,
-    width: A4_WIDTH - 144,
+    top: 360,
+    left: 0,
+    width: A4_WIDTH,
     textAlign: "center",
-    fontSize: 56
+    fontSize: 54
   },
   prizeNameKana: {
     position: "absolute",
-    top: 320,
-    left: 72,
-    width: A4_WIDTH - 144,
+    top: 332,
+    left: 0,
+    width: A4_WIDTH,
     textAlign: "center",
-    fontSize: 22
+    fontSize: 20
   },
   prizeEvent: {
     position: "absolute",
-    top: 518,
-    left: 72,
-    width: A4_WIDTH - 144,
+    top: 484,
+    left: 0,
+    width: A4_WIDTH,
     textAlign: "center",
-    fontSize: 31,
-    lineHeight: 1.35
+    fontSize: 30,
+    lineHeight: 1.4
   },
   prizeTime: {
     position: "absolute",
-    top: 586,
-    left: 72,
-    width: A4_WIDTH - 144,
+    top: 564,
+    left: 0,
+    width: A4_WIDTH,
     textAlign: "center",
-    fontSize: 29,
-    lineHeight: 1.35
+    fontSize: 28,
+    lineHeight: 1.4
   },
   prizeMeta: {
     position: "absolute",
-    top: 446,
-    left: 72,
-    width: A4_WIDTH - 144,
+    top: 438,
+    left: 0,
+    width: A4_WIDTH,
     textAlign: "center",
     fontSize: 24
   },
   prizeAwardMeta: {
     position: "absolute",
-    top: 446,
-    left: 72,
-    width: A4_WIDTH - 144,
-    textAlign: "center",
-    fontSize: 23
-  },
-  prizeAwardEvent: {
-    position: "absolute",
-    top: 518,
-    left: 72,
-    width: A4_WIDTH - 144,
-    textAlign: "center",
-    fontSize: 30
-  },
-  prizeAwardTime: {
-    position: "absolute",
-    top: 586,
-    left: 72,
-    width: A4_WIDTH - 144,
-    textAlign: "center",
-    fontSize: 27
-  },
-  prizeIssueLabel: {
-    position: "absolute",
-    top: 698,
+    top: 470,
     left: 0,
     width: A4_WIDTH,
     textAlign: "center",
-    fontSize: 19
+    fontSize: 22
+  },
+  prizeAwardEvent: {
+    position: "absolute",
+    top: 530,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 26
+  },
+  prizeAwardTime: {
+    position: "absolute",
+    top: 590,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 24
+  },
+  prizeIssueLabel: {
+    position: "absolute",
+    top: 700,
+    left: 0,
+    width: A4_WIDTH,
+    textAlign: "center",
+    fontSize: 18
   }
 });
 
