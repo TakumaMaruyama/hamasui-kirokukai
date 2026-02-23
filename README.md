@@ -51,4 +51,21 @@ Playwright / Chromium の追加インストールは不要です。
 - `public/pdf-templates/record-certificate.png`（記録証）
 - `public/pdf-templates/first-prize-certificate.png`（1位賞状）
 
+子ども向け3案の比較用テンプレートは `public/pdf-templates/variants/` 配下にあります。
+次のコマンドで有効化する案を切り替えできます。
+
+```bash
+npm run templates:use adventure
+npm run templates:use medal-fes
+npm run templates:use swim-hero
+```
+
+テンプレートを再生成する場合:
+
+```bash
+npm run templates:generate
+```
+
+`templates:generate` は Python と Pillow (`pip install pillow`) が必要です。
+
 画像が未配置の場合はシンプルなフォールバックレイアウトで生成されます。
