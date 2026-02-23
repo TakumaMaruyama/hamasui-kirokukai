@@ -577,8 +577,8 @@ function buildRecordTemplateDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.templatePage}>
-        <Image style={styles.templateBackground} src={templateDataUri} />
+      <Page size="A4" style={styles.templatePage} wrap={false}>
+        <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
         <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
         <Text style={styles.recordGradeValue}>{formatGradeShortLabel(athlete.grade)}</Text>
@@ -598,7 +598,7 @@ function buildRecordFallbackDocument({
 }): ReactElement {
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} wrap={false}>
         <Text style={styles.title}>記録証</Text>
         <Text style={styles.meta}>ふりがな: {athlete.fullNameKana || athlete.fullName}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
@@ -632,8 +632,8 @@ function buildRecordCertificateTemplateDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.templatePage}>
-        <Image style={styles.templateBackground} src={templateDataUri} />
+      <Page size="A4" style={styles.templatePage} wrap={false}>
+        <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
         <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
         <Text style={styles.recordGradeLabelValue}>{formatGradeLabel(athlete.grade)}</Text>
@@ -654,7 +654,7 @@ function buildRecordCertificateFallbackDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} wrap={false}>
         <Text style={styles.title}>記録証</Text>
         <Text style={styles.meta}>ふりがな: {nameKana}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
@@ -698,8 +698,8 @@ function buildFirstPrizeTemplateDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.templatePage}>
-        <Image style={styles.templateBackground} src={templateDataUri} />
+      <Page size="A4" style={styles.templatePage} wrap={false}>
+        <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.prizeNameKana}>{nameKana}</Text>
         <Text style={styles.prizeName}>{athlete.fullName}</Text>
         <Text style={styles.prizeMeta}>{`${formatGradeLabel(athlete.grade)} / ${genderLabel(athlete.gender)}`}</Text>
@@ -719,7 +719,7 @@ function buildFirstPrizeFallbackDocument({
 }): ReactElement {
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} wrap={false}>
         <Text style={styles.title}>賞状</Text>
         <Text style={styles.meta}>ふりがな: {athlete.fullNameKana || athlete.fullName}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
@@ -754,8 +754,8 @@ function buildFirstPrizeAwardTemplateDocument({
 }: FirstPrizeAwardPdfInput & { templateDataUri: string }): ReactElement {
   return (
     <Document>
-      <Page size="A4" style={styles.templatePage}>
-        <Image style={styles.templateBackground} src={templateDataUri} />
+      <Page size="A4" style={styles.templatePage} wrap={false}>
+        <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.prizeNameKana}>{athlete.fullNameKana?.trim() || athlete.fullName}</Text>
         <Text style={styles.prizeName}>{athlete.fullName}</Text>
         <Text style={styles.prizeAwardMeta}>{`${formatGradeLabel(athlete.grade)} ${genderLabel(athlete.gender)}`}</Text>
@@ -778,7 +778,7 @@ function buildFirstPrizeAwardFallbackDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} wrap={false}>
         <Text style={styles.title}>第1位 賞状</Text>
         <Text style={styles.meta}>ふりがな: {nameKana}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
