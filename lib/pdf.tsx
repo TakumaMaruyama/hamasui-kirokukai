@@ -17,7 +17,7 @@ const RECORD_TEMPLATE_FILE = "record-certificate.png";
 const FIRST_PRIZE_TEMPLATE_FILE = "first-prize-certificate.png";
 const TEMPLATE_DIRECTORY = path.join(process.cwd(), "public", "pdf-templates");
 
-const templateCache = new Map<string, string | null>();
+const templateCache = new Map<string, { dataUri: string; mtimeMs: number }>();
 let fontRegistered = false;
 
 export type RecordPdfEntry = {
@@ -96,22 +96,23 @@ function getMimeType(fileName: string): string {
 }
 
 function getTemplateDataUri(fileName: string): string | null {
-  const cached = templateCache.get(fileName);
-  if (typeof cached !== "undefined") {
-    return cached;
-  }
-
   const filePath = path.join(TEMPLATE_DIRECTORY, fileName);
   if (!fs.existsSync(filePath)) {
-    templateCache.set(fileName, null);
+    templateCache.delete(fileName);
     return null;
+  }
+
+  const mtimeMs = fs.statSync(filePath).mtimeMs;
+  const cached = templateCache.get(fileName);
+  if (cached && cached.mtimeMs === mtimeMs) {
+    return cached.dataUri;
   }
 
   const mimeType = getMimeType(fileName);
   const base64 = fs.readFileSync(filePath).toString("base64");
   const dataUri = `data:${mimeType};base64,${base64}`;
 
-  templateCache.set(fileName, dataUri);
+  templateCache.set(fileName, { dataUri, mtimeMs });
   return dataUri;
 }
 
