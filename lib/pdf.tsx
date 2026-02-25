@@ -298,6 +298,10 @@ const styles = StyleSheet.create({
     width: A5_WIDTH,
     height: A5_HEIGHT
   },
+  templateFlowSpacer: {
+    width: 1,
+    height: A5_HEIGHT
+  },
   recordNameValue: {
     position: "absolute",
     top: 168,
@@ -582,6 +586,7 @@ function buildRecordTemplateDocument({
   return (
     <Document>
       <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
+        <View style={styles.templateFlowSpacer} />
         <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
         <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
@@ -637,6 +642,7 @@ function buildRecordCertificateTemplateDocument({
   return (
     <Document>
       <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
+        <View style={styles.templateFlowSpacer} />
         <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
         <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
@@ -703,6 +709,7 @@ function buildFirstPrizeTemplateDocument({
   return (
     <Document>
       <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
+        <View style={styles.templateFlowSpacer} />
         <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.prizeNameKana}>{nameKana}</Text>
         <Text style={styles.prizeName}>{athlete.fullName}</Text>
@@ -759,6 +766,7 @@ function buildFirstPrizeAwardTemplateDocument({
   return (
     <Document>
       <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
+        <View style={styles.templateFlowSpacer} />
         <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.prizeNameKana}>{athlete.fullNameKana?.trim() || athlete.fullName}</Text>
         <Text style={styles.prizeName}>{athlete.fullName}</Text>
