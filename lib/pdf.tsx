@@ -13,6 +13,9 @@ const FONT_FAMILY = "NotoSansJP";
 const NOTO_SANS_JP_FONT_URL = "https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Regular.otf";
 const A4_WIDTH = 595.28;
 const A4_HEIGHT = 841.89;
+const A5_WIDTH = 419.53;
+const A5_HEIGHT = 595.28;
+const CERTIFICATE_PAGE_SIZE = [A5_WIDTH, A5_HEIGHT] as const;
 const RECORD_TEMPLATE_FILE = "record-certificate.png";
 const FIRST_PRIZE_TEMPLATE_FILE = "first-prize-certificate.png";
 const TEMPLATE_DIRECTORY = path.join(process.cwd(), "public", "pdf-templates");
@@ -284,144 +287,144 @@ const styles = StyleSheet.create({
   },
   templatePage: {
     position: "relative",
-    width: A4_WIDTH,
-    height: A4_HEIGHT,
+    width: A5_WIDTH,
+    height: A5_HEIGHT,
     fontFamily: FONT_FAMILY
   },
   templateBackground: {
     position: "absolute",
     top: 0,
     left: 0,
-    width: A4_WIDTH,
-    height: A4_HEIGHT
+    width: A5_WIDTH,
+    height: A5_HEIGHT
   },
   recordNameValue: {
     position: "absolute",
-    top: 250,
-    left: 120,
-    width: 260,
-    fontSize: 30
+    top: 168,
+    left: 90,
+    width: 170,
+    fontSize: 22
   },
   recordNameKanaValue: {
     position: "absolute",
-    top: 226,
-    left: 120,
-    width: 260,
-    fontSize: 14
+    top: 150,
+    left: 90,
+    width: 170,
+    fontSize: 10
   },
   recordGradeValue: {
     position: "absolute",
-    top: 250,
-    left: 392,
-    width: 96,
-    textAlign: "center",
-    fontSize: 30
-  },
-  recordEventValue: {
-    position: "absolute",
-    top: 358,
-    left: 154,
-    width: 210,
-    fontSize: 20,
-    lineHeight: 1.5
-  },
-  recordTimeValue: {
-    position: "absolute",
-    top: 358,
-    left: 364,
-    width: 188,
-    fontSize: 20,
-    lineHeight: 1.5
-  },
-  recordGradeLabelValue: {
-    position: "absolute",
-    top: 250,
-    left: 330,
-    width: 190,
-    textAlign: "left",
-    fontSize: 20
-  },
-  recordIssueLabelValue: {
-    position: "absolute",
-    top: 700,
-    left: 0,
-    width: A4_WIDTH,
-    textAlign: "center",
-    fontSize: 18
-  },
-  prizeName: {
-    position: "absolute",
-    top: 360,
-    left: 0,
-    width: A4_WIDTH,
-    textAlign: "center",
-    fontSize: 54
-  },
-  prizeNameKana: {
-    position: "absolute",
-    top: 332,
-    left: 0,
-    width: A4_WIDTH,
-    textAlign: "center",
-    fontSize: 20
-  },
-  prizeEvent: {
-    position: "absolute",
-    top: 484,
-    left: 0,
-    width: A4_WIDTH,
-    textAlign: "center",
-    fontSize: 30,
-    lineHeight: 1.4
-  },
-  prizeTime: {
-    position: "absolute",
-    top: 564,
-    left: 0,
-    width: A4_WIDTH,
-    textAlign: "center",
-    fontSize: 28,
-    lineHeight: 1.4
-  },
-  prizeMeta: {
-    position: "absolute",
-    top: 438,
-    left: 0,
-    width: A4_WIDTH,
-    textAlign: "center",
-    fontSize: 24
-  },
-  prizeAwardMeta: {
-    position: "absolute",
-    top: 470,
-    left: 0,
-    width: A4_WIDTH,
+    top: 168,
+    left: 278,
+    width: 68,
     textAlign: "center",
     fontSize: 22
   },
+  recordEventValue: {
+    position: "absolute",
+    top: 255,
+    left: 108,
+    width: 146,
+    fontSize: 14,
+    lineHeight: 1.48
+  },
+  recordTimeValue: {
+    position: "absolute",
+    top: 255,
+    left: 257,
+    width: 130,
+    fontSize: 14,
+    lineHeight: 1.48
+  },
+  recordGradeLabelValue: {
+    position: "absolute",
+    top: 170,
+    left: 258,
+    width: 130,
+    textAlign: "center",
+    fontSize: 14
+  },
+  recordIssueLabelValue: {
+    position: "absolute",
+    top: 500,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 14
+  },
+  prizeName: {
+    position: "absolute",
+    top: 258,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 38
+  },
+  prizeNameKana: {
+    position: "absolute",
+    top: 239,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 14
+  },
+  prizeEvent: {
+    position: "absolute",
+    top: 345,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 22,
+    lineHeight: 1.32
+  },
+  prizeTime: {
+    position: "absolute",
+    top: 407,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 20,
+    lineHeight: 1.32
+  },
+  prizeMeta: {
+    position: "absolute",
+    top: 314,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 16
+  },
+  prizeAwardMeta: {
+    position: "absolute",
+    top: 314,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 16
+  },
   prizeAwardEvent: {
     position: "absolute",
-    top: 530,
+    top: 368,
     left: 0,
-    width: A4_WIDTH,
+    width: A5_WIDTH,
     textAlign: "center",
-    fontSize: 26
+    fontSize: 20
   },
   prizeAwardTime: {
     position: "absolute",
-    top: 590,
+    top: 420,
     left: 0,
-    width: A4_WIDTH,
+    width: A5_WIDTH,
     textAlign: "center",
-    fontSize: 24
+    fontSize: 18
   },
   prizeIssueLabel: {
     position: "absolute",
-    top: 700,
+    top: 503,
     left: 0,
-    width: A4_WIDTH,
+    width: A5_WIDTH,
     textAlign: "center",
-    fontSize: 18
+    fontSize: 14
   }
 });
 
@@ -578,7 +581,7 @@ function buildRecordTemplateDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.templatePage} wrap={false}>
+      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
         <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
         <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
@@ -599,7 +602,7 @@ function buildRecordFallbackDocument({
 }): ReactElement {
   return (
     <Document>
-      <Page size="A4" style={styles.page} wrap={false}>
+      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
         <Text style={styles.title}>記録証</Text>
         <Text style={styles.meta}>ふりがな: {athlete.fullNameKana || athlete.fullName}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
@@ -633,7 +636,7 @@ function buildRecordCertificateTemplateDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.templatePage} wrap={false}>
+      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
         <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
         <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
@@ -655,7 +658,7 @@ function buildRecordCertificateFallbackDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page} wrap={false}>
+      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
         <Text style={styles.title}>記録証</Text>
         <Text style={styles.meta}>ふりがな: {nameKana}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
@@ -699,7 +702,7 @@ function buildFirstPrizeTemplateDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.templatePage} wrap={false}>
+      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
         <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.prizeNameKana}>{nameKana}</Text>
         <Text style={styles.prizeName}>{athlete.fullName}</Text>
@@ -720,7 +723,7 @@ function buildFirstPrizeFallbackDocument({
 }): ReactElement {
   return (
     <Document>
-      <Page size="A4" style={styles.page} wrap={false}>
+      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
         <Text style={styles.title}>賞状</Text>
         <Text style={styles.meta}>ふりがな: {athlete.fullNameKana || athlete.fullName}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
@@ -755,7 +758,7 @@ function buildFirstPrizeAwardTemplateDocument({
 }: FirstPrizeAwardPdfInput & { templateDataUri: string }): ReactElement {
   return (
     <Document>
-      <Page size="A4" style={styles.templatePage} wrap={false}>
+      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
         <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.prizeNameKana}>{athlete.fullNameKana?.trim() || athlete.fullName}</Text>
         <Text style={styles.prizeName}>{athlete.fullName}</Text>
@@ -779,7 +782,7 @@ function buildFirstPrizeAwardFallbackDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page} wrap={false}>
+      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
         <Text style={styles.title}>第1位 賞状</Text>
         <Text style={styles.meta}>ふりがな: {nameKana}</Text>
         <Text style={styles.meta}>氏名: {athlete.fullName}</Text>

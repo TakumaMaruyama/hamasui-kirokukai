@@ -4,6 +4,7 @@ PDF台紙をこのフォルダに配置してください。
 - 1位賞状: `first-prize-certificate.png`
 
 拡張子は `.png` を推奨します（`.jpg` / `.jpeg` / `.webp` も読み込み可能）。
+サイズは A5 縦（推奨: 1748x2480px, 300dpi）に合わせてください。
 
 ## 記録証の差し込み項目
 `record-certificate.png` は、以下の動的文字を重ねて出力します。

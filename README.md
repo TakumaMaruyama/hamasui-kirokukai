@@ -51,4 +51,6 @@ Playwright / Chromium の追加インストールは不要です。
 - `public/pdf-templates/record-certificate.png`（記録証）
 - `public/pdf-templates/first-prize-certificate.png`（1位賞状）
 
+台紙は A5 縦（推奨: 1748x2480px, 300dpi）で作成してください。
+
 画像が未配置の場合はシンプルなフォールバックレイアウトで生成されます。
