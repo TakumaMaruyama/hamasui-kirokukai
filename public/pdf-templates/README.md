@@ -1,13 +1,13 @@
 PDF台紙をこのフォルダに配置してください。
 
-- 記録証: `record-certificate.png`
-- 1位賞状: `first-prize-certificate.png`
+- 記録証: `record-certificate.(jpg|jpeg|png|webp)`
+- 1位賞状: `first-prize-certificate.(jpg|jpeg|png|webp)`
 
-拡張子は `.png` を推奨します（`.jpg` / `.jpeg` / `.webp` も読み込み可能）。
 サイズは A5 縦（推奨: 1748x2480px, 300dpi）に合わせてください。
+写真やグラデーションが多い台紙は `.jpg` / `.jpeg` を推奨します。大きい台紙はサーバー側で軽量化してから PDF に埋め込みます。
 
 ## 記録証の差し込み項目
-`record-certificate.png` は、以下の動的文字を重ねて出力します。
+`record-certificate.*` は、以下の動的文字を重ねて出力します。
 
 - ふりがな
 - 氏名
@@ -17,7 +17,7 @@ PDF台紙をこのフォルダに配置してください。
 - 年月
 
 ## 1位賞状の差し込み項目
-`first-prize-certificate.png` は、以下の動的文字を重ねて出力します。
+`first-prize-certificate.*` は、以下の動的文字を重ねて出力します。
 
 - ふりがな
 - 氏名

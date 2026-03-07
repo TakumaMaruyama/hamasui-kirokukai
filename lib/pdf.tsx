@@ -3,6 +3,7 @@ import path from "node:path";
 import { Gender } from "@prisma/client";
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import React, { type ReactElement } from "react";
+import sharp from "sharp";
 import type { ChallengeEventRankingGroup, RankingEntry, RankingGroup } from "./ranking-report";
 import { buildChallengeRankingTableRows, type ChallengeRankingTableRow } from "./challenge-ranking-layout";
 import { formatTimeForDocument } from "./display-time";
@@ -15,12 +16,19 @@ const A4_WIDTH = 595.28;
 const A4_HEIGHT = 841.89;
 const A5_WIDTH = 419.53;
 const A5_HEIGHT = 595.28;
-const CERTIFICATE_PAGE_SIZE = [A5_WIDTH, A5_HEIGHT] as [number, number];
-const RECORD_TEMPLATE_FILE = "record-certificate.png";
-const FIRST_PRIZE_TEMPLATE_FILE = "first-prize-certificate.png";
+const CERTIFICATE_PAGE_SIZE = "A5";
+const RECORD_TEMPLATE_NAME = "record-certificate";
+const FIRST_PRIZE_TEMPLATE_NAME = "first-prize-certificate";
 const TEMPLATE_DIRECTORY = path.join(process.cwd(), "public", "pdf-templates");
+const TEMPLATE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"] as const;
+const TEMPLATE_RECOMMENDED_WIDTH = 1748;
+const TEMPLATE_RECOMMENDED_HEIGHT = 2480;
+const TEMPLATE_EMBED_WIDTH = 1240;
+const TEMPLATE_EMBED_HEIGHT = 1754;
+const TEMPLATE_DIRECT_FILE_BYTES_LIMIT = 350 * 1024;
+const TEMPLATE_JPEG_QUALITY = 82;
 
-const templateCache = new Map<string, { dataUri: string; mtimeMs: number }>();
+const templateCache = new Map<string, { dataUri: string; filePath: string; mtimeMs: number }>();
 let fontRegistered = false;
 
 export type RecordPdfEntry = {
@@ -98,25 +106,80 @@ function getMimeType(fileName: string): string {
   return "application/octet-stream";
 }
 
-function getTemplateDataUri(fileName: string): string | null {
-  const filePath = path.join(TEMPLATE_DIRECTORY, fileName);
-  if (!fs.existsSync(filePath)) {
-    templateCache.delete(fileName);
+function buildDataUri(mimeType: string, buffer: Buffer): string {
+  const base64 = buffer.toString("base64");
+  return `data:${mimeType};base64,${base64}`;
+}
+
+function resolveTemplatePath(templateName: string): string | null {
+  for (const extension of TEMPLATE_EXTENSIONS) {
+    const filePath = path.join(TEMPLATE_DIRECTORY, `${templateName}${extension}`);
+    if (fs.existsSync(filePath)) {
+      return filePath;
+    }
+  }
+
+  return null;
+}
+
+async function buildOptimizedTemplateDataUri(filePath: string): Promise<string> {
+  const originalBuffer = fs.readFileSync(filePath);
+  const mimeType = getMimeType(filePath);
+
+  const metadata = await sharp(originalBuffer).metadata();
+  const width = metadata.width ?? 0;
+  const height = metadata.height ?? 0;
+  const shouldOptimize = mimeType === "image/webp"
+    || originalBuffer.byteLength > TEMPLATE_DIRECT_FILE_BYTES_LIMIT
+    || width > TEMPLATE_RECOMMENDED_WIDTH
+    || height > TEMPLATE_RECOMMENDED_HEIGHT;
+
+  if (!shouldOptimize) {
+    return buildDataUri(mimeType, originalBuffer);
+  }
+
+  const optimizedBuffer = await sharp(originalBuffer)
+    .rotate()
+    .resize({
+      width: TEMPLATE_EMBED_WIDTH,
+      height: TEMPLATE_EMBED_HEIGHT,
+      fit: "inside",
+      withoutEnlargement: true
+    })
+    .flatten({ background: "#ffffff" })
+    .jpeg({
+      quality: TEMPLATE_JPEG_QUALITY,
+      mozjpeg: true,
+      chromaSubsampling: "4:4:4"
+    })
+    .toBuffer();
+
+  return buildDataUri("image/jpeg", optimizedBuffer);
+}
+
+async function getTemplateDataUri(templateName: string): Promise<string | null> {
+  const filePath = resolveTemplatePath(templateName);
+  if (!filePath) {
+    templateCache.delete(templateName);
     return null;
   }
 
   const mtimeMs = fs.statSync(filePath).mtimeMs;
-  const cached = templateCache.get(fileName);
-  if (cached && cached.mtimeMs === mtimeMs) {
+  const cached = templateCache.get(templateName);
+  if (cached && cached.filePath === filePath && cached.mtimeMs === mtimeMs) {
     return cached.dataUri;
   }
 
-  const mimeType = getMimeType(fileName);
-  const base64 = fs.readFileSync(filePath).toString("base64");
-  const dataUri = `data:${mimeType};base64,${base64}`;
-
-  templateCache.set(fileName, { dataUri, mtimeMs });
-  return dataUri;
+  try {
+    const dataUri = await buildOptimizedTemplateDataUri(filePath);
+    templateCache.set(templateName, { dataUri, filePath, mtimeMs });
+    return dataUri;
+  } catch (error) {
+    templateCache.delete(templateName);
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`Failed to load PDF template ${path.basename(filePath)}: ${message}`);
+    return null;
+  }
 }
 
 function buildRecordLines(entries: RecordPdfEntry[]) {
@@ -812,7 +875,7 @@ export async function renderRecordPdf({
   athlete: PdfAthlete;
   entries: RecordPdfEntry[];
 }): Promise<Buffer> {
-  const templateDataUri = getTemplateDataUri(RECORD_TEMPLATE_FILE);
+  const templateDataUri = await getTemplateDataUri(RECORD_TEMPLATE_NAME);
   if (templateDataUri) {
     return renderPdfDocument(buildRecordTemplateDocument({ athlete, entries, templateDataUri }));
   }
@@ -821,7 +884,7 @@ export async function renderRecordPdf({
 }
 
 export async function renderRecordCertificatePdf(input: RecordCertificatePdfInput): Promise<Buffer> {
-  const templateDataUri = getTemplateDataUri(RECORD_TEMPLATE_FILE);
+  const templateDataUri = await getTemplateDataUri(RECORD_TEMPLATE_NAME);
   if (templateDataUri) {
     return renderPdfDocument(buildRecordCertificateTemplateDocument({ ...input, templateDataUri }));
   }
@@ -836,7 +899,7 @@ export async function renderCertificatePdf({
   athlete: PdfAthlete;
   entries: CertificatePdfEntry[];
 }): Promise<Buffer> {
-  const templateDataUri = getTemplateDataUri(FIRST_PRIZE_TEMPLATE_FILE);
+  const templateDataUri = await getTemplateDataUri(FIRST_PRIZE_TEMPLATE_NAME);
   if (templateDataUri) {
     return renderPdfDocument(buildFirstPrizeTemplateDocument({ athlete, entries, templateDataUri }));
   }
@@ -845,7 +908,7 @@ export async function renderCertificatePdf({
 }
 
 export async function renderFirstPrizeAwardPdf(input: FirstPrizeAwardPdfInput): Promise<Buffer> {
-  const templateDataUri = getTemplateDataUri(FIRST_PRIZE_TEMPLATE_FILE);
+  const templateDataUri = await getTemplateDataUri(FIRST_PRIZE_TEMPLATE_NAME);
   if (templateDataUri) {
     return renderPdfDocument(buildFirstPrizeAwardTemplateDocument({ ...input, templateDataUri }));
   }
