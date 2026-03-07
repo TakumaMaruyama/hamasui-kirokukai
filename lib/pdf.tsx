@@ -17,7 +17,6 @@ const A4_HEIGHT = 841.89;
 const A5_WIDTH = 419.53;
 const A5_HEIGHT = 595.28;
 const CERTIFICATE_PAGE_SIZE = "A5";
-const RECORD_TEMPLATE_NAME = "record-certificate";
 const FIRST_PRIZE_TEMPLATE_NAME = "first-prize-certificate";
 const TEMPLATE_DIRECTORY = path.join(process.cwd(), "public", "pdf-templates");
 const TEMPLATE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"] as const;
@@ -27,6 +26,9 @@ const TEMPLATE_EMBED_WIDTH = 1240;
 const TEMPLATE_EMBED_HEIGHT = 1754;
 const TEMPLATE_DIRECT_FILE_BYTES_LIMIT = 350 * 1024;
 const TEMPLATE_JPEG_QUALITY = 82;
+const MAX_RECORD_TABLE_ROWS = 6;
+const RECORD_OVERFLOW_NOTE = "※ 7種目以上あるため6件まで表示しています。";
+const RECORD_DECOR_DOTS = [22, 60, 98, 136, 242, 280, 318, 356] as const;
 
 const templateCache = new Map<string, { dataUri: string; filePath: string; mtimeMs: number }>();
 let fontRegistered = false;
@@ -55,6 +57,16 @@ export type RecordCertificatePdfInput = {
   athlete: PdfAthlete;
   entries: RecordPdfEntry[];
   issueLabel: string;
+};
+
+type RecordLayoutVariant = "swimming" | "school";
+
+type RecordDisplayModel = {
+  visibleEntries: RecordPdfEntry[];
+  overflowCount: number;
+  hasOverflow: boolean;
+  footerText: string;
+  headerSubtitle: string;
 };
 
 type PdfAthlete = {
@@ -182,20 +194,39 @@ async function getTemplateDataUri(templateName: string): Promise<string | null> 
   }
 }
 
-function buildRecordLines(entries: RecordPdfEntry[]) {
-  const visibleEntries = entries.slice(0, 6);
-  const eventLines = visibleEntries.map((entry) => entry.eventTitle);
-  const timeLines = visibleEntries.map((entry) => formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs }));
-
-  if (entries.length > visibleEntries.length) {
-    eventLines.push("...");
-    timeLines.push("...");
-  }
+function buildRecordDisplayModel({
+  variant,
+  entries,
+  issueLabel
+}: {
+  variant: RecordLayoutVariant;
+  entries: RecordPdfEntry[];
+  issueLabel?: string;
+}): RecordDisplayModel {
+  const visibleEntries = entries.slice(0, MAX_RECORD_TABLE_ROWS);
+  const overflowCount = Math.max(0, entries.length - visibleEntries.length);
 
   return {
-    events: eventLines.join("\n"),
-    times: timeLines.join("\n")
+    visibleEntries,
+    overflowCount,
+    hasOverflow: overflowCount > 0,
+    footerText: variant === "swimming" && issueLabel ? `発行年月 ${issueLabel}` : "学校委託コース記録証",
+    headerSubtitle: variant === "swimming" ? "一般コース" : "学校委託コース"
   };
+}
+
+function resolveRecordNameFontSize(fullName: string): 24 | 21 | 18 {
+  const normalizedLength = fullName.replace(/\s+/g, "").length;
+
+  if (normalizedLength >= 14) {
+    return 18;
+  }
+
+  if (normalizedLength >= 10) {
+    return 21;
+  }
+
+  return 24;
 }
 
 const styles = StyleSheet.create({
@@ -365,59 +396,207 @@ const styles = StyleSheet.create({
     width: 1,
     height: A5_HEIGHT
   },
-  recordNameValue: {
-    position: "absolute",
-    top: 168,
-    left: 90,
-    width: 170,
-    fontSize: 22
-  },
-  recordNameKanaValue: {
-    position: "absolute",
-    top: 150,
-    left: 90,
-    width: 170,
-    fontSize: 10
-  },
-  recordGradeValue: {
-    position: "absolute",
-    top: 168,
-    left: 278,
-    width: 68,
-    textAlign: "center",
-    fontSize: 22
-  },
-  recordEventValue: {
-    position: "absolute",
-    top: 255,
-    left: 108,
-    width: 146,
-    fontSize: 14,
-    lineHeight: 1.48
-  },
-  recordTimeValue: {
-    position: "absolute",
-    top: 255,
-    left: 257,
-    width: 130,
-    fontSize: 14,
-    lineHeight: 1.48
-  },
-  recordGradeLabelValue: {
-    position: "absolute",
-    top: 170,
-    left: 258,
-    width: 130,
-    textAlign: "center",
-    fontSize: 14
-  },
-  recordIssueLabelValue: {
-    position: "absolute",
-    top: 500,
-    left: 0,
+  recordPage: {
+    position: "relative",
     width: A5_WIDTH,
+    height: A5_HEIGHT,
+    fontFamily: FONT_FAMILY,
+    backgroundColor: "#eaf7ff",
+    paddingTop: 28,
+    paddingBottom: 28,
+    paddingHorizontal: 30
+  },
+  recordHeaderDot: {
+    position: "absolute",
+    top: 18,
+    width: 5,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: "#facc15"
+  },
+  recordCard: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderWidth: 2,
+    borderColor: "#3b82d6",
+    borderRadius: 20
+  },
+  recordHeaderBand: {
+    backgroundColor: "#4aa7e8",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingTop: 16,
+    paddingBottom: 18,
+    paddingHorizontal: 20,
+    alignItems: "center"
+  },
+  recordHeaderPill: {
+    backgroundColor: "#8ad1fb",
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    marginBottom: 8
+  },
+  recordHeaderEyebrow: {
+    fontSize: 9,
+    fontWeight: 700,
+    color: "#ffffff",
+    letterSpacing: 0.8
+  },
+  recordHeaderTitle: {
+    fontSize: 25,
+    fontWeight: 700,
+    color: "#ffffff",
+    marginBottom: 3
+  },
+  recordHeaderSubtitle: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#dff5ff"
+  },
+  recordBody: {
+    flex: 1,
+    paddingTop: 20,
+    paddingBottom: 18,
+    paddingHorizontal: 22
+  },
+  recordInfoRow: {
+    flexDirection: "row",
+    marginBottom: 16
+  },
+  recordInfoNameCard: {
+    flex: 1,
+    marginRight: 12,
+    backgroundColor: "#f4fbff",
+    borderWidth: 1.5,
+    borderColor: "#8cc7f2",
+    borderRadius: 14,
+    paddingTop: 12,
+    paddingBottom: 14,
+    paddingHorizontal: 14
+  },
+  recordInfoGradeCard: {
+    width: 106,
+    backgroundColor: "#f4fbff",
+    borderWidth: 1.5,
+    borderColor: "#8cc7f2",
+    borderRadius: 14,
+    paddingTop: 12,
+    paddingBottom: 14,
+    paddingHorizontal: 10,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  recordInfoLabel: {
+    fontSize: 9,
+    fontWeight: 700,
+    color: "#456886",
+    marginBottom: 4
+  },
+  recordInfoKanaValue: {
+    fontSize: 9,
+    color: "#35546f",
+    lineHeight: 1.35
+  },
+  recordInfoNameLabel: {
+    marginTop: 10
+  },
+  recordInfoNameValue: {
+    fontWeight: 700,
+    color: "#12385b",
+    lineHeight: 1.15
+  },
+  recordInfoGradeValue: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#12385b",
     textAlign: "center",
-    fontSize: 14
+    lineHeight: 1.2
+  },
+  recordTableSectionTitle: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#12385b",
+    marginBottom: 8
+  },
+  recordTableWrap: {
+    borderWidth: 1.5,
+    borderColor: "#8cc7f2",
+    borderRadius: 12
+  },
+  recordTableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#4aa7e8",
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10
+  },
+  recordTableHeaderCell: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#ffffff"
+  },
+  recordTableHeaderEvent: {
+    width: "62%"
+  },
+  recordTableHeaderTime: {
+    width: "38%",
+    textAlign: "right"
+  },
+  recordTableRow: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#cfe8fb",
+    minHeight: 42
+  },
+  recordTableCell: {
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    justifyContent: "center"
+  },
+  recordTableCellEvent: {
+    width: "62%",
+    borderRightWidth: 1,
+    borderRightColor: "#cfe8fb"
+  },
+  recordTableCellTime: {
+    width: "38%"
+  },
+  recordTableEventText: {
+    fontSize: 12,
+    color: "#12385b",
+    lineHeight: 1.35
+  },
+  recordTableTimeText: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#12385b",
+    textAlign: "right"
+  },
+  recordTableNote: {
+    marginTop: 8,
+    fontSize: 9,
+    color: "#456886"
+  },
+  recordFooterSpacer: {
+    flexGrow: 1
+  },
+  recordFooterPill: {
+    alignSelf: "center",
+    backgroundColor: "#e6f4ff",
+    borderWidth: 1,
+    borderColor: "#8cc7f2",
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 16,
+    marginTop: 14
+  },
+  recordFooterText: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#12385b",
+    textAlign: "center"
   },
   prizeName: {
     position: "absolute",
@@ -634,119 +813,80 @@ async function renderPdfDocument(document: ReactElement): Promise<Buffer> {
   }
 }
 
-function buildRecordTemplateDocument({
-  athlete,
-  entries,
-  templateDataUri
-}: {
-  athlete: PdfAthlete;
-  entries: RecordPdfEntry[];
-  templateDataUri: string;
-}): ReactElement {
-  const lines = buildRecordLines(entries);
-  const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
-
-  return (
-    <Document>
-      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
-        <View style={styles.templateFlowSpacer} />
-        <Image fixed style={styles.templateBackground} src={templateDataUri} />
-        <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
-        <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
-        <Text style={styles.recordGradeValue}>{formatGradeShortLabel(athlete.grade)}</Text>
-        <Text style={styles.recordEventValue}>{lines.events}</Text>
-        <Text style={styles.recordTimeValue}>{lines.times}</Text>
-      </Page>
-    </Document>
-  );
-}
-
-function buildRecordFallbackDocument({
-  athlete,
-  entries
-}: {
-  athlete: PdfAthlete;
-  entries: RecordPdfEntry[];
-}): ReactElement {
-  return (
-    <Document>
-      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
-        <Text style={styles.title}>記録証</Text>
-        <Text style={styles.meta}>ふりがな: {athlete.fullNameKana || athlete.fullName}</Text>
-        <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
-        <Text style={styles.meta}>学年: {formatGradeLabel(athlete.grade)}</Text>
-
-        <View style={styles.table}>
-          <View style={styles.row}>
-            <Text style={[styles.cell, styles.cellEvent, styles.headerCell]}>種目</Text>
-            <Text style={[styles.cell, styles.cellTime, styles.headerCell]}>記録</Text>
-          </View>
-          {entries.map((entry, index) => (
-            <View key={`${entry.eventTitle}-${entry.timeText}-${index}`} style={index === entries.length - 1 ? [styles.row, styles.rowLast] : styles.row}>
-              <Text style={[styles.cell, styles.cellEvent]}>{entry.eventTitle}</Text>
-              <Text style={[styles.cell, styles.cellTime]}>{formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs })}</Text>
-            </View>
-          ))}
-        </View>
-      </Page>
-    </Document>
-  );
-}
-
-function buildRecordCertificateTemplateDocument({
-  athlete,
-  entries,
-  issueLabel,
-  templateDataUri
-}: RecordCertificatePdfInput & { templateDataUri: string }): ReactElement {
-  const lines = buildRecordLines(entries);
-  const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
-
-  return (
-    <Document>
-      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
-        <View style={styles.templateFlowSpacer} />
-        <Image fixed style={styles.templateBackground} src={templateDataUri} />
-        <Text style={styles.recordNameKanaValue}>{nameKana}</Text>
-        <Text style={styles.recordNameValue}>{athlete.fullName}</Text>
-        <Text style={styles.recordGradeLabelValue}>{formatGradeLabel(athlete.grade)}</Text>
-        <Text style={styles.recordEventValue}>{lines.events}</Text>
-        <Text style={styles.recordTimeValue}>{lines.times}</Text>
-        <Text style={styles.recordIssueLabelValue}>{issueLabel}</Text>
-      </Page>
-    </Document>
-  );
-}
-
-function buildRecordCertificateFallbackDocument({
+function buildReadableRecordDocument({
+  variant,
   athlete,
   entries,
   issueLabel
-}: RecordCertificatePdfInput): ReactElement {
+}: {
+  variant: RecordLayoutVariant;
+  athlete: PdfAthlete;
+  entries: RecordPdfEntry[];
+  issueLabel?: string;
+}): ReactElement {
   const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
+  const nameFontSize = resolveRecordNameFontSize(athlete.fullName);
+  const display = buildRecordDisplayModel({ variant, entries, issueLabel });
 
   return (
     <Document>
-      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
-        <Text style={styles.title}>記録証</Text>
-        <Text style={styles.meta}>ふりがな: {nameKana}</Text>
-        <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
-        <Text style={styles.meta}>学年: {formatGradeLabel(athlete.grade)}</Text>
-        <Text style={styles.meta}>年月: {issueLabel}</Text>
-        <View style={styles.table}>
-          <View style={styles.row}>
-            <Text style={[styles.cell, styles.cellEvent, styles.headerCell]}>種目</Text>
-            <Text style={[styles.cell, styles.cellTime, styles.headerCell]}>記録</Text>
-          </View>
-          {entries.map((entry, index) => (
-            <View
-              key={`${entry.eventTitle}-${entry.timeText}-${index}`}
-              style={index === entries.length - 1 ? [styles.row, styles.rowLast] : styles.row}
-            >
-              <Text style={[styles.cell, styles.cellEvent]}>{entry.eventTitle}</Text>
-              <Text style={[styles.cell, styles.cellTime]}>{formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs })}</Text>
+      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.recordPage} wrap={false}>
+        {RECORD_DECOR_DOTS.map((left, index) => (
+          <View key={`record-dot-${index}`} style={[styles.recordHeaderDot, { left }]} />
+        ))}
+        <View style={styles.recordCard}>
+          <View style={styles.recordHeaderBand}>
+            <View style={styles.recordHeaderPill}>
+              <Text style={styles.recordHeaderEyebrow}>SWIMMING RECORD</Text>
             </View>
-          ))}
+            <Text style={styles.recordHeaderTitle}>記録証</Text>
+            <Text style={styles.recordHeaderSubtitle}>{display.headerSubtitle}</Text>
+          </View>
+
+          <View style={styles.recordBody}>
+            <View style={styles.recordInfoRow}>
+              <View style={styles.recordInfoNameCard}>
+                <Text style={styles.recordInfoLabel}>ふりがな</Text>
+                <Text style={styles.recordInfoKanaValue}>{nameKana}</Text>
+                <Text style={[styles.recordInfoLabel, styles.recordInfoNameLabel]}>氏名</Text>
+                <Text style={[styles.recordInfoNameValue, { fontSize: nameFontSize }]}>{athlete.fullName}</Text>
+              </View>
+
+              <View style={styles.recordInfoGradeCard}>
+                <Text style={styles.recordInfoLabel}>学年</Text>
+                <Text style={styles.recordInfoGradeValue}>{formatGradeLabel(athlete.grade)}</Text>
+              </View>
+            </View>
+
+            <Text style={styles.recordTableSectionTitle}>今回のベスト記録</Text>
+            <View style={styles.recordTableWrap}>
+              <View style={styles.recordTableHeader}>
+                <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderEvent]}>種目</Text>
+                <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderTime]}>記録</Text>
+              </View>
+
+              {display.visibleEntries.map((entry, index) => (
+                <View
+                  key={`${entry.eventTitle}-${entry.timeText}-${index}`}
+                  style={[styles.recordTableRow, { backgroundColor: index % 2 === 0 ? "#ffffff" : "#f4fbff" }]}
+                >
+                  <View style={[styles.recordTableCell, styles.recordTableCellEvent]}>
+                    <Text style={styles.recordTableEventText}>{entry.eventTitle}</Text>
+                  </View>
+                  <View style={[styles.recordTableCell, styles.recordTableCellTime]}>
+                    <Text style={styles.recordTableTimeText}>{formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs })}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {display.hasOverflow ? <Text style={styles.recordTableNote}>{RECORD_OVERFLOW_NOTE}</Text> : null}
+
+            <View style={styles.recordFooterSpacer} />
+            <View style={styles.recordFooterPill}>
+              <Text style={styles.recordFooterText}>{display.footerText}</Text>
+            </View>
+          </View>
         </View>
       </Page>
     </Document>
@@ -875,21 +1015,11 @@ export async function renderRecordPdf({
   athlete: PdfAthlete;
   entries: RecordPdfEntry[];
 }): Promise<Buffer> {
-  const templateDataUri = await getTemplateDataUri(RECORD_TEMPLATE_NAME);
-  if (templateDataUri) {
-    return renderPdfDocument(buildRecordTemplateDocument({ athlete, entries, templateDataUri }));
-  }
-
-  return renderPdfDocument(buildRecordFallbackDocument({ athlete, entries }));
+  return renderPdfDocument(buildReadableRecordDocument({ variant: "school", athlete, entries }));
 }
 
 export async function renderRecordCertificatePdf(input: RecordCertificatePdfInput): Promise<Buffer> {
-  const templateDataUri = await getTemplateDataUri(RECORD_TEMPLATE_NAME);
-  if (templateDataUri) {
-    return renderPdfDocument(buildRecordCertificateTemplateDocument({ ...input, templateDataUri }));
-  }
-
-  return renderPdfDocument(buildRecordCertificateFallbackDocument(input));
+  return renderPdfDocument(buildReadableRecordDocument({ variant: "swimming", ...input }));
 }
 
 export async function renderCertificatePdf({

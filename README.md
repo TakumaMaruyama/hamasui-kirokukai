@@ -46,11 +46,12 @@ npm run dev
 `@react-pdf/renderer` を使ってサーバー側でPDFを直接生成します。  
 Playwright / Chromium の追加インストールは不要です。
 
-台紙デザインを使う場合は、以下の画像を配置してください。
+記録証はコードレイアウトで直接生成します。背景画像テンプレートは使いません。
 
-- `public/pdf-templates/record-certificate.(jpg|jpeg|png|webp)`（記録証）
+1位賞状の台紙デザインを使う場合は、以下の画像を配置してください。
+
 - `public/pdf-templates/first-prize-certificate.(jpg|jpeg|png|webp)`（1位賞状）
 
 台紙は A5 縦（推奨: 1748x2480px, 300dpi）で作成してください。写真やグラデーションが多い台紙は `jpg` / `jpeg` 推奨です。
 
-画像が未配置の場合はシンプルなフォールバックレイアウトで生成されます。
+賞状の台紙画像が未配置の場合はシンプルなフォールバックレイアウトで生成されます。

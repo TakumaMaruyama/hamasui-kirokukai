@@ -40,7 +40,6 @@ export type RecordCertificate = {
 const INVALID_FILENAME_CHARS = /[\\/:*?"<>|\r\n\t]+/g;
 const MULTIPLE_SPACES = /\s+/g;
 const MAX_FILENAME_PART_LENGTH = 80;
-const MAX_RECORD_ENTRIES = 6;
 
 function toIssueLabelFromDate(date: Date): string {
   return `${date.getUTCFullYear()}年${date.getUTCMonth() + 1}月`;
@@ -95,17 +94,6 @@ function ensureUniqueFileName(baseName: string, usedNames: Set<string>): string 
   }
 
   throw new Error("記録証のファイル名が重複しすぎています");
-}
-
-export function toRecordCertificateDisplayEntries(entries: RecordCertificateEntry[]): RecordCertificateEntry[] {
-  if (entries.length <= MAX_RECORD_ENTRIES) {
-    return entries;
-  }
-
-  return [
-    ...entries.slice(0, MAX_RECORD_ENTRIES),
-    { eventTitle: "...", timeText: "...", timeMs: undefined }
-  ];
 }
 
 export function buildRecordCertificates(
@@ -176,7 +164,7 @@ export function buildRecordCertificates(
           grade: group.athlete.grade,
           gender: group.athlete.gender
         },
-        entries: toRecordCertificateDisplayEntries(entries),
+        entries,
         issueLabel,
         fileName
       };

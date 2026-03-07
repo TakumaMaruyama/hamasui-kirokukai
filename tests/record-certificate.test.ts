@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   buildRecordCertificates,
-  toRecordCertificateDisplayEntries,
   type RecordCertificateSourceRow
 } from "../lib/record-certificate";
 
@@ -107,19 +106,20 @@ describe("buildRecordCertificates", () => {
     expect(certificates).toHaveLength(2);
     expect(certificates[0]?.fileName).not.toBe(certificates[1]?.fileName);
   });
-});
 
-describe("toRecordCertificateDisplayEntries", () => {
-  it("limits rows to 6 and appends ellipsis row", () => {
-    const input = Array.from({ length: 7 }, (_, index) => ({
-      eventTitle: `${index + 1}種目`,
-      timeText: `${index + 1}秒`,
-      timeMs: (index + 1) * 1000
-    }));
+  it("keeps all best-by-event rows for PDF-side truncation", () => {
+    const certificates = buildRecordCertificates(
+      Array.from({ length: 7 }, (_, index) =>
+        buildRow({
+          eventId: `event-${index + 1}`,
+          event: { title: `${index + 1}種目` },
+          timeText: `${index + 1}秒00`,
+          timeMs: (index + 1) * 1000
+        })
+      )
+    );
 
-    const displayed = toRecordCertificateDisplayEntries(input);
-    expect(displayed).toHaveLength(7);
-    expect(displayed[6]?.eventTitle).toBe("...");
-    expect(displayed[6]?.timeText).toBe("...");
+    expect(certificates[0]?.entries).toHaveLength(7);
+    expect(certificates[0]?.entries[6]?.eventTitle).toBe("7種目");
   });
 });
