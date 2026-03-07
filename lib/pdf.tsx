@@ -66,7 +66,7 @@ type RecordDisplayModel = {
   overflowCount: number;
   hasOverflow: boolean;
   footerText: string;
-  headerSubtitle: string;
+  headerSubtitle: string | null;
 };
 
 type PdfAthlete = {
@@ -211,7 +211,7 @@ function buildRecordDisplayModel({
     overflowCount,
     hasOverflow: overflowCount > 0,
     footerText: variant === "swimming" && issueLabel ? `発行年月 ${issueLabel}` : "学校委託コース記録証",
-    headerSubtitle: variant === "swimming" ? "一般コース" : "学校委託コース"
+    headerSubtitle: variant === "swimming" ? null : "学校委託コース"
   };
 }
 
@@ -438,10 +438,10 @@ const styles = StyleSheet.create({
     marginBottom: 8
   },
   recordHeaderEyebrow: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
     color: "#ffffff",
-    letterSpacing: 0.8
+    letterSpacing: 0
   },
   recordHeaderTitle: {
     fontSize: 25,
@@ -496,10 +496,8 @@ const styles = StyleSheet.create({
   recordInfoKanaValue: {
     fontSize: 9,
     color: "#35546f",
-    lineHeight: 1.35
-  },
-  recordInfoNameLabel: {
-    marginTop: 10
+    lineHeight: 1.35,
+    marginBottom: 8
   },
   recordInfoNameValue: {
     fontWeight: 700,
@@ -520,9 +518,10 @@ const styles = StyleSheet.create({
     marginBottom: 8
   },
   recordTableWrap: {
-    borderWidth: 1.5,
-    borderColor: "#8cc7f2",
-    borderRadius: 12
+    backgroundColor: "#8cc7f2",
+    borderRadius: 12,
+    padding: 1.5,
+    overflow: "hidden"
   },
   recordTableHeader: {
     flexDirection: "row",
@@ -549,6 +548,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#cfe8fb",
     minHeight: 42
+  },
+  recordTableRowLast: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#8cc7f2"
   },
   recordTableCell: {
     paddingVertical: 9,
@@ -837,18 +840,16 @@ function buildReadableRecordDocument({
         <View style={styles.recordCard}>
           <View style={styles.recordHeaderBand}>
             <View style={styles.recordHeaderPill}>
-              <Text style={styles.recordHeaderEyebrow}>SWIMMING RECORD</Text>
+              <Text style={styles.recordHeaderEyebrow}>はまスイ記録会</Text>
             </View>
             <Text style={styles.recordHeaderTitle}>記録証</Text>
-            <Text style={styles.recordHeaderSubtitle}>{display.headerSubtitle}</Text>
+            {display.headerSubtitle ? <Text style={styles.recordHeaderSubtitle}>{display.headerSubtitle}</Text> : null}
           </View>
 
           <View style={styles.recordBody}>
             <View style={styles.recordInfoRow}>
               <View style={styles.recordInfoNameCard}>
-                <Text style={styles.recordInfoLabel}>ふりがな</Text>
                 <Text style={styles.recordInfoKanaValue}>{nameKana}</Text>
-                <Text style={[styles.recordInfoLabel, styles.recordInfoNameLabel]}>氏名</Text>
                 <Text style={[styles.recordInfoNameValue, { fontSize: nameFontSize }]}>{athlete.fullName}</Text>
               </View>
 
@@ -858,7 +859,7 @@ function buildReadableRecordDocument({
               </View>
             </View>
 
-            <Text style={styles.recordTableSectionTitle}>今回のベスト記録</Text>
+            <Text style={styles.recordTableSectionTitle}>今回の記録</Text>
             <View style={styles.recordTableWrap}>
               <View style={styles.recordTableHeader}>
                 <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderEvent]}>種目</Text>
@@ -868,7 +869,11 @@ function buildReadableRecordDocument({
               {display.visibleEntries.map((entry, index) => (
                 <View
                   key={`${entry.eventTitle}-${entry.timeText}-${index}`}
-                  style={[styles.recordTableRow, { backgroundColor: index % 2 === 0 ? "#ffffff" : "#f4fbff" }]}
+                  style={[
+                    styles.recordTableRow,
+                    ...(index === display.visibleEntries.length - 1 ? [styles.recordTableRowLast] : []),
+                    { backgroundColor: index % 2 === 0 ? "#ffffff" : "#f4fbff" }
+                  ]}
                 >
                   <View style={[styles.recordTableCell, styles.recordTableCellEvent]}>
                     <Text style={styles.recordTableEventText}>{entry.eventTitle}</Text>

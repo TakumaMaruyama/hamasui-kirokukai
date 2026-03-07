@@ -144,12 +144,13 @@ describe("record PDF layout", () => {
     expect(root.type).toBe("Document");
 
     const texts = collectTextNodes(root).join("\n");
+    expect(texts).toContain("はまスイ記録会");
     expect(texts).toContain("記録証");
-    expect(texts).toContain("一般コース");
-    expect(texts).toContain("ふりがな");
-    expect(texts).toContain("氏名");
+    expect(texts).not.toContain("一般コース");
+    expect(texts).not.toContain("ふりがな");
+    expect(texts).not.toContain("氏名");
     expect(texts).toContain("学年");
-    expect(texts).toContain("今回のベスト記録");
+    expect(texts).toContain("今回の記録");
     expect(texts).toContain("種目");
     expect(texts).toContain("記録");
     expect(texts).toContain("発行年月 2025年9月");
