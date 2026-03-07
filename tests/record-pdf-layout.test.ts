@@ -119,12 +119,31 @@ function findTextElement(root: unknown, matcher: (text: string) => boolean): any
   return found;
 }
 
+function collectElementsByType(root: unknown, type: string): any[] {
+  const elements: any[] = [];
+
+  walkNode(root, (value) => {
+    if (value.type === type) {
+      elements.push(value);
+    }
+  });
+
+  return elements;
+}
+
+function collectRecordRowViews(root: unknown): any[] {
+  return collectElementsByType(root, "View").filter((element) => {
+    const style = flattenStyle(element.props?.style);
+    return style.flexDirection === "row" && style.borderTopWidth === 1 && style.borderTopColor === "#cfe8fb" && style.height === 42;
+  });
+}
+
 describe("record PDF layout", () => {
   beforeEach(() => {
     mockState.lastDocument = null;
   });
 
-  it("renders readable swimming record labels without image templates", async () => {
+  it("renders swimming records in exactly three fixed rows", async () => {
     await renderRecordCertificatePdf({
       athlete: {
         fullName: "窪園 彩希",
@@ -142,6 +161,11 @@ describe("record PDF layout", () => {
     const root = mockState.lastDocument as any;
     expect(root).toBeTruthy();
     expect(root.type).toBe("Document");
+    const rowViews = collectRecordRowViews(root);
+    expect(rowViews).toHaveLength(3);
+    expect(collectTextNodes(rowViews[0]).join("")).toContain("15mクロール");
+    expect(collectTextNodes(rowViews[1]).join("")).toContain("30mクロール");
+    expect(collectTextNodes(rowViews[2]).join("").trim()).toBe("");
 
     const texts = collectTextNodes(root).join("\n");
     expect(texts).toContain("はまスイ記録会");
@@ -156,11 +180,11 @@ describe("record PDF layout", () => {
     expect(texts).toContain("発行年月 2025年9月");
     expect(texts).toContain("窪園 彩希");
     expect(texts).toContain("くぼその さき");
-    expect(texts).not.toContain("...");
+    expect(texts).not.toContain("※ ");
     expect(collectNodeTypes(root)).not.toContain("Image");
   });
 
-  it("renders school record footer without issue label text", async () => {
+  it("renders school record footer and keeps three rows with blanks", async () => {
     await renderRecordPdf({
       athlete: {
         fullName: "窪園 彩希",
@@ -171,13 +195,20 @@ describe("record PDF layout", () => {
       entries: [{ eventTitle: "15mクロール", timeText: "12.96" }]
     });
 
-    const texts = collectTextNodes(mockState.lastDocument).join("\n");
+    const root = mockState.lastDocument as any;
+    const rowViews = collectRecordRowViews(root);
+    expect(rowViews).toHaveLength(3);
+    expect(collectTextNodes(rowViews[0]).join("")).toContain("15mクロール");
+    expect(collectTextNodes(rowViews[1]).join("").trim()).toBe("");
+    expect(collectTextNodes(rowViews[2]).join("").trim()).toBe("");
+
+    const texts = collectTextNodes(root).join("\n");
     expect(texts).toContain("学校委託コース");
     expect(texts).toContain("学校委託コース記録証");
     expect(texts).not.toContain("発行年月");
   });
 
-  it("limits visible rows to six and shows an overflow note", async () => {
+  it("renders three filled rows and silently truncates a fourth entry", async () => {
     await renderRecordCertificatePdf({
       athlete: {
         fullName: "窪園 彩希",
@@ -185,18 +216,23 @@ describe("record PDF layout", () => {
         grade: 8,
         gender: "female"
       },
-      entries: Array.from({ length: 7 }, (_, index) => ({
+      entries: Array.from({ length: 4 }, (_, index) => ({
         eventTitle: `${index + 1}種目`,
         timeText: `${index + 10}.00`
       })),
       issueLabel: "2025年9月"
     });
 
-    const texts = collectTextNodes(mockState.lastDocument).join("\n");
+    const root = mockState.lastDocument as any;
+    const rowViews = collectRecordRowViews(root);
+    expect(rowViews).toHaveLength(3);
+    expect(rowViews.every((row) => collectTextNodes(row).join("").trim().length > 0)).toBe(true);
+
+    const texts = collectTextNodes(root).join("\n");
     expect(texts).toContain("1種目");
-    expect(texts).toContain("6種目");
-    expect(texts).not.toContain("7種目\n");
-    expect(texts).toContain("※ 7種目以上あるため6件まで表示しています。");
+    expect(texts).toContain("3種目");
+    expect(texts).not.toContain("4種目");
+    expect(texts).not.toContain("※ ");
   });
 
   it("reduces the name font size for very long names", async () => {

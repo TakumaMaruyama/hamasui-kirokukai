@@ -26,8 +26,7 @@ const TEMPLATE_EMBED_WIDTH = 1240;
 const TEMPLATE_EMBED_HEIGHT = 1754;
 const TEMPLATE_DIRECT_FILE_BYTES_LIMIT = 350 * 1024;
 const TEMPLATE_JPEG_QUALITY = 82;
-const MAX_RECORD_TABLE_ROWS = 6;
-const RECORD_OVERFLOW_NOTE = "※ 7種目以上あるため6件まで表示しています。";
+const MAX_RECORD_TABLE_ROWS = 3;
 const RECORD_DECOR_DOTS = [22, 60, 98, 136, 242, 280, 318, 356] as const;
 
 const templateCache = new Map<string, { dataUri: string; filePath: string; mtimeMs: number }>();
@@ -61,10 +60,15 @@ export type RecordCertificatePdfInput = {
 
 type RecordLayoutVariant = "swimming" | "school";
 
+type RecordTableRow = {
+  kind: "filled";
+  entry: RecordPdfEntry;
+} | {
+  kind: "empty";
+};
+
 type RecordDisplayModel = {
-  visibleEntries: RecordPdfEntry[];
-  overflowCount: number;
-  hasOverflow: boolean;
+  tableRows: RecordTableRow[];
   footerText: string;
   headerSubtitle: string | null;
 };
@@ -203,13 +207,19 @@ function buildRecordDisplayModel({
   entries: RecordPdfEntry[];
   issueLabel?: string;
 }): RecordDisplayModel {
-  const visibleEntries = entries.slice(0, MAX_RECORD_TABLE_ROWS);
-  const overflowCount = Math.max(0, entries.length - visibleEntries.length);
+  const tableRows: RecordTableRow[] = entries
+    .slice(0, MAX_RECORD_TABLE_ROWS)
+    .map((entry) => ({
+      kind: "filled",
+      entry
+    }));
+
+  while (tableRows.length < MAX_RECORD_TABLE_ROWS) {
+    tableRows.push({ kind: "empty" });
+  }
 
   return {
-    visibleEntries,
-    overflowCount,
-    hasOverflow: overflowCount > 0,
+    tableRows,
     footerText: variant === "swimming" && issueLabel ? `発行年月 ${issueLabel}` : "学校委託コース記録証",
     headerSubtitle: variant === "swimming" ? null : "学校委託コース"
   };
@@ -547,7 +557,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderTopWidth: 1,
     borderTopColor: "#cfe8fb",
-    minHeight: 42
+    height: 42
   },
   recordTableRowLast: {
     borderBottomWidth: 1,
@@ -866,26 +876,28 @@ function buildReadableRecordDocument({
                 <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderTime]}>記録</Text>
               </View>
 
-              {display.visibleEntries.map((entry, index) => (
+              {display.tableRows.map((row, index) => (
                 <View
-                  key={`${entry.eventTitle}-${entry.timeText}-${index}`}
+                  key={row.kind === "filled" ? `${row.entry.eventTitle}-${row.entry.timeText}-${index}` : `empty-row-${index}`}
                   style={[
                     styles.recordTableRow,
-                    ...(index === display.visibleEntries.length - 1 ? [styles.recordTableRowLast] : []),
+                    ...(index === display.tableRows.length - 1 ? [styles.recordTableRowLast] : []),
                     { backgroundColor: index % 2 === 0 ? "#ffffff" : "#f4fbff" }
                   ]}
                 >
                   <View style={[styles.recordTableCell, styles.recordTableCellEvent]}>
-                    <Text style={styles.recordTableEventText}>{entry.eventTitle}</Text>
+                    <Text style={styles.recordTableEventText}>{row.kind === "filled" ? row.entry.eventTitle : ""}</Text>
                   </View>
                   <View style={[styles.recordTableCell, styles.recordTableCellTime]}>
-                    <Text style={styles.recordTableTimeText}>{formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs })}</Text>
+                    <Text style={styles.recordTableTimeText}>
+                      {row.kind === "filled"
+                        ? formatTimeForDocument({ timeText: row.entry.timeText, timeMs: row.entry.timeMs })
+                        : ""}
+                    </Text>
                   </View>
                 </View>
               ))}
             </View>
-
-            {display.hasOverflow ? <Text style={styles.recordTableNote}>{RECORD_OVERFLOW_NOTE}</Text> : null}
 
             <View style={styles.recordFooterSpacer} />
             <View style={styles.recordFooterPill}>
