@@ -131,11 +131,29 @@ function collectElementsByType(root: unknown, type: string): any[] {
   return elements;
 }
 
+function findFirstElementByType(root: unknown, type: string): any | null {
+  return collectElementsByType(root, type)[0] ?? null;
+}
+
 function collectRecordRowViews(root: unknown): any[] {
   return collectElementsByType(root, "View").filter((element) => {
     const style = flattenStyle(element.props?.style);
     return style.flexDirection === "row" && style.borderTopWidth === 1 && style.borderTopColor === "#cfe8fb" && style.height === 42;
   });
+}
+
+function collectRecordDecorDots(root: unknown): any[] {
+  return collectElementsByType(root, "View").filter((element) => {
+    const style = flattenStyle(element.props?.style);
+    return style.top === 18 && style.width === 5 && style.height === 5 && style.backgroundColor === "#facc15";
+  });
+}
+
+function findRecordHeaderBand(root: unknown): any | null {
+  return collectElementsByType(root, "View").find((element) => {
+    const style = flattenStyle(element.props?.style);
+    return style.borderTopLeftRadius === 18 && style.borderTopRightRadius === 18 && style.alignItems === "center";
+  }) ?? null;
 }
 
 describe("record PDF layout", () => {
@@ -182,6 +200,16 @@ describe("record PDF layout", () => {
     expect(texts).toContain("くぼその さき");
     expect(texts).not.toContain("※ ");
     expect(collectNodeTypes(root)).not.toContain("Image");
+
+    const pageElement = findFirstElementByType(root, "Page");
+    expect(pageElement).toBeTruthy();
+    expect(flattenStyle(pageElement.props.style).backgroundColor).toBe("#ffffff");
+
+    const headerBand = findRecordHeaderBand(root);
+    expect(headerBand).toBeTruthy();
+    expect(flattenStyle(headerBand.props.style).backgroundColor).toBe("#ffffff");
+
+    expect(collectRecordDecorDots(root)).toHaveLength(0);
   });
 
   it("renders school record footer and keeps three rows with blanks", async () => {

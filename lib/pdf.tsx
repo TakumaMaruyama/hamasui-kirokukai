@@ -27,7 +27,6 @@ const TEMPLATE_EMBED_HEIGHT = 1754;
 const TEMPLATE_DIRECT_FILE_BYTES_LIMIT = 350 * 1024;
 const TEMPLATE_JPEG_QUALITY = 82;
 const MAX_RECORD_TABLE_ROWS = 3;
-const RECORD_DECOR_DOTS = [22, 60, 98, 136, 242, 280, 318, 356] as const;
 
 const templateCache = new Map<string, { dataUri: string; filePath: string; mtimeMs: number }>();
 let fontRegistered = false;
@@ -411,18 +410,10 @@ const styles = StyleSheet.create({
     width: A5_WIDTH,
     height: A5_HEIGHT,
     fontFamily: FONT_FAMILY,
-    backgroundColor: "#eaf7ff",
+    backgroundColor: "#ffffff",
     paddingTop: 28,
     paddingBottom: 28,
     paddingHorizontal: 30
-  },
-  recordHeaderDot: {
-    position: "absolute",
-    top: 18,
-    width: 5,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: "#facc15"
   },
   recordCard: {
     flex: 1,
@@ -432,16 +423,20 @@ const styles = StyleSheet.create({
     borderRadius: 20
   },
   recordHeaderBand: {
-    backgroundColor: "#4aa7e8",
+    backgroundColor: "#ffffff",
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
+    borderBottomWidth: 1.5,
+    borderBottomColor: "#cfe8fb",
     paddingTop: 16,
     paddingBottom: 18,
     paddingHorizontal: 20,
     alignItems: "center"
   },
   recordHeaderPill: {
-    backgroundColor: "#8ad1fb",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#8cc7f2",
     borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 16,
@@ -450,19 +445,19 @@ const styles = StyleSheet.create({
   recordHeaderEyebrow: {
     fontSize: 10,
     fontWeight: 700,
-    color: "#ffffff",
+    color: "#2470aa",
     letterSpacing: 0
   },
   recordHeaderTitle: {
     fontSize: 25,
     fontWeight: 700,
-    color: "#ffffff",
+    color: "#12385b",
     marginBottom: 3
   },
   recordHeaderSubtitle: {
     fontSize: 12,
     fontWeight: 700,
-    color: "#dff5ff"
+    color: "#456886"
   },
   recordBody: {
     flex: 1,
@@ -844,9 +839,6 @@ function buildReadableRecordDocument({
   return (
     <Document>
       <Page size={CERTIFICATE_PAGE_SIZE} style={styles.recordPage} wrap={false}>
-        {RECORD_DECOR_DOTS.map((left, index) => (
-          <View key={`record-dot-${index}`} style={[styles.recordHeaderDot, { left }]} />
-        ))}
         <View style={styles.recordCard}>
           <View style={styles.recordHeaderBand}>
             <View style={styles.recordHeaderPill}>
