@@ -171,7 +171,7 @@ describe("first prize award PDF layout", () => {
     const root = mockState.lastDocument as any;
     const nameElement = findTextElement(root, (text) => text.includes(longName));
     expect(nameElement).toBeTruthy();
-    expect(flattenStyle(nameElement.props.style).fontSize).toBe(30);
+    expect(flattenStyle(nameElement.props.style).fontSize).toBe(32);
   });
 
   it("reduces the name font size further for very long names", async () => {
@@ -193,7 +193,7 @@ describe("first prize award PDF layout", () => {
     const root = mockState.lastDocument as any;
     const nameElement = findTextElement(root, (text) => text.includes(veryLongName));
     expect(nameElement).toBeTruthy();
-    expect(flattenStyle(nameElement.props.style).fontSize).toBe(26);
+    expect(flattenStyle(nameElement.props.style).fontSize).toBe(28);
   });
 
   it("reduces the event font size for long event titles", async () => {
@@ -215,6 +215,32 @@ describe("first prize award PDF layout", () => {
     const root = mockState.lastDocument as any;
     const eventElement = findTextElement(root, (text) => text.includes(longEventTitle));
     expect(eventElement).toBeTruthy();
-    expect(flattenStyle(eventElement.props.style).fontSize).toBe(16);
+    expect(flattenStyle(eventElement.props.style).fontSize).toBe(17);
+    expect(flattenStyle(eventElement.props.style).lineHeight).toBe(1.3);
+  });
+
+  it("keeps the default larger font sizes for shorter name and event values", async () => {
+    await renderFirstPrizeAwardPdf({
+      athlete: {
+        fullName: "横手 翔太朗",
+        fullNameKana: "よこて しょうたろう",
+        grade: 9,
+        gender: "male"
+      },
+      eventTitle: "30mクロール",
+      timeText: "29.49",
+      timeMs: 29_490,
+      issueLabel: "2025年9月"
+    });
+
+    const root = mockState.lastDocument as any;
+    const nameElement = findTextElement(root, (text) => text.includes("横手 翔太朗"));
+    const eventElement = findTextElement(root, (text) => text.includes("30mクロール"));
+
+    expect(nameElement).toBeTruthy();
+    expect(eventElement).toBeTruthy();
+    expect(flattenStyle(nameElement.props.style).fontSize).toBe(36);
+    expect(flattenStyle(eventElement.props.style).fontSize).toBe(19);
+    expect(flattenStyle(eventElement.props.style).lineHeight).toBe(1.3);
   });
 });

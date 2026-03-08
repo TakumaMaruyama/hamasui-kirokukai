@@ -238,28 +238,28 @@ function resolveRecordNameFontSize(fullName: string): 24 | 21 | 18 {
   return 24;
 }
 
-function resolveFirstPrizeAwardNameFontSize(fullName: string): 34 | 30 | 26 {
+function resolveFirstPrizeAwardNameFontSize(fullName: string): 36 | 32 | 28 {
   const normalizedLength = fullName.replace(/\s+/g, "").length;
 
   if (normalizedLength >= 12) {
-    return 26;
+    return 28;
   }
 
   if (normalizedLength >= 9) {
-    return 30;
+    return 32;
   }
 
-  return 34;
+  return 36;
 }
 
-function resolveFirstPrizeAwardEventFontSize(eventTitle: string): 18 | 16 {
+function resolveFirstPrizeAwardEventFontSize(eventTitle: string): 19 | 17 {
   const normalizedLength = eventTitle.replace(/\s+/g, "").length;
 
   if (normalizedLength >= 13) {
-    return 16;
+    return 17;
   }
 
-  return 18;
+  return 19;
 }
 
 const styles = StyleSheet.create({
@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
   },
   firstPrizeAwardKana: {
     position: "absolute",
-    top: 214,
+    top: 206,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
@@ -716,40 +716,40 @@ const styles = StyleSheet.create({
   },
   firstPrizeAwardName: {
     position: "absolute",
-    top: 236,
+    top: 228,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
-    fontSize: 34,
+    fontSize: 36,
     fontWeight: 700,
     color: "#111827",
     lineHeight: 1.15
   },
   firstPrizeAwardMeta: {
     position: "absolute",
-    top: 300,
+    top: 286,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
     fontSize: 13,
     fontWeight: 700,
-    color: "#374151",
+    color: "#4b5563",
     letterSpacing: 0.2
   },
   firstPrizeAwardEvent: {
     position: "absolute",
-    top: 356,
+    top: 340,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: 700,
     color: "#111827",
     lineHeight: 1.3
   },
   firstPrizeAwardTime: {
     position: "absolute",
-    top: 406,
+    top: 392,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
   },
   firstPrizeAwardIssueLabel: {
     position: "absolute",
-    top: 492,
+    top: 470,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
