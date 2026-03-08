@@ -238,6 +238,30 @@ function resolveRecordNameFontSize(fullName: string): 24 | 21 | 18 {
   return 24;
 }
 
+function resolveFirstPrizeAwardNameFontSize(fullName: string): 34 | 30 | 26 {
+  const normalizedLength = fullName.replace(/\s+/g, "").length;
+
+  if (normalizedLength >= 12) {
+    return 26;
+  }
+
+  if (normalizedLength >= 9) {
+    return 30;
+  }
+
+  return 34;
+}
+
+function resolveFirstPrizeAwardEventFontSize(eventTitle: string): 18 | 16 {
+  const normalizedLength = eventTitle.replace(/\s+/g, "").length;
+
+  if (normalizedLength >= 13) {
+    return 16;
+  }
+
+  return 18;
+}
+
 const styles = StyleSheet.create({
   page: {
     fontFamily: FONT_FAMILY,
@@ -679,6 +703,68 @@ const styles = StyleSheet.create({
     width: A5_WIDTH,
     textAlign: "center",
     fontSize: 14
+  },
+  firstPrizeAwardKana: {
+    position: "absolute",
+    top: 214,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 11,
+    color: "#6b7280",
+    letterSpacing: 0.3
+  },
+  firstPrizeAwardName: {
+    position: "absolute",
+    top: 236,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 34,
+    fontWeight: 700,
+    color: "#111827",
+    lineHeight: 1.15
+  },
+  firstPrizeAwardMeta: {
+    position: "absolute",
+    top: 300,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#374151",
+    letterSpacing: 0.2
+  },
+  firstPrizeAwardEvent: {
+    position: "absolute",
+    top: 356,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: 700,
+    color: "#111827",
+    lineHeight: 1.3
+  },
+  firstPrizeAwardTime: {
+    position: "absolute",
+    top: 406,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#111827"
+  },
+  firstPrizeAwardIssueLabel: {
+    position: "absolute",
+    top: 492,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 12,
+    color: "#6b7280"
   }
 });
 
@@ -975,17 +1061,21 @@ function buildFirstPrizeAwardTemplateDocument({
   issueLabel,
   templateDataUri
 }: FirstPrizeAwardPdfInput & { templateDataUri: string }): ReactElement {
+  const nameFontSize = resolveFirstPrizeAwardNameFontSize(athlete.fullName);
+  const eventFontSize = resolveFirstPrizeAwardEventFontSize(eventTitle);
+  const gradeAndGenderLabel = `${formatGradeLabel(athlete.grade)}・${genderLabel(athlete.gender)}`;
+
   return (
     <Document>
       <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
         <View style={styles.templateFlowSpacer} />
         <Image fixed style={styles.templateBackground} src={templateDataUri} />
-        <Text style={styles.prizeNameKana}>{athlete.fullNameKana?.trim() || athlete.fullName}</Text>
-        <Text style={styles.prizeName}>{athlete.fullName}</Text>
-        <Text style={styles.prizeAwardMeta}>{`${formatGradeLabel(athlete.grade)} ${genderLabel(athlete.gender)}`}</Text>
-        <Text style={styles.prizeAwardEvent}>{eventTitle}</Text>
-        <Text style={styles.prizeAwardTime}>記録 {formatTimeForDocument({ timeText, timeMs })}</Text>
-        <Text style={styles.prizeIssueLabel}>{issueLabel}</Text>
+        <Text style={styles.firstPrizeAwardKana}>{athlete.fullNameKana?.trim() || athlete.fullName}</Text>
+        <Text style={[styles.firstPrizeAwardName, { fontSize: nameFontSize }]}>{athlete.fullName}</Text>
+        <Text style={styles.firstPrizeAwardMeta}>{gradeAndGenderLabel}</Text>
+        <Text style={[styles.firstPrizeAwardEvent, { fontSize: eventFontSize }]}>{eventTitle}</Text>
+        <Text style={styles.firstPrizeAwardTime}>記録 {formatTimeForDocument({ timeText, timeMs })}</Text>
+        <Text style={styles.firstPrizeAwardIssueLabel}>{issueLabel}</Text>
       </Page>
     </Document>
   );
