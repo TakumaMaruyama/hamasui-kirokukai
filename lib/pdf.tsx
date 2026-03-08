@@ -842,7 +842,7 @@ function buildReadableRecordDocument({
         <View style={styles.recordCard}>
           <View style={styles.recordHeaderBand}>
             <View style={styles.recordHeaderPill}>
-              <Text style={styles.recordHeaderEyebrow}>はまスイ記録会</Text>
+              <Text style={styles.recordHeaderEyebrow}>はまだスイミングスクール記録会</Text>
             </View>
             <Text style={styles.recordHeaderTitle}>記録証</Text>
             {display.headerSubtitle ? <Text style={styles.recordHeaderSubtitle}>{display.headerSubtitle}</Text> : null}

@@ -186,7 +186,7 @@ describe("record PDF layout", () => {
     expect(collectTextNodes(rowViews[2]).join("").trim()).toBe("");
 
     const texts = collectTextNodes(root).join("\n");
-    expect(texts).toContain("はまスイ記録会");
+    expect(texts).toContain("はまだスイミングスクール記録会");
     expect(texts).toContain("記録証");
     expect(texts).not.toContain("一般コース");
     expect(texts).not.toContain("ふりがな");
