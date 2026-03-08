@@ -706,12 +706,12 @@ const styles = StyleSheet.create({
   },
   firstPrizeAwardKana: {
     position: "absolute",
-    top: 222,
+    top: 230,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
     fontSize: 11,
-    color: "#6b7280",
+    color: "#111827",
     letterSpacing: 0.3
   },
   firstPrizeAwardName: {
@@ -753,9 +753,10 @@ const styles = StyleSheet.create({
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: 700,
-    color: "#111827"
+    color: "#111827",
+    lineHeight: 1.3
   },
   firstPrizeAwardIssueLabel: {
     position: "absolute",
@@ -763,8 +764,8 @@ const styles = StyleSheet.create({
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
-    fontSize: 12,
-    color: "#6b7280"
+    fontSize: 14,
+    color: "#111827"
   }
 });
 
@@ -1063,7 +1064,7 @@ function buildFirstPrizeAwardTemplateDocument({
 }: FirstPrizeAwardPdfInput & { templateDataUri: string }): ReactElement {
   const nameFontSize = resolveFirstPrizeAwardNameFontSize(athlete.fullName);
   const eventFontSize = resolveFirstPrizeAwardEventFontSize(eventTitle);
-  const gradeAndGenderLabel = `${formatGradeLabel(athlete.grade)}・${genderLabel(athlete.gender)}`;
+  const gradeAndGenderLabel = `${formatGradeLabel(athlete.grade)} ${genderLabel(athlete.gender)}`;
 
   return (
     <Document>

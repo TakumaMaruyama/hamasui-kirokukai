@@ -146,7 +146,7 @@ describe("first prize award PDF layout", () => {
     const texts = collectTextNodes(root).join("");
     expect(texts).toContain("徳重 湊仁");
     expect(texts).toContain("とくしげ みなと");
-    expect(texts).toContain("小学1年生・男子");
+    expect(texts).toContain("小学1年生 男子");
     expect(texts).toContain("15m板キック");
     expect(texts).toContain("記録 2分1秒77");
     expect(texts).toContain("2026年2月");
@@ -235,18 +235,30 @@ describe("first prize award PDF layout", () => {
 
     const root = mockState.lastDocument as any;
     const nameElement = findTextElement(root, (text) => text.includes("横手 翔太朗"));
-    const metaElement = findTextElement(root, (text) => text.includes("小学6年生・男子"));
+    const kanaElement = findTextElement(root, (text) => text.includes("よこて しょうたろう"));
+    const metaElement = findTextElement(root, (text) => text.includes("小学6年生 男子"));
     const eventElement = findTextElement(root, (text) => text.includes("30mクロール"));
+    const timeElement = findTextElement(root, (text) => text.includes("記録 29.49"));
+    const issueElement = findTextElement(root, (text) => text.includes("2025年9月"));
 
     expect(nameElement).toBeTruthy();
+    expect(kanaElement).toBeTruthy();
     expect(metaElement).toBeTruthy();
     expect(eventElement).toBeTruthy();
+    expect(timeElement).toBeTruthy();
+    expect(issueElement).toBeTruthy();
     expect(flattenStyle(nameElement.props.style).fontSize).toBe(36);
+    expect(flattenStyle(kanaElement.props.style).color).toBe("#111827");
     expect(flattenStyle(metaElement.props.style).fontSize).toBe(19);
     expect(flattenStyle(metaElement.props.style).color).toBe("#111827");
     expect(flattenStyle(metaElement.props.style).lineHeight).toBe(1.3);
     expect(flattenStyle(eventElement.props.style).fontSize).toBe(19);
     expect(flattenStyle(eventElement.props.style).color).toBe("#111827");
     expect(flattenStyle(eventElement.props.style).lineHeight).toBe(1.3);
+    expect(flattenStyle(timeElement.props.style).fontSize).toBe(19);
+    expect(flattenStyle(timeElement.props.style).color).toBe("#111827");
+    expect(flattenStyle(timeElement.props.style).lineHeight).toBe(1.3);
+    expect(flattenStyle(issueElement.props.style).fontSize).toBe(14);
+    expect(flattenStyle(issueElement.props.style).color).toBe("#111827");
   });
 });
