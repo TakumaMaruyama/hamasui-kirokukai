@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
   },
   firstPrizeAwardKana: {
     position: "absolute",
-    top: 206,
+    top: 222,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
   },
   firstPrizeAwardName: {
     position: "absolute",
-    top: 228,
+    top: 242,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
@@ -727,18 +727,18 @@ const styles = StyleSheet.create({
   },
   firstPrizeAwardMeta: {
     position: "absolute",
-    top: 286,
+    top: 320,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
-    fontSize: 13,
+    fontSize: 19,
     fontWeight: 700,
-    color: "#4b5563",
-    letterSpacing: 0.2
+    color: "#111827",
+    lineHeight: 1.3
   },
   firstPrizeAwardEvent: {
     position: "absolute",
-    top: 340,
+    top: 352,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
   },
   firstPrizeAwardTime: {
     position: "absolute",
-    top: 392,
+    top: 406,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
   },
   firstPrizeAwardIssueLabel: {
     position: "absolute",
-    top: 470,
+    top: 484,
     left: 0,
     width: A5_WIDTH,
     textAlign: "center",

@@ -235,12 +235,18 @@ describe("first prize award PDF layout", () => {
 
     const root = mockState.lastDocument as any;
     const nameElement = findTextElement(root, (text) => text.includes("横手 翔太朗"));
+    const metaElement = findTextElement(root, (text) => text.includes("小学6年生・男子"));
     const eventElement = findTextElement(root, (text) => text.includes("30mクロール"));
 
     expect(nameElement).toBeTruthy();
+    expect(metaElement).toBeTruthy();
     expect(eventElement).toBeTruthy();
     expect(flattenStyle(nameElement.props.style).fontSize).toBe(36);
+    expect(flattenStyle(metaElement.props.style).fontSize).toBe(19);
+    expect(flattenStyle(metaElement.props.style).color).toBe("#111827");
+    expect(flattenStyle(metaElement.props.style).lineHeight).toBe(1.3);
     expect(flattenStyle(eventElement.props.style).fontSize).toBe(19);
+    expect(flattenStyle(eventElement.props.style).color).toBe("#111827");
     expect(flattenStyle(eventElement.props.style).lineHeight).toBe(1.3);
   });
 });
