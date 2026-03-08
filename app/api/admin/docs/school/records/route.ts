@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const rows = await prisma.result.findMany({
       where: {
         meet: meetWhere,
-        ...(filter.fullName ? { athlete: { fullName: filter.fullName } } : {})
+        ...(filter.fullName ? { athlete: { is: { fullName: filter.fullName } } } : {})
       },
       include: {
         athlete: {

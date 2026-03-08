@@ -20,7 +20,7 @@ async function findRecordCertificateRows(options: {
 }): Promise<RecordCertificateSourceRow[]> {
   const where = {
     meet: options.meetWhere,
-    ...(options.fullName ? { athlete: { fullName: options.fullName } } : {})
+    ...(options.fullName ? { athlete: { is: { fullName: options.fullName } } } : {})
   } as const;
 
   const orderBy = [

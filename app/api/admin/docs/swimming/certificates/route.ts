@@ -20,7 +20,7 @@ async function findFirstPrizeRows(options: {
   const where = {
     meet: options.meetWhere,
     rank: 1,
-    ...(options.fullName ? { athlete: { fullName: options.fullName } } : {})
+    ...(options.fullName ? { athlete: { is: { fullName: options.fullName } } } : {})
   } as const;
 
   const orderBy = [
