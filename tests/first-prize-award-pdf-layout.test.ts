@@ -150,6 +150,7 @@ describe("first prize award PDF layout", () => {
     expect(texts).toContain("15m板キック");
     expect(texts).toContain("記録 2分1秒77");
     expect(texts).toContain("2026年2月");
+    expect(texts).toContain("はまだスイミングスクール");
   });
 
   it("reduces the name font size for moderately long names", async () => {
@@ -240,6 +241,7 @@ describe("first prize award PDF layout", () => {
     const eventElement = findTextElement(root, (text) => text.includes("30mクロール"));
     const timeElement = findTextElement(root, (text) => text.includes("記録 29.49"));
     const issueElement = findTextElement(root, (text) => text.includes("2025年9月"));
+    const issuerElement = findTextElement(root, (text) => text.includes("はまだスイミングスクール"));
 
     expect(nameElement).toBeTruthy();
     expect(kanaElement).toBeTruthy();
@@ -247,6 +249,7 @@ describe("first prize award PDF layout", () => {
     expect(eventElement).toBeTruthy();
     expect(timeElement).toBeTruthy();
     expect(issueElement).toBeTruthy();
+    expect(issuerElement).toBeTruthy();
     expect(flattenStyle(nameElement.props.style).fontSize).toBe(36);
     expect(flattenStyle(kanaElement.props.style).color).toBe("#111827");
     expect(flattenStyle(metaElement.props.style).fontSize).toBe(19);
@@ -260,5 +263,7 @@ describe("first prize award PDF layout", () => {
     expect(flattenStyle(timeElement.props.style).lineHeight).toBe(1.3);
     expect(flattenStyle(issueElement.props.style).fontSize).toBe(14);
     expect(flattenStyle(issueElement.props.style).color).toBe("#111827");
+    expect(flattenStyle(issuerElement.props.style).fontSize).toBe(11);
+    expect(flattenStyle(issuerElement.props.style).color).toBe("#111827");
   });
 });

@@ -766,6 +766,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
     color: "#111827"
+  },
+  firstPrizeAwardIssuer: {
+    position: "absolute",
+    top: 510,
+    left: 0,
+    width: A5_WIDTH,
+    textAlign: "center",
+    fontSize: 11,
+    color: "#111827"
   }
 });
 
@@ -1077,6 +1086,7 @@ function buildFirstPrizeAwardTemplateDocument({
         <Text style={[styles.firstPrizeAwardEvent, { fontSize: eventFontSize }]}>{eventTitle}</Text>
         <Text style={styles.firstPrizeAwardTime}>記録 {formatTimeForDocument({ timeText, timeMs })}</Text>
         <Text style={styles.firstPrizeAwardIssueLabel}>{issueLabel}</Text>
+        <Text style={styles.firstPrizeAwardIssuer}>はまだスイミングスクール</Text>
       </Page>
     </Document>
   );
