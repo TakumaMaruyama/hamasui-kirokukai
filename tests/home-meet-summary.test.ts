@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HomeMeetSummaryInput } from "../lib/home-meet-summary";
-import { buildHomeMeetComparisonSummary } from "../lib/home-meet-summary";
+import { buildHomeMeetComparisonCards } from "../lib/home-meet-summary";
 
 type MeetResultInput = HomeMeetSummaryInput["results"][number];
 
@@ -44,15 +44,23 @@ function buildMeet(input: {
   };
 }
 
-describe("buildHomeMeetComparisonSummary", () => {
-  it("selects the latest two swimming meets and ignores other programs", () => {
-    const summary = buildHomeMeetComparisonSummary([
+describe("buildHomeMeetComparisonCards", () => {
+  it("builds two cards from the latest three swimming meets and ignores other programs", () => {
+    const cards = buildHomeMeetComparisonCards([
       buildMeet({
         id: "school-newer",
         program: "school",
         title: "学校委託",
         heldOn: "2025-10-01T00:00:00.000Z",
         createdAt: "2025-10-02T00:00:00.000Z",
+        results: []
+      }),
+      buildMeet({
+        id: "swim-oldest",
+        program: "swimming",
+        title: "2025年7月",
+        heldOn: "2025-07-01T00:00:00.000Z",
+        createdAt: "2025-07-02T00:00:00.000Z",
         results: []
       }),
       buildMeet({
@@ -99,14 +107,18 @@ describe("buildHomeMeetComparisonSummary", () => {
       })
     ]);
 
-    expect(summary).not.toBeNull();
-    expect(summary?.currentMeet.id).toBe("swim-current");
-    expect(summary?.previousMeet?.id).toBe("swim-previous");
-    expect(summary?.state).toBe("ready");
+    expect(cards).not.toBeNull();
+    expect(cards).toHaveLength(2);
+    expect(cards?.[0]?.slotLabel).toBe("今回");
+    expect(cards?.[0]?.currentMeet?.id).toBe("swim-current");
+    expect(cards?.[0]?.previousMeet?.id).toBe("swim-previous");
+    expect(cards?.[1]?.slotLabel).toBe("1つ前");
+    expect(cards?.[1]?.currentMeet?.id).toBe("swim-previous");
+    expect(cards?.[1]?.previousMeet?.id).toBe("swim-oldest");
   });
 
   it("matches rows across whitespace, school year changes, and full/half-width event text", () => {
-    const summary = buildHomeMeetComparisonSummary([
+    const cards = buildHomeMeetComparisonCards([
       buildMeet({
         id: "current",
         program: "swimming",
@@ -140,16 +152,24 @@ describe("buildHomeMeetComparisonSummary", () => {
             timeMs: 18_100
           })
         ]
+      }),
+      buildMeet({
+        id: "oldest",
+        program: "swimming",
+        title: "2025年7月",
+        heldOn: "2025-07-01T00:00:00.000Z",
+        createdAt: "2025-07-02T00:00:00.000Z",
+        results: []
       })
     ]);
 
-    expect(summary?.comparedEntryCount).toBe(1);
-    expect(summary?.totalImprovementMs).toBe(300);
-    expect(summary?.improvedEntryCount).toBe(1);
+    expect(cards?.[0]?.comparedEntryCount).toBe(1);
+    expect(cards?.[0]?.totalImprovementMs).toBe(300);
+    expect(cards?.[0]?.improvedEntryCount).toBe(1);
   });
 
   it("adds only positive improvements and ignores slower, tied, or missing rows", () => {
-    const summary = buildHomeMeetComparisonSummary([
+    const cards = buildHomeMeetComparisonCards([
       buildMeet({
         id: "current",
         program: "swimming",
@@ -231,16 +251,24 @@ describe("buildHomeMeetComparisonSummary", () => {
             timeMs: 19_300
           })
         ]
+      }),
+      buildMeet({
+        id: "oldest",
+        program: "swimming",
+        title: "2025年7月",
+        heldOn: "2025-07-01T00:00:00.000Z",
+        createdAt: "2025-07-02T00:00:00.000Z",
+        results: []
       })
     ]);
 
-    expect(summary?.comparedEntryCount).toBe(3);
-    expect(summary?.totalImprovementMs).toBe(300);
-    expect(summary?.improvedEntryCount).toBe(1);
+    expect(cards?.[0]?.comparedEntryCount).toBe(3);
+    expect(cards?.[0]?.totalImprovementMs).toBe(300);
+    expect(cards?.[0]?.improvedEntryCount).toBe(1);
   });
 
   it("drops duplicated comparison keys within the same meet", () => {
-    const summary = buildHomeMeetComparisonSummary([
+    const cards = buildHomeMeetComparisonCards([
       buildMeet({
         id: "current",
         program: "swimming",
@@ -282,27 +310,24 @@ describe("buildHomeMeetComparisonSummary", () => {
             timeMs: 18_100
           })
         ]
-      })
-    ]);
-
-    expect(summary?.state).toBe("not-comparable");
-    expect(summary?.comparedEntryCount).toBe(0);
-    expect(summary?.totalImprovementMs).toBe(0);
-  });
-
-  it("returns fallback states for one meet and for two meets without overlap", () => {
-    const oneMeetSummary = buildHomeMeetComparisonSummary([
+      }),
       buildMeet({
-        id: "current-only",
+        id: "oldest",
         program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
+        title: "2025年7月",
+        heldOn: "2025-07-01T00:00:00.000Z",
+        createdAt: "2025-07-02T00:00:00.000Z",
         results: []
       })
     ]);
 
-    const noOverlapSummary = buildHomeMeetComparisonSummary([
+    expect(cards?.[0]?.state).toBe("not-comparable");
+    expect(cards?.[0]?.comparedEntryCount).toBe(0);
+    expect(cards?.[0]?.totalImprovementMs).toBe(0);
+  });
+
+  it("uses a placeholder card when there are only two meets", () => {
+    const cards = buildHomeMeetComparisonCards([
       buildMeet({
         id: "current",
         program: "swimming",
@@ -329,19 +354,37 @@ describe("buildHomeMeetComparisonSummary", () => {
         results: [
           buildResult({
             athleteId: "b1",
-            fullName: "佐藤花子",
-            gender: "female",
-            eventTitle: "25m背泳ぎ",
+            fullName: "山田太郎",
+            gender: "male",
+            eventTitle: "25mクロール",
             distanceM: 25,
-            timeMs: 20_300
+            timeMs: 18_100
           })
         ]
       })
     ]);
 
-    expect(oneMeetSummary?.state).toBe("waiting-next-meet");
-    expect(oneMeetSummary?.previousMeet).toBeNull();
-    expect(noOverlapSummary?.state).toBe("not-comparable");
-    expect(noOverlapSummary?.comparedEntryCount).toBe(0);
+    expect(cards?.[0]?.state).toBe("ready");
+    expect(cards?.[1]?.slotLabel).toBe("1つ前");
+    expect(cards?.[1]?.state).toBe("unavailable");
+    expect(cards?.[1]?.currentMeet).toBeNull();
+    expect(cards?.[1]?.previousMeet).toBeNull();
+  });
+
+  it("returns a waiting card for the first slot when there is only one meet", () => {
+    const cards = buildHomeMeetComparisonCards([
+      buildMeet({
+        id: "current-only",
+        program: "swimming",
+        title: "2025年9月",
+        heldOn: "2025-09-01T00:00:00.000Z",
+        createdAt: "2025-09-02T00:00:00.000Z",
+        results: []
+      })
+    ]);
+
+    expect(cards?.[0]?.state).toBe("waiting-next-meet");
+    expect(cards?.[0]?.currentMeet?.id).toBe("current-only");
+    expect(cards?.[1]?.state).toBe("unavailable");
   });
 });
