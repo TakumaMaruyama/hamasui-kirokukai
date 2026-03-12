@@ -19,8 +19,8 @@ describe("formatImprovementTotal", () => {
     expect(formatImprovementTotal(0)).toBe("0.00秒");
   });
 
-  it("formats 60 seconds or more in minute/second style", () => {
-    expect(formatImprovementTotal(65_320)).toBe("1分5秒32");
-    expect(formatImprovementTotal(123_000)).toBe("2分3秒");
+  it("formats 60 seconds or more as decimal seconds", () => {
+    expect(formatImprovementTotal(65_320)).toBe("65.32秒");
+    expect(formatImprovementTotal(123_000)).toBe("123.00秒");
   });
 });

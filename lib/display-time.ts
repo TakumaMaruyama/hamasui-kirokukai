@@ -20,12 +20,7 @@ function formatMsAsJapanese(ms: number): string {
 
 export function formatImprovementTotal(ms: number): string {
   const normalizedMs = Math.max(0, Math.floor(ms));
-
-  if (normalizedMs < 60_000) {
-    return `${(normalizedMs / 1000).toFixed(2)}秒`;
-  }
-
-  return formatMsAsJapanese(normalizedMs);
+  return `${(normalizedMs / 1000).toFixed(2)}秒`;
 }
 
 export function formatTimeForDocument(input: DisplayTimeInput): string {

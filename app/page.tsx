@@ -58,10 +58,10 @@ export default async function HomePage() {
             comparisonSummary.totalImprovementMs > 0 ? (
               <>
                 <h2 id="home-progress-title" className="home-progress-title">
-                  みんなで前回より {formatImprovementTotal(comparisonSummary.totalImprovementMs)} 短縮
+                  みんなで前回より {formatImprovementTotal(comparisonSummary.totalImprovementMs)} 速くなった
                 </h2>
                 <p className="home-progress-body">
-                  同じ子・同じ種目で比べると、今回は {formatCount(comparisonSummary.improvedEntryCount)} 記録が前回超えでした。
+                  前回と比べられた {formatCount(comparisonSummary.comparedEntryCount)}記録中 {formatCount(comparisonSummary.improvedEntryCount)}記録更新
                 </p>
               </>
             ) : (
@@ -93,33 +93,6 @@ export default async function HomePage() {
               </p>
             </>
           )}
-
-          <div className="home-progress-stats" aria-label="比較サマリー">
-            <div className="home-progress-stat">
-              <span className="home-progress-stat-label">比較対象</span>
-              <strong className="home-progress-stat-value">
-                {comparisonSummary.state === "waiting-next-meet"
-                  ? "-"
-                  : `${formatCount(comparisonSummary.comparedEntryCount)}記録`}
-              </strong>
-            </div>
-            <div className="home-progress-stat">
-              <span className="home-progress-stat-label">更新した記録</span>
-              <strong className="home-progress-stat-value">
-                {comparisonSummary.state === "waiting-next-meet"
-                  ? "-"
-                  : `${formatCount(comparisonSummary.improvedEntryCount)}記録`}
-              </strong>
-            </div>
-            <div className="home-progress-stat">
-              <span className="home-progress-stat-label">更新した子</span>
-              <strong className="home-progress-stat-value">
-                {comparisonSummary.state === "waiting-next-meet"
-                  ? "-"
-                  : `${formatCount(comparisonSummary.improvedChildCount)}人`}
-              </strong>
-            </div>
-          </div>
 
           <div className="home-progress-meets">
             <article className="home-progress-meet home-progress-meet-current">
@@ -157,10 +130,6 @@ export default async function HomePage() {
               )}
             </article>
           </div>
-
-          <p className="home-progress-note">
-            同じ子・同じ種目が両方の記録会にあるものだけを比較しています。同じ比較キーが同一回に重複する場合は集計から除外します。
-          </p>
         </section>
       ) : null}
       <div className="card">
