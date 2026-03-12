@@ -18,6 +18,16 @@ function formatMsAsJapanese(ms: number): string {
   return `${minutes}分${seconds}秒`;
 }
 
+export function formatImprovementTotal(ms: number): string {
+  const normalizedMs = Math.max(0, Math.floor(ms));
+
+  if (normalizedMs < 60_000) {
+    return `${(normalizedMs / 1000).toFixed(2)}秒`;
+  }
+
+  return formatMsAsJapanese(normalizedMs);
+}
+
 export function formatTimeForDocument(input: DisplayTimeInput): string {
   const trimmed = input.timeText.trim();
   if (!trimmed) {

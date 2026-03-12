@@ -1,26 +1,41 @@
 import Link from "next/link";
 import SearchForm from "./search-form";
 import { prisma } from "@/lib/prisma";
+import { formatImprovementTotal } from "@/lib/display-time";
+import { getHomeMeetComparisonSummary } from "@/lib/home-meet-summary";
+import { formatMeetLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
 
+function formatCount(value: number): string {
+  return new Intl.NumberFormat("ja-JP").format(value);
+}
+
+function formatHeldOn(value: Date): string {
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(value);
+}
+
 export default async function HomePage() {
-  let publishWindow: {
-    publishFrom: Date | null;
-    publishUntil: Date | null;
-    announcement: string | null;
-  } | null = null;
-  try {
-    publishWindow = await prisma.publishWindow.findUnique({
+  const [publishWindowResult, comparisonSummaryResult] = await Promise.allSettled([
+    prisma.publishWindow.findUnique({
       where: { id: "default" },
       select: {
         publishFrom: true,
         publishUntil: true,
         announcement: true
       }
-    });
-  } catch {
-    publishWindow = null;
-  }
+    }),
+    getHomeMeetComparisonSummary()
+  ]);
+
+  const publishWindow =
+    publishWindowResult.status === "fulfilled" ? publishWindowResult.value : null;
+  const comparisonSummary =
+    comparisonSummaryResult.status === "fulfilled" ? comparisonSummaryResult.value : null;
 
   return (
     <main>
@@ -36,6 +51,118 @@ export default async function HomePage() {
           {formatPublishRange(publishWindow?.publishFrom, publishWindow?.publishUntil)}
         </p>
       </header>
+      {comparisonSummary ? (
+        <section className="home-progress-card" aria-labelledby="home-progress-title">
+          <p className="home-progress-eyebrow">みんなの前回比</p>
+          {comparisonSummary.state === "ready" ? (
+            comparisonSummary.totalImprovementMs > 0 ? (
+              <>
+                <h2 id="home-progress-title" className="home-progress-title">
+                  みんなで前回より {formatImprovementTotal(comparisonSummary.totalImprovementMs)} 短縮
+                </h2>
+                <p className="home-progress-body">
+                  同じ子・同じ種目で比べると、今回は {formatCount(comparisonSummary.improvedEntryCount)} 記録が前回超えでした。
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 id="home-progress-title" className="home-progress-title">
+                  今回はまだ前回超えなし
+                </h2>
+                <p className="home-progress-body">
+                  比較できた {formatCount(comparisonSummary.comparedEntryCount)} 記録をもとに集計しています。次の記録会で更新を狙おう。
+                </p>
+              </>
+            )
+          ) : comparisonSummary.state === "not-comparable" ? (
+            <>
+              <h2 id="home-progress-title" className="home-progress-title">
+                比較できる同一記録がまだ少ない
+              </h2>
+              <p className="home-progress-body">
+                今回と前回で、同じ子・同じ種目がまだ十分そろっていません。次回以降に前回比を表示します。
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 id="home-progress-title" className="home-progress-title">
+                次回から前回比を表示
+              </h2>
+              <p className="home-progress-body">
+                直近の記録会がまだ1回分のため、次の記録会が入ると「前回より何秒速くなったか」を表示できます。
+              </p>
+            </>
+          )}
+
+          <div className="home-progress-stats" aria-label="比較サマリー">
+            <div className="home-progress-stat">
+              <span className="home-progress-stat-label">比較対象</span>
+              <strong className="home-progress-stat-value">
+                {comparisonSummary.state === "waiting-next-meet"
+                  ? "-"
+                  : `${formatCount(comparisonSummary.comparedEntryCount)}記録`}
+              </strong>
+            </div>
+            <div className="home-progress-stat">
+              <span className="home-progress-stat-label">更新した記録</span>
+              <strong className="home-progress-stat-value">
+                {comparisonSummary.state === "waiting-next-meet"
+                  ? "-"
+                  : `${formatCount(comparisonSummary.improvedEntryCount)}記録`}
+              </strong>
+            </div>
+            <div className="home-progress-stat">
+              <span className="home-progress-stat-label">更新した子</span>
+              <strong className="home-progress-stat-value">
+                {comparisonSummary.state === "waiting-next-meet"
+                  ? "-"
+                  : `${formatCount(comparisonSummary.improvedChildCount)}人`}
+              </strong>
+            </div>
+          </div>
+
+          <div className="home-progress-meets">
+            <article className="home-progress-meet home-progress-meet-current">
+              <p className="home-progress-meet-label">今回</p>
+              <h3 className="home-progress-meet-title">
+                {formatMeetLabel(comparisonSummary.currentMeet)}
+              </h3>
+              <p className="home-progress-meet-date">{formatHeldOn(comparisonSummary.currentMeet.heldOn)}</p>
+              <p className="home-progress-meet-meta">
+                {formatCount(comparisonSummary.currentMeet.participantCount)}人 / {formatCount(comparisonSummary.currentMeet.resultCount)}記録
+              </p>
+            </article>
+            <article
+              className={`home-progress-meet home-progress-meet-previous${
+                comparisonSummary.previousMeet ? "" : " is-empty"
+              }`}
+            >
+              <p className="home-progress-meet-label">前回</p>
+              {comparisonSummary.previousMeet ? (
+                <>
+                  <h3 className="home-progress-meet-title">
+                    {formatMeetLabel(comparisonSummary.previousMeet)}
+                  </h3>
+                  <p className="home-progress-meet-date">{formatHeldOn(comparisonSummary.previousMeet.heldOn)}</p>
+                  <p className="home-progress-meet-meta">
+                    {formatCount(comparisonSummary.previousMeet.participantCount)}人 / {formatCount(comparisonSummary.previousMeet.resultCount)}記録
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="home-progress-meet-title">まだありません</h3>
+                  <p className="home-progress-meet-date">次の記録会から比較できます</p>
+                  <p className="home-progress-meet-meta">前回比の表示を準備中</p>
+                </>
+              )}
+            </article>
+          </div>
+
+          <p className="home-progress-note">
+            同じ子・同じ種目が両方の記録会にあるものだけを比較しています。同じ比較キーが同一回に重複する場合は集計から除外します。
+          </p>
+        </section>
+      ) : null}
       <div className="card">
         <SearchForm />
       </div>

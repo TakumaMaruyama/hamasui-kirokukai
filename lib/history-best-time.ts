@@ -1,4 +1,4 @@
-import { nameSearchKey } from "./search-request";
+import { toComparableEventBaseKey } from "./event-key";
 
 type BestTimeSource = {
   id: string;
@@ -10,16 +10,11 @@ type BestTimeSource = {
   };
 };
 
-function normalizeEventTitle(value: string): string {
-  return value
-    .replace(/\u3000/g, " ")
-    .replace(/[！-～]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0))
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function toEventBaseKey(source: BestTimeSource): string {
-  return `${nameSearchKey(normalizeEventTitle(source.event.title))}:${source.event.distanceM}`;
+  return toComparableEventBaseKey({
+    title: source.event.title,
+    distanceM: source.event.distanceM
+  });
 }
 
 function shouldReplaceCurrentBest(current: BestTimeSource, candidate: BestTimeSource): boolean {
