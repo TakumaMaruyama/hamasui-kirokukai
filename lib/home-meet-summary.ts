@@ -40,11 +40,9 @@ export type HomeMeetComparisonSummary = {
   totalImprovementMs: number;
   comparedEntryCount: number;
   improvedEntryCount: number;
-  improvedChildCount: number;
 };
 
 type ComparisonEntry = {
-  childKey: string;
   timeMs: number;
 };
 
@@ -97,7 +95,6 @@ function buildUniqueResultMap(meet: Pick<HomeMeetSummaryInput, "results">): Map<
     }
 
     uniqueResults.set(key, {
-      childKey: `${nameSearchKey(result.athlete.fullName)}:${result.athlete.gender}`,
       timeMs: result.timeMs
     });
   }
@@ -129,14 +126,12 @@ export function buildHomeMeetComparisonSummary(
       previousMeet: null,
       totalImprovementMs: 0,
       comparedEntryCount: 0,
-      improvedEntryCount: 0,
-      improvedChildCount: 0
+      improvedEntryCount: 0
     };
   }
 
   const currentResults = buildUniqueResultMap(currentMeet);
   const previousResults = buildUniqueResultMap(previousMeet);
-  const improvedChildren = new Set<string>();
   let totalImprovementMs = 0;
   let comparedEntryCount = 0;
   let improvedEntryCount = 0;
@@ -156,7 +151,6 @@ export function buildHomeMeetComparisonSummary(
 
     totalImprovementMs += improvementMs;
     improvedEntryCount += 1;
-    improvedChildren.add(currentResult.childKey);
   }
 
   return {
@@ -165,8 +159,7 @@ export function buildHomeMeetComparisonSummary(
     previousMeet: previousOverview,
     totalImprovementMs,
     comparedEntryCount,
-    improvedEntryCount,
-    improvedChildCount: improvedChildren.size
+    improvedEntryCount
   };
 }
 

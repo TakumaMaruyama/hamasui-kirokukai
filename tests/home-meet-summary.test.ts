@@ -146,7 +146,6 @@ describe("buildHomeMeetComparisonSummary", () => {
     expect(summary?.comparedEntryCount).toBe(1);
     expect(summary?.totalImprovementMs).toBe(300);
     expect(summary?.improvedEntryCount).toBe(1);
-    expect(summary?.improvedChildCount).toBe(1);
   });
 
   it("adds only positive improvements and ignores slower, tied, or missing rows", () => {
@@ -238,81 +237,6 @@ describe("buildHomeMeetComparisonSummary", () => {
     expect(summary?.comparedEntryCount).toBe(3);
     expect(summary?.totalImprovementMs).toBe(300);
     expect(summary?.improvedEntryCount).toBe(1);
-    expect(summary?.improvedChildCount).toBe(1);
-  });
-
-  it("counts a child once even when the child improves in multiple events", () => {
-    const summary = buildHomeMeetComparisonSummary([
-      buildMeet({
-        id: "current",
-        program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
-        results: [
-          buildResult({
-            athleteId: "a1",
-            fullName: "山田太郎",
-            gender: "male",
-            eventTitle: "25mクロール",
-            distanceM: 25,
-            timeMs: 17_700
-          }),
-          buildResult({
-            athleteId: "a1",
-            fullName: "山田太郎",
-            gender: "male",
-            eventTitle: "50mクロール",
-            distanceM: 50,
-            timeMs: 38_200
-          }),
-          buildResult({
-            athleteId: "a2",
-            fullName: "佐藤花子",
-            gender: "female",
-            eventTitle: "25m背泳ぎ",
-            distanceM: 25,
-            timeMs: 20_000
-          })
-        ]
-      }),
-      buildMeet({
-        id: "previous",
-        program: "swimming",
-        title: "2025年8月",
-        heldOn: "2025-08-01T00:00:00.000Z",
-        createdAt: "2025-08-02T00:00:00.000Z",
-        results: [
-          buildResult({
-            athleteId: "b1",
-            fullName: "山田太郎",
-            gender: "male",
-            eventTitle: "25mクロール",
-            distanceM: 25,
-            timeMs: 17_900
-          }),
-          buildResult({
-            athleteId: "b1",
-            fullName: "山田太郎",
-            gender: "male",
-            eventTitle: "50mクロール",
-            distanceM: 50,
-            timeMs: 38_700
-          }),
-          buildResult({
-            athleteId: "b2",
-            fullName: "佐藤花子",
-            gender: "female",
-            eventTitle: "25m背泳ぎ",
-            distanceM: 25,
-            timeMs: 20_300
-          })
-        ]
-      })
-    ]);
-
-    expect(summary?.improvedEntryCount).toBe(3);
-    expect(summary?.improvedChildCount).toBe(2);
   });
 
   it("drops duplicated comparison keys within the same meet", () => {

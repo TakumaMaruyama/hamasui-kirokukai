@@ -183,34 +183,6 @@ button.secondary {
   line-height: 1.65;
 }
 
-.home-progress-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.home-progress-stat {
-  padding: 14px 16px;
-  border: 1px solid rgba(49, 84, 143, 0.16);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.home-progress-stat-label {
-  display: block;
-  color: #5b6170;
-  font-size: 0.82rem;
-  margin-bottom: 6px;
-}
-
-.home-progress-stat-value {
-  display: block;
-  color: #0f234d;
-  font-size: 1.1rem;
-  line-height: 1.2;
-}
-
 .home-progress-meets {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -260,19 +232,11 @@ button.secondary {
   line-height: 1.5;
 }
 
-.home-progress-note {
-  margin: 14px 0 0;
-  color: #5d6f8a;
-  font-size: 0.84rem;
-  line-height: 1.6;
-}
-
 @media (max-width: 640px) {
   .home-progress-card {
     padding: 20px;
   }
 
-  .home-progress-stats,
   .home-progress-meets {
     grid-template-columns: 1fr;
   }
