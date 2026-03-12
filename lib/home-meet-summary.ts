@@ -86,25 +86,16 @@ function buildUniqueResultMap(
   meet: Pick<HomeMeetSummaryInput, "results">
 ): Map<string, ComparisonEntry> {
   const uniqueResults = new Map<string, ComparisonEntry>();
-  const duplicatedKeys = new Set<string>();
 
   for (const result of meet.results) {
     const key = toComparisonKey(result);
-
-    if (duplicatedKeys.has(key)) {
-      continue;
-    }
-
     const existing = uniqueResults.get(key);
-    if (existing) {
-      uniqueResults.delete(key);
-      duplicatedKeys.add(key);
-      continue;
-    }
 
-    uniqueResults.set(key, {
-      timeMs: result.timeMs
-    });
+    if (!existing || result.timeMs < existing.timeMs) {
+      uniqueResults.set(key, {
+        timeMs: result.timeMs
+      });
+    }
   }
 
   return uniqueResults;

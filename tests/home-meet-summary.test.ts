@@ -267,7 +267,7 @@ describe("buildHomeMeetComparisonCards", () => {
     expect(cards?.[0]?.improvedEntryCount).toBe(1);
   });
 
-  it("drops duplicated comparison keys within the same meet", () => {
+  it("uses the fastest record when duplicated comparison keys exist within the same meet", () => {
     const cards = buildHomeMeetComparisonCards([
       buildMeet({
         id: "current",
@@ -321,9 +321,117 @@ describe("buildHomeMeetComparisonCards", () => {
       })
     ]);
 
-    expect(cards?.[0]?.state).toBe("not-comparable");
-    expect(cards?.[0]?.comparedEntryCount).toBe(0);
-    expect(cards?.[0]?.totalImprovementMs).toBe(0);
+    expect(cards?.[0]?.state).toBe("ready");
+    expect(cards?.[0]?.comparedEntryCount).toBe(1);
+    expect(cards?.[0]?.improvedEntryCount).toBe(1);
+    expect(cards?.[0]?.totalImprovementMs).toBe(300);
+  });
+
+  it("treats freestyle label variants as the same comparable event", () => {
+    const cards = buildHomeMeetComparisonCards([
+      buildMeet({
+        id: "current",
+        program: "swimming",
+        title: "2025年9月",
+        heldOn: "2025-09-01T00:00:00.000Z",
+        createdAt: "2025-09-02T00:00:00.000Z",
+        results: [
+          buildResult({
+            athleteId: "a1",
+            fullName: "山田太郎",
+            gender: "male",
+            eventTitle: "25mクロール",
+            distanceM: 25,
+            timeMs: 17_800
+          })
+        ]
+      }),
+      buildMeet({
+        id: "previous",
+        program: "swimming",
+        title: "2025年3月",
+        heldOn: "2025-03-01T00:00:00.000Z",
+        createdAt: "2025-03-02T00:00:00.000Z",
+        results: [
+          buildResult({
+            athleteId: "b1",
+            fullName: "山田太郎",
+            gender: "male",
+            eventTitle: "25m自由形",
+            distanceM: 25,
+            timeMs: 18_100
+          })
+        ]
+      }),
+      buildMeet({
+        id: "oldest",
+        program: "swimming",
+        title: "2024年9月",
+        heldOn: "2024-09-01T00:00:00.000Z",
+        createdAt: "2024-09-02T00:00:00.000Z",
+        results: []
+      })
+    ]);
+
+    expect(cards?.[0]?.state).toBe("ready");
+    expect(cards?.[0]?.comparedEntryCount).toBe(1);
+    expect(cards?.[0]?.improvedEntryCount).toBe(1);
+    expect(cards?.[0]?.totalImprovementMs).toBe(300);
+  });
+
+  it("calculates the previous slot from the second and third latest meets", () => {
+    const cards = buildHomeMeetComparisonCards([
+      buildMeet({
+        id: "latest",
+        program: "swimming",
+        title: "2025年9月",
+        heldOn: "2025-09-01T00:00:00.000Z",
+        createdAt: "2025-09-02T00:00:00.000Z",
+        results: []
+      }),
+      buildMeet({
+        id: "middle",
+        program: "swimming",
+        title: "2025年3月",
+        heldOn: "2025-03-01T00:00:00.000Z",
+        createdAt: "2025-03-02T00:00:00.000Z",
+        results: [
+          buildResult({
+            athleteId: "a1",
+            fullName: "山田太郎",
+            gender: "male",
+            eventTitle: "25mクロール",
+            distanceM: 25,
+            timeMs: 17_800
+          })
+        ]
+      }),
+      buildMeet({
+        id: "oldest",
+        program: "swimming",
+        title: "2024年9月",
+        heldOn: "2024-09-01T00:00:00.000Z",
+        createdAt: "2024-09-02T00:00:00.000Z",
+        results: [
+          buildResult({
+            athleteId: "b1",
+            fullName: "山田太郎",
+            gender: "male",
+            eventTitle: "25m自由形",
+            distanceM: 25,
+            timeMs: 18_100
+          })
+        ]
+      })
+    ]);
+
+    expect(cards?.[1]?.slotLabel).toBe("1つ前");
+    expect(cards?.[1]?.state).toBe("ready");
+    expect(cards?.[1]?.currentMeet?.id).toBe("middle");
+    expect(cards?.[1]?.previousMeet?.id).toBe("oldest");
+    expect(cards?.[1]?.comparedEntryCount).toBe(1);
+    expect(cards?.[1]?.improvedEntryCount).toBe(1);
+    expect(cards?.[1]?.totalImprovementMs).toBe(300);
   });
 
   it("uses a placeholder card when there are only two meets", () => {

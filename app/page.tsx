@@ -31,7 +31,10 @@ function renderCardBody(card: HomeMeetComparisonCard) {
       return (
         <>
           <h2 className="home-progress-title">
-            前回からみんなで合計 {formatImprovementTotal(card.totalImprovementMs)}タイム更新
+            <span className="home-progress-title-line">前回からみんなで</span>
+            <span className="home-progress-title-line">
+              合計 {formatImprovementTotal(card.totalImprovementMs)}タイム更新
+            </span>
           </h2>
           <p className="home-progress-body">
             {formatCount(card.comparedEntryCount)}記録中{formatCount(card.improvedEntryCount)}記録更新
