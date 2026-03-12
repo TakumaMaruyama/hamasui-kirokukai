@@ -6,6 +6,7 @@ import { formatMeetMonthLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
 import { formatGradeLabel } from "@/lib/grade";
 import { buildAthleteRankScopeLabels } from "@/lib/athlete-rank-scope";
+import { pickBestTimesByEventBase } from "@/lib/history-best-time";
 import {
   assignAllTimeClassRankStatsUpToHeldOn,
   assignMonthlyOverallRankStats,
@@ -82,19 +83,7 @@ function groupByMeet(results: ResultWithMeetEvent[]) {
 
 // 種目別ベストタイムを計算
 function getBestTimes(results: ResultWithMeetEvent[]) {
-  const bestByEvent = new Map<string, ResultWithMeetEvent>();
-
-  for (const result of results) {
-    const key = result.event.id;
-    const current = bestByEvent.get(key);
-    if (!current || result.timeMs < current.timeMs) {
-      bestByEvent.set(key, result);
-    }
-  }
-
-  return Array.from(bestByEvent.values()).sort((a, b) =>
-    a.event.title.localeCompare(b.event.title, "ja")
-  );
+  return pickBestTimesByEventBase(results);
 }
 
 function renderRankCell(stat: RankStat | undefined) {
