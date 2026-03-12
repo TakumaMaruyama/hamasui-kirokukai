@@ -33,9 +33,10 @@ export type HomeMeetOverview = {
   resultCount: number;
 };
 
-export type HomeMeetComparisonSummary = {
-  state: "ready" | "not-comparable" | "waiting-next-meet";
-  currentMeet: HomeMeetOverview;
+export type HomeMeetComparisonCard = {
+  slotLabel: "今回" | "1つ前";
+  state: "ready" | "not-comparable" | "waiting-next-meet" | "unavailable";
+  currentMeet: HomeMeetOverview | null;
   previousMeet: HomeMeetOverview | null;
   totalImprovementMs: number;
   comparedEntryCount: number;
@@ -46,7 +47,10 @@ type ComparisonEntry = {
   timeMs: number;
 };
 
-function compareMeetOrder(a: Pick<HomeMeetSummaryInput, "heldOn" | "createdAt" | "id">, b: Pick<HomeMeetSummaryInput, "heldOn" | "createdAt" | "id">) {
+function compareMeetOrder(
+  a: Pick<HomeMeetSummaryInput, "heldOn" | "createdAt" | "id">,
+  b: Pick<HomeMeetSummaryInput, "heldOn" | "createdAt" | "id">
+) {
   const heldOnOrder = b.heldOn.getTime() - a.heldOn.getTime();
   if (heldOnOrder !== 0) {
     return heldOnOrder;
@@ -60,7 +64,9 @@ function compareMeetOrder(a: Pick<HomeMeetSummaryInput, "heldOn" | "createdAt" |
   return b.id.localeCompare(a.id, "en");
 }
 
-function toMeetOverview(meet: Pick<HomeMeetSummaryInput, "id" | "title" | "heldOn" | "results">): HomeMeetOverview {
+function toMeetOverview(
+  meet: Pick<HomeMeetSummaryInput, "id" | "title" | "heldOn" | "results">
+): HomeMeetOverview {
   return {
     id: meet.id,
     title: meet.title,
@@ -76,7 +82,9 @@ function toComparisonKey(result: HomeMeetResultInput): string {
   return `${childKey}:${eventKey}`;
 }
 
-function buildUniqueResultMap(meet: Pick<HomeMeetSummaryInput, "results">): Map<string, ComparisonEntry> {
+function buildUniqueResultMap(
+  meet: Pick<HomeMeetSummaryInput, "results">
+): Map<string, ComparisonEntry> {
   const uniqueResults = new Map<string, ComparisonEntry>();
   const duplicatedKeys = new Set<string>();
 
@@ -102,27 +110,16 @@ function buildUniqueResultMap(meet: Pick<HomeMeetSummaryInput, "results">): Map<
   return uniqueResults;
 }
 
-export function buildHomeMeetComparisonSummary(
-  meets: HomeMeetSummaryInput[]
-): HomeMeetComparisonSummary | null {
-  const latestMeets = meets
-    .filter((meet) => meet.program === "swimming")
-    .sort(compareMeetOrder)
-    .slice(0, 2);
-
-  const currentMeet = latestMeets[0];
-  if (!currentMeet) {
-    return null;
-  }
-
-  const currentOverview = toMeetOverview(currentMeet);
-  const previousMeet = latestMeets[1];
-  const previousOverview = previousMeet ? toMeetOverview(previousMeet) : null;
-
-  if (!previousMeet) {
+function buildComparisonCard(
+  slotLabel: HomeMeetComparisonCard["slotLabel"],
+  currentMeetInput: HomeMeetSummaryInput | null | undefined,
+  previousMeetInput: HomeMeetSummaryInput | null | undefined
+): HomeMeetComparisonCard {
+  if (!currentMeetInput) {
     return {
-      state: "waiting-next-meet",
-      currentMeet: currentOverview,
+      slotLabel,
+      state: "unavailable",
+      currentMeet: null,
       previousMeet: null,
       totalImprovementMs: 0,
       comparedEntryCount: 0,
@@ -130,8 +127,23 @@ export function buildHomeMeetComparisonSummary(
     };
   }
 
-  const currentResults = buildUniqueResultMap(currentMeet);
-  const previousResults = buildUniqueResultMap(previousMeet);
+  const currentMeet = toMeetOverview(currentMeetInput);
+
+  if (!previousMeetInput) {
+    return {
+      slotLabel,
+      state: "waiting-next-meet",
+      currentMeet,
+      previousMeet: null,
+      totalImprovementMs: 0,
+      comparedEntryCount: 0,
+      improvedEntryCount: 0
+    };
+  }
+
+  const previousMeet = toMeetOverview(previousMeetInput);
+  const currentResults = buildUniqueResultMap(currentMeetInput);
+  const previousResults = buildUniqueResultMap(previousMeetInput);
   let totalImprovementMs = 0;
   let comparedEntryCount = 0;
   let improvedEntryCount = 0;
@@ -154,22 +166,41 @@ export function buildHomeMeetComparisonSummary(
   }
 
   return {
+    slotLabel,
     state: comparedEntryCount > 0 ? "ready" : "not-comparable",
-    currentMeet: currentOverview,
-    previousMeet: previousOverview,
+    currentMeet,
+    previousMeet,
     totalImprovementMs,
     comparedEntryCount,
     improvedEntryCount
   };
 }
 
-export async function getHomeMeetComparisonSummary() {
+export function buildHomeMeetComparisonCards(
+  meets: HomeMeetSummaryInput[]
+): HomeMeetComparisonCard[] | null {
+  const latestMeets = meets
+    .filter((meet) => meet.program === "swimming")
+    .sort(compareMeetOrder)
+    .slice(0, 3);
+
+  if (!latestMeets[0]) {
+    return null;
+  }
+
+  return [
+    buildComparisonCard("今回", latestMeets[0], latestMeets[1]),
+    buildComparisonCard("1つ前", latestMeets[2] ? latestMeets[1] : null, latestMeets[2])
+  ];
+}
+
+export async function getHomeMeetComparisonCards() {
   const meets = await prisma.meet.findMany({
     where: {
       program: "swimming"
     },
     orderBy: [{ heldOn: "desc" }, { createdAt: "desc" }],
-    take: 2,
+    take: 3,
     select: {
       id: true,
       program: true,
@@ -197,5 +228,5 @@ export async function getHomeMeetComparisonSummary() {
     }
   });
 
-  return buildHomeMeetComparisonSummary(meets);
+  return buildHomeMeetComparisonCards(meets);
 }
