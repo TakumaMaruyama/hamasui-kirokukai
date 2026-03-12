@@ -22,10 +22,11 @@ tests/         - Vitest test files
 ```
 
 ## Key Configuration
-- **Dev server**: `npm run dev` (port 5000, host 0.0.0.0)
-- **Production**: `npm run build && npm run start` (port 5000)
+- **Dev server**: `npm run dev` (`PORT` env var or fallback `3000`, host `0.0.0.0`)
+- **Production**: `npm run build && npm run start` (`PORT` env var or fallback `3000`)
 - **Database**: PostgreSQL via `DATABASE_URL` env var
 - **Admin access**: Protected by `ADMIN_PASSWORD` env var
 
 ## Recent Changes
-- 2026-02-07: Initial Replit setup - configured port 5000, Prisma DB push, deployment config
+- 2026-02-07: Initial Replit setup - configured Prisma DB push and deployment config
+- 2026-03-12: Replit preview startup aligned to `PORT`/`3000` and simplified port forwarding
