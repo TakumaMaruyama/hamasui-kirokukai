@@ -6,23 +6,11 @@ import {
   getHomeMeetComparisonCards,
   type HomeMeetComparisonCard
 } from "@/lib/home-meet-summary";
-import { formatMeetLabel } from "@/lib/meet-context";
+import { getHomeProgressHeader } from "@/lib/home-progress";
 import { formatPublishRange } from "@/lib/publish";
 
 function formatCount(value: number): string {
   return new Intl.NumberFormat("ja-JP").format(value);
-}
-
-function formatComparisonPair(card: HomeMeetComparisonCard): string {
-  if (card.currentMeet && card.previousMeet) {
-    return `${formatMeetLabel(card.currentMeet)} ← ${formatMeetLabel(card.previousMeet)}`;
-  }
-
-  if (card.currentMeet) {
-    return `${formatMeetLabel(card.currentMeet)} を基準に次回から表示`;
-  }
-
-  return "比較できる記録会がそろったら表示";
 }
 
 function renderCardBody(card: HomeMeetComparisonCard) {
@@ -108,20 +96,27 @@ export default async function HomePage() {
       </header>
       {comparisonCards ? (
         <section className="home-progress-grid" aria-label="みんなの前回比">
-          {comparisonCards.map((card) => (
-            <article
-              key={card.slotLabel}
-              className={`home-progress-card ${
-                card.slotLabel === "今回"
-                  ? "home-progress-card-current"
-                  : "home-progress-card-previous"
-              }${card.state === "unavailable" ? " is-empty" : ""}`}
-            >
-              <p className="home-progress-slot">{card.slotLabel}</p>
-              {renderCardBody(card)}
-              <p className="home-progress-pair">{formatComparisonPair(card)}</p>
-            </article>
-          ))}
+          {comparisonCards.map((card) => {
+            const header = getHomeProgressHeader(card);
+
+            return (
+              <article
+                key={card.slotLabel}
+                className={`home-progress-card ${
+                  card.slotLabel === "今回"
+                    ? "home-progress-card-current"
+                    : "home-progress-card-previous"
+                }${card.state === "unavailable" ? " is-empty" : ""}`}
+              >
+                <header className="home-progress-header">
+                  <span className="home-progress-slot">{header.slotLabel}</span>
+                  <p className="home-progress-meet">{header.currentLabel}</p>
+                  <p className="home-progress-comparison">{header.comparisonLabel}</p>
+                </header>
+                <div className="home-progress-content">{renderCardBody(card)}</div>
+              </article>
+            );
+          })}
         </section>
       ) : null}
       <div className="card">
