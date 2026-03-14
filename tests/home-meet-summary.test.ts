@@ -119,11 +119,9 @@ describe("buildHomeMeetComparisonSummary", () => {
     expect(summary).not.toBeNull();
     expect(summary?.currentMeet.id).toBe("2026年3月");
     expect(summary?.currentMeet.title).toBe("2026年3月");
-    expect(summary?.currentMeet.meetCount).toBe(2);
     expect(summary?.currentMeet.participantCount).toBe(2);
     expect(summary?.currentMeet.resultCount).toBe(2);
     expect(summary?.previousMeet?.id).toBe("2025年9月");
-    expect(summary?.previousMeet?.meetCount).toBe(1);
     expect(summary?.state).toBe("ready");
   });
 
@@ -588,7 +586,6 @@ describe("buildHomeMeetComparisonSummary", () => {
 
     expect(oneMonthSummary?.state).toBe("waiting-next-meet");
     expect(oneMonthSummary?.currentMeet.title).toBe("2026年3月");
-    expect(oneMonthSummary?.currentMeet.meetCount).toBe(2);
     expect(oneMonthSummary?.previousMeet).toBeNull();
     expect(noOverlapSummary?.state).toBe("not-comparable");
     expect(noOverlapSummary?.comparedEntryCount).toBe(0);

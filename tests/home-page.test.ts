@@ -121,7 +121,6 @@ describe("HomePage", () => {
         id: "current",
         title: "2026年3月",
         heldOn: new Date("2026-03-08T00:00:00.000Z"),
-        meetCount: 3,
         participantCount: 12,
         resultCount: 24
       },
@@ -129,7 +128,6 @@ describe("HomePage", () => {
         id: "previous",
         title: "2025年9月",
         heldOn: new Date("2025-09-30T00:00:00.000Z"),
-        meetCount: 2,
         participantCount: 10,
         resultCount: 20
       },
@@ -149,8 +147,7 @@ describe("HomePage", () => {
     expect(texts).not.toContain("1つ前");
     expect(texts).toContain("2026年3月");
     expect(texts).toContain("2025年9月");
-    expect(compactText).toContain("記録会3回分");
-    expect(compactText).toContain("記録会2回分");
+    expect(compactText).not.toContain("回分");
     expect(texts).toContain("比較対象");
     expect(texts).toContain("更新した記録");
     expect(texts).toContain("更新した子");

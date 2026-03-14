@@ -118,9 +118,6 @@ export default async function HomePage() {
             <article className="home-progress-meet home-progress-meet-current">
               <p className="home-progress-meet-label">今回</p>
               <h3 className="home-progress-meet-title">{comparisonSummary.currentMeet.title}</h3>
-              <p className="home-progress-meet-date">
-                記録会{formatCount(comparisonSummary.currentMeet.meetCount)}回分
-              </p>
               <p className="home-progress-meet-meta">
                 {formatCount(comparisonSummary.currentMeet.participantCount)}人 /{" "}
                 {formatCount(comparisonSummary.currentMeet.resultCount)}記録
@@ -135,9 +132,6 @@ export default async function HomePage() {
               {comparisonSummary.previousMeet ? (
                 <>
                   <h3 className="home-progress-meet-title">{comparisonSummary.previousMeet.title}</h3>
-                  <p className="home-progress-meet-date">
-                    記録会{formatCount(comparisonSummary.previousMeet.meetCount)}回分
-                  </p>
                   <p className="home-progress-meet-meta">
                     {formatCount(comparisonSummary.previousMeet.participantCount)}人 /{" "}
                     {formatCount(comparisonSummary.previousMeet.resultCount)}記録

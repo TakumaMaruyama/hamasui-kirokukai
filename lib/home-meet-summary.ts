@@ -30,7 +30,6 @@ export type HomeMeetOverview = {
   id: string;
   title: string;
   heldOn: Date;
-  meetCount: number;
   participantCount: number;
   resultCount: number;
 };
@@ -55,7 +54,6 @@ type HomeMeetMonthGroup = {
   title: string;
   heldOn: Date;
   results: HomeMeetResultInput[];
-  meetCount: number;
 };
 
 function compareMeetOrder(
@@ -82,7 +80,6 @@ function toMeetOverview(
     id: meet.id,
     title: meet.title,
     heldOn: meet.heldOn,
-    meetCount: meet.meetCount,
     participantCount: new Set(meet.results.map((result) => result.athleteId)).size,
     resultCount: meet.results.length
   };
@@ -126,8 +123,7 @@ function buildMonthGroups(meets: HomeMeetSummaryInput[]): HomeMeetMonthGroup[] {
         id: monthLabel,
         title: monthLabel,
         heldOn: meet.heldOn,
-        results: [...meet.results],
-        meetCount: 1
+        results: [...meet.results]
       });
       continue;
     }
@@ -137,7 +133,6 @@ function buildMonthGroups(meets: HomeMeetSummaryInput[]): HomeMeetMonthGroup[] {
     }
 
     existingGroup.results.push(...meet.results);
-    existingGroup.meetCount += 1;
   }
 
   return Array.from(monthlyGroups.values()).slice(0, 2);
