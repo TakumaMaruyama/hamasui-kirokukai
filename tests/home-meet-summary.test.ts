@@ -141,7 +141,7 @@ describe("buildHomeMeetComparisonCards", () => {
     expect(cards?.[0]?.currentMeet?.resultCount).toBe(2);
     expect(cards?.[0]?.previousMeet?.id).toBe("2025年9月");
     expect(cards?.[0]?.state).toBe("ready");
-    expect(cards?.[1]?.slotLabel).toBe("前回の前回比");
+    expect(cards?.[1]?.slotLabel).toBe("前回");
     expect(cards?.[1]?.currentMeet?.id).toBe("2025年9月");
     expect(cards?.[1]?.previousMeet?.id).toBe("2025年7月");
     expect(cards?.[1]?.state).toBe("ready");
@@ -417,7 +417,7 @@ describe("buildHomeMeetComparisonCards", () => {
     ]);
 
     expect(cards?.[0]?.state).toBe("not-comparable");
-    expect(cards?.[1]?.slotLabel).toBe("前回の前回比");
+    expect(cards?.[1]?.slotLabel).toBe("前回");
     expect(cards?.[1]?.state).toBe("waiting-older-month");
     expect(cards?.[1]?.currentMeet?.title).toBe("2025年9月");
     expect(cards?.[1]?.previousMeet).toBeNull();
@@ -445,7 +445,7 @@ describe("buildHomeMeetComparisonCards", () => {
 
     expect(cards?.[0]?.state).toBe("waiting-next-meet");
     expect(cards?.[0]?.currentMeet?.title).toBe("2026年3月");
-    expect(cards?.[1]?.slotLabel).toBe("前回の前回比");
+    expect(cards?.[1]?.slotLabel).toBe("前回");
     expect(cards?.[1]?.state).toBe("unavailable");
     expect(cards?.[1]?.currentMeet).toBeNull();
     expect(cards?.[1]?.previousMeet).toBeNull();

@@ -136,7 +136,7 @@ describe("HomePage", () => {
         totalImprovementMs: 13_000
       },
       {
-        slotLabel: "前回の前回比",
+        slotLabel: "前回",
         state: "ready",
         currentMeet: {
           id: "previous",
@@ -160,14 +160,14 @@ describe("HomePage", () => {
     const texts = collectTextNodes(root).join("\n");
     const compactText = texts.replace(/\s+/g, "");
 
-    expect(texts).toContain("みんなの前回比");
+    expect(texts).not.toContain("みんなの前回比");
     expect(texts).toContain("今回");
-    expect(texts).toContain("前回の前回比");
+    expect(texts).toContain("前回");
     expect(texts).toContain("2026年3月");
     expect(texts).toContain("2025年9月");
     expect(texts).not.toContain("2025年7月");
     expect(compactText).toContain("今回2026年3月/24記録");
-    expect(compactText).toContain("前回の前回比2025年9月/20記録");
+    expect(compactText).toContain("前回2025年9月/20記録");
     expect(compactText).toContain("みんなで前より13000msタイムアップ");
     expect(compactText).toContain("みんなで前より2400msタイムアップ");
     expect(compactText).not.toContain("12人");
@@ -207,7 +207,7 @@ describe("HomePage", () => {
         totalImprovementMs: 13_000
       },
       {
-        slotLabel: "前回の前回比",
+        slotLabel: "前回",
         state: "waiting-older-month",
         currentMeet: {
           id: "previous",
@@ -225,8 +225,8 @@ describe("HomePage", () => {
     const texts = collectTextNodes(root).join("\n");
     const compactText = texts.replace(/\s+/g, "");
 
-    expect(texts).toContain("前回の前回比");
-    expect(compactText).toContain("前回の前回比2025年9月/20記録");
+    expect(texts).toContain("前回");
+    expect(compactText).toContain("前回2025年9月/20記録");
     expect(texts).toContain("さらに前の開催月が入ると表示");
     expect(texts).not.toContain("まだありません");
     expect(compactText).toContain("20記録");
@@ -252,7 +252,7 @@ describe("HomePage", () => {
         totalImprovementMs: 0
       },
       {
-        slotLabel: "前回の前回比",
+        slotLabel: "前回",
         state: "unavailable",
         currentMeet: null,
         previousMeet: null,
@@ -269,7 +269,7 @@ describe("HomePage", () => {
     expect(compactText).toContain("今回2026年3月/24記録");
     expect(texts).not.toContain("まだありません");
     expect(texts).not.toContain("次の開催月から比較できます");
-    expect(compactText).not.toContain("前回の前回比/"); 
+    expect(compactText).not.toContain("前回/");
     expect(compactText).not.toContain("12人");
     expect(texts).not.toContain("比較対象");
     expect(texts).not.toContain("更新した記録");

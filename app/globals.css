@@ -185,15 +185,6 @@ button.secondary {
   border-color: rgba(123, 146, 184, 0.16);
 }
 
-.home-progress-eyebrow {
-  margin: 0 0 10px;
-  color: #31548f;
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .home-progress-slot {
   margin: 0;
   color: #31548f;
