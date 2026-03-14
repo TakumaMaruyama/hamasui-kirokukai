@@ -1,6 +1,6 @@
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { HomeMeetComparisonSummary } from "../lib/home-meet-summary";
+import type { HomeMeetComparisonCard } from "../lib/home-meet-summary";
 
 const mockState = vi.hoisted(() => ({
   publishWindow: null as {
@@ -8,7 +8,7 @@ const mockState = vi.hoisted(() => ({
     publishUntil: Date | null;
     announcement: string | null;
   } | null,
-  summary: null as HomeMeetComparisonSummary | null
+  cards: null as HomeMeetComparisonCard[] | null
 }));
 
 vi.mock("next/link", () => ({
@@ -36,7 +36,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/home-meet-summary", () => ({
-  getHomeMeetComparisonSummary: vi.fn(async () => mockState.summary)
+  getHomeMeetComparisonCards: vi.fn(async () => mockState.cards)
 }));
 
 import HomePage from "../app/page";
@@ -111,28 +111,50 @@ function collectElementsByClassName(root: unknown, className: string): any[] {
 describe("HomePage", () => {
   beforeEach(() => {
     mockState.publishWindow = null;
-    mockState.summary = null;
+    mockState.cards = null;
   });
 
-  it("renders one latest-vs-previous summary and does not show chained previous cards", async () => {
-    mockState.summary = {
-      state: "ready",
-      currentMeet: {
-        id: "current",
-        title: "2026年3月",
-        heldOn: new Date("2026-03-08T00:00:00.000Z"),
-        participantCount: 12,
-        resultCount: 24
+  it("renders two ready month comparison cards", async () => {
+    mockState.cards = [
+      {
+        slotLabel: "今回",
+        state: "ready",
+        currentMeet: {
+          id: "current",
+          title: "2026年3月",
+          heldOn: new Date("2026-03-08T00:00:00.000Z"),
+          participantCount: 12,
+          resultCount: 24
+        },
+        previousMeet: {
+          id: "previous",
+          title: "2025年9月",
+          heldOn: new Date("2025-09-30T00:00:00.000Z"),
+          participantCount: 10,
+          resultCount: 20
+        },
+        totalImprovementMs: 13_000
       },
-      previousMeet: {
-        id: "previous",
-        title: "2025年9月",
-        heldOn: new Date("2025-09-30T00:00:00.000Z"),
-        participantCount: 10,
-        resultCount: 20
-      },
-      totalImprovementMs: 13_000
-    };
+      {
+        slotLabel: "前回の前回比",
+        state: "ready",
+        currentMeet: {
+          id: "previous",
+          title: "2025年9月",
+          heldOn: new Date("2025-09-30T00:00:00.000Z"),
+          participantCount: 10,
+          resultCount: 20
+        },
+        previousMeet: {
+          id: "older",
+          title: "2025年7月",
+          heldOn: new Date("2025-07-31T00:00:00.000Z"),
+          participantCount: 8,
+          resultCount: 14
+        },
+        totalImprovementMs: 2_400
+      }
+    ];
 
     const root = await HomePage();
     const texts = collectTextNodes(root).join("\n");
@@ -140,47 +162,107 @@ describe("HomePage", () => {
 
     expect(texts).toContain("みんなの前回比");
     expect(texts).toContain("今回");
-    expect(texts).toContain("前回");
-    expect(texts).not.toContain("1つ前");
+    expect(texts).toContain("前回の前回比");
     expect(texts).toContain("2026年3月");
     expect(texts).toContain("2025年9月");
-    expect(texts).toContain("みんなで前回より ");
+    expect(texts).toContain("2025年7月");
     expect(texts).toContain("13000ms");
+    expect(texts).toContain("2400ms");
+    expect(texts).not.toContain("1つ前");
     expect(texts).not.toContain("2026年3月日曜");
     expect(texts).not.toContain("2026年3月土曜");
+    expect(texts).not.toContain("今回の開催月と前回の開催月を、同じ子・同じ種目の月内ベストで比べています。");
+    expect(texts).not.toContain("同じ子・同じ種目が両方の開催月にあるものだけを比較しています。");
     expect(compactText).not.toContain("回分");
-    expect(texts).not.toContain("比較対象");
-    expect(texts).not.toContain("更新した記録");
-    expect(texts).not.toContain("更新した子");
 
-    const meetPanels = collectElementsByClassName(root, "home-progress-meet");
-    expect(meetPanels).toHaveLength(2);
-    expect(collectElementsByClassName(root, "home-progress-card")).toHaveLength(1);
+    expect(collectElementsByClassName(root, "home-progress-card")).toHaveLength(2);
+    expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(4);
   });
 
-  it("renders waiting-next-meet copy without obsolete summary stats", async () => {
-    mockState.summary = {
-      state: "waiting-next-meet",
-      currentMeet: {
-        id: "current",
-        title: "2026年3月",
-        heldOn: new Date("2026-03-08T00:00:00.000Z"),
-        participantCount: 12,
-        resultCount: 24
+  it("renders a waiting-older-month second card with the previous month filled in", async () => {
+    mockState.cards = [
+      {
+        slotLabel: "今回",
+        state: "ready",
+        currentMeet: {
+          id: "current",
+          title: "2026年3月",
+          heldOn: new Date("2026-03-08T00:00:00.000Z"),
+          participantCount: 12,
+          resultCount: 24
+        },
+        previousMeet: {
+          id: "previous",
+          title: "2025年9月",
+          heldOn: new Date("2025-09-30T00:00:00.000Z"),
+          participantCount: 10,
+          resultCount: 20
+        },
+        totalImprovementMs: 13_000
       },
-      previousMeet: null,
-      totalImprovementMs: 0
-    };
+      {
+        slotLabel: "前回の前回比",
+        state: "waiting-older-month",
+        currentMeet: {
+          id: "previous",
+          title: "2025年9月",
+          heldOn: new Date("2025-09-30T00:00:00.000Z"),
+          participantCount: 10,
+          resultCount: 20
+        },
+        previousMeet: null,
+        totalImprovementMs: 0
+      }
+    ];
+
+    const root = await HomePage();
+    const texts = collectTextNodes(root).join("\n");
+
+    expect(texts).toContain("前回の前回比");
+    expect(texts).toContain("さらに前の開催月が入ると表示");
+    expect(texts).toContain("2025年9月");
+    expect(texts).toContain("まだありません");
+    expect(texts).toContain("前回の前回比を準備中");
+    expect(collectElementsByClassName(root, "home-progress-card")).toHaveLength(2);
+    expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(4);
+  });
+
+  it("renders waiting-next-meet and unavailable states without obsolete summary stats", async () => {
+    mockState.cards = [
+      {
+        slotLabel: "今回",
+        state: "waiting-next-meet",
+        currentMeet: {
+          id: "current",
+          title: "2026年3月",
+          heldOn: new Date("2026-03-08T00:00:00.000Z"),
+          participantCount: 12,
+          resultCount: 24
+        },
+        previousMeet: null,
+        totalImprovementMs: 0
+      },
+      {
+        slotLabel: "前回の前回比",
+        state: "unavailable",
+        currentMeet: null,
+        previousMeet: null,
+        totalImprovementMs: 0
+      }
+    ];
 
     const root = await HomePage();
     const texts = collectTextNodes(root).join("\n");
 
     expect(texts).toContain("次回から前回比を表示");
+    expect(texts).toContain("さらに前の開催月が入ると表示");
     expect(texts).toContain("2026年3月");
     expect(texts).toContain("まだありません");
     expect(texts).toContain("次の開催月から比較できます");
     expect(texts).not.toContain("比較対象");
     expect(texts).not.toContain("更新した記録");
     expect(texts).not.toContain("更新した子");
+    expect(collectElementsByClassName(root, "home-progress-card")).toHaveLength(2);
+    expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(2);
   });
 });
