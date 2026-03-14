@@ -1,6 +1,7 @@
 import type { Gender, Program } from "@prisma/client";
 import { prisma } from "./prisma";
 import { toComparableEventBaseKey } from "./event-key";
+import { formatMeetMonthLabel } from "./meet-context";
 import { nameSearchKey } from "./search-request";
 
 type HomeMeetResultInput = {
@@ -48,6 +49,13 @@ type ComparisonEntry = {
   timeMs: number;
 };
 
+type HomeMeetMonthGroup = {
+  id: string;
+  title: string;
+  heldOn: Date;
+  results: HomeMeetResultInput[];
+};
+
 function compareMeetOrder(
   a: Pick<HomeMeetSummaryInput, "heldOn" | "createdAt" | "id">,
   b: Pick<HomeMeetSummaryInput, "heldOn" | "createdAt" | "id">
@@ -66,7 +74,7 @@ function compareMeetOrder(
 }
 
 function toMeetOverview(
-  meet: Pick<HomeMeetSummaryInput, "id" | "title" | "heldOn" | "results">
+  meet: HomeMeetMonthGroup
 ): HomeMeetOverview {
   return {
     id: meet.id,
@@ -84,7 +92,7 @@ function toComparisonKey(result: HomeMeetResultInput): string {
 }
 
 function buildUniqueResultMap(
-  meet: Pick<HomeMeetSummaryInput, "results">
+  meet: Pick<HomeMeetMonthGroup, "results">
 ): Map<string, ComparisonEntry> {
   const uniqueResults = new Map<string, ComparisonEntry>();
 
@@ -103,13 +111,37 @@ function buildUniqueResultMap(
   return uniqueResults;
 }
 
+function buildMonthGroups(meets: HomeMeetSummaryInput[]): HomeMeetMonthGroup[] {
+  const monthlyGroups = new Map<string, HomeMeetMonthGroup>();
+
+  for (const meet of meets.filter((candidate) => candidate.program === "swimming").sort(compareMeetOrder)) {
+    const monthLabel = formatMeetMonthLabel(meet);
+    const existingGroup = monthlyGroups.get(monthLabel);
+
+    if (!existingGroup) {
+      monthlyGroups.set(monthLabel, {
+        id: monthLabel,
+        title: monthLabel,
+        heldOn: meet.heldOn,
+        results: [...meet.results]
+      });
+      continue;
+    }
+
+    if (meet.heldOn.getTime() > existingGroup.heldOn.getTime()) {
+      existingGroup.heldOn = meet.heldOn;
+    }
+
+    existingGroup.results.push(...meet.results);
+  }
+
+  return Array.from(monthlyGroups.values()).slice(0, 2);
+}
+
 export function buildHomeMeetComparisonSummary(
   meets: HomeMeetSummaryInput[]
 ): HomeMeetComparisonSummary | null {
-  const latestMeets = meets
-    .filter((meet) => meet.program === "swimming")
-    .sort(compareMeetOrder)
-    .slice(0, 2);
+  const latestMeets = buildMonthGroups(meets);
 
   const currentMeet = latestMeets[0];
   if (!currentMeet) {
@@ -174,7 +206,6 @@ export async function getHomeMeetComparisonSummary() {
       program: "swimming"
     },
     orderBy: [{ heldOn: "desc" }, { createdAt: "desc" }],
-    take: 2,
     select: {
       id: true,
       program: true,
