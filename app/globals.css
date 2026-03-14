@@ -150,15 +150,9 @@ button.secondary {
   width: 20%;
 }
 
-.home-progress-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 24px;
-}
-
 .home-progress-card {
-  padding: 22px;
+  margin-bottom: 24px;
+  padding: 24px;
   border: 1px solid #dbe6ff;
   border-radius: 18px;
   background:
@@ -167,89 +161,20 @@ button.secondary {
   box-shadow: 0 12px 28px rgba(31, 61, 116, 0.12);
 }
 
-.home-progress-card-current {
-  border-color: rgba(47, 92, 255, 0.24);
-}
-
-.home-progress-card-previous {
-  border-color: rgba(83, 112, 154, 0.2);
-}
-
-.home-progress-card.is-empty {
-  background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0) 30%),
-    linear-gradient(135deg, #f5f8fd 0%, #fbfcff 100%);
-  border-color: rgba(123, 146, 184, 0.16);
-}
-
-.home-progress-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(87, 112, 152, 0.18);
-}
-
-.home-progress-slot {
-  display: inline-flex;
-  align-self: flex-start;
-  align-items: center;
-  padding: 5px 10px;
-  border-radius: 999px;
-  margin: 0;
-  font-size: 0.78rem;
+.home-progress-eyebrow {
+  margin: 0 0 10px;
+  color: #31548f;
+  font-size: 0.85rem;
   font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.04em;
-}
-
-.home-progress-card-current .home-progress-slot {
-  background: rgba(47, 92, 255, 0.12);
-  color: #1f3d74;
-}
-
-.home-progress-card-previous .home-progress-slot {
-  background: rgba(83, 112, 154, 0.12);
-  color: #36507f;
-}
-
-.home-progress-meet {
-  margin: 0;
-  color: #173263;
-  font-size: clamp(1.02rem, 1.9vw, 1.22rem);
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-.home-progress-comparison {
-  margin: 0;
-  color: #3d5579;
-  font-size: 0.93rem;
-  font-weight: 600;
-  line-height: 1.5;
-}
-
-.home-progress-card.is-empty .home-progress-meet {
-  color: #50617f;
-}
-
-.home-progress-card.is-empty .home-progress-comparison {
-  color: #667892;
-}
-
-.home-progress-content {
-  margin-top: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .home-progress-title {
   margin: 0;
   color: #0f234d;
-  font-size: clamp(1.2rem, 2.2vw, 1.55rem);
-  line-height: 1.35;
-}
-
-.home-progress-title-line {
-  display: block;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  line-height: 1.25;
 }
 
 .home-progress-body {
@@ -258,26 +183,98 @@ button.secondary {
   line-height: 1.65;
 }
 
-@media (max-width: 640px) {
-  .home-progress-grid {
-    grid-template-columns: 1fr;
-  }
+.home-progress-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
 
+.home-progress-stat {
+  padding: 14px 16px;
+  border: 1px solid rgba(49, 84, 143, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.home-progress-stat-label {
+  display: block;
+  color: #5b6170;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+}
+
+.home-progress-stat-value {
+  display: block;
+  color: #0f234d;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.home-progress-meets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.home-progress-meet {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(67, 94, 141, 0.14);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.home-progress-meet-current {
+  border-color: rgba(47, 92, 255, 0.22);
+}
+
+.home-progress-meet-previous {
+  border-color: rgba(123, 146, 184, 0.2);
+}
+
+.home-progress-meet.is-empty {
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.home-progress-meet-label {
+  margin: 0 0 8px;
+  color: #31548f;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.home-progress-meet-title {
+  margin: 0;
+  color: #12284f;
+  font-size: 1.02rem;
+  line-height: 1.45;
+}
+
+.home-progress-meet-date,
+.home-progress-meet-meta {
+  margin: 8px 0 0;
+  color: #55657f;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.home-progress-note {
+  margin: 14px 0 0;
+  color: #5d6f8a;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
   .home-progress-card {
     padding: 20px;
   }
 
-  .home-progress-header {
-    gap: 7px;
-    padding-bottom: 14px;
-  }
-
-  .home-progress-meet {
-    font-size: 1rem;
-  }
-
-  .home-progress-comparison {
-    font-size: 0.9rem;
+  .home-progress-stats,
+  .home-progress-meets {
+    grid-template-columns: 1fr;
   }
 
   .history-best-table .history-best-col-event {
