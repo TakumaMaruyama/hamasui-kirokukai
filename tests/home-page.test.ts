@@ -165,12 +165,11 @@ describe("HomePage", () => {
     expect(texts).toContain("前回の前回比");
     expect(texts).toContain("2026年3月");
     expect(texts).toContain("2025年9月");
-    expect(texts).toContain("2025年7月");
+    expect(texts).not.toContain("2025年7月");
+    expect(compactText).toContain("今回2026年3月/24記録");
+    expect(compactText).toContain("前回の前回比2025年9月/20記録");
     expect(compactText).toContain("みんなで前より13000msタイムアップ");
     expect(compactText).toContain("みんなで前より2400msタイムアップ");
-    expect(compactText).toContain("24記録");
-    expect(compactText).toContain("20記録");
-    expect(compactText).toContain("14記録");
     expect(compactText).not.toContain("12人");
     expect(compactText).not.toContain("10人");
     expect(compactText).not.toContain("8人");
@@ -182,7 +181,8 @@ describe("HomePage", () => {
     expect(compactText).not.toContain("回分");
 
     expect(collectElementsByClassName(root, "home-progress-card")).toHaveLength(2);
-    expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(4);
+    expect(collectElementsByClassName(root, "home-progress-header")).toHaveLength(2);
+    expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(0);
   });
 
   it("renders a waiting-older-month second card with the previous month filled in", async () => {
@@ -226,14 +226,14 @@ describe("HomePage", () => {
     const compactText = texts.replace(/\s+/g, "");
 
     expect(texts).toContain("前回の前回比");
+    expect(compactText).toContain("前回の前回比2025年9月/20記録");
     expect(texts).toContain("さらに前の開催月が入ると表示");
-    expect(texts).toContain("2025年9月");
-    expect(texts).toContain("まだありません");
-    expect(texts).toContain("前回の前回比を準備中");
+    expect(texts).not.toContain("まだありません");
     expect(compactText).toContain("20記録");
     expect(compactText).not.toContain("10人");
     expect(collectElementsByClassName(root, "home-progress-card")).toHaveLength(2);
-    expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(4);
+    expect(collectElementsByClassName(root, "home-progress-header")).toHaveLength(2);
+    expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(0);
   });
 
   it("renders waiting-next-meet and unavailable states without obsolete summary stats", async () => {
@@ -266,15 +266,16 @@ describe("HomePage", () => {
 
     expect(texts).toContain("次回から前回比を表示");
     expect(texts).toContain("さらに前の開催月が入ると表示");
-    expect(texts).toContain("2026年3月");
-    expect(texts).toContain("まだありません");
-    expect(texts).toContain("次の開催月から比較できます");
-    expect(compactText).toContain("24記録");
+    expect(compactText).toContain("今回2026年3月/24記録");
+    expect(texts).not.toContain("まだありません");
+    expect(texts).not.toContain("次の開催月から比較できます");
+    expect(compactText).not.toContain("前回の前回比/"); 
     expect(compactText).not.toContain("12人");
     expect(texts).not.toContain("比較対象");
     expect(texts).not.toContain("更新した記録");
     expect(texts).not.toContain("更新した子");
     expect(collectElementsByClassName(root, "home-progress-card")).toHaveLength(2);
-    expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(2);
+    expect(collectElementsByClassName(root, "home-progress-header")).toHaveLength(2);
+    expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(0);
   });
 });

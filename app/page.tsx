@@ -13,11 +13,18 @@ function formatCount(value: number): string {
   return new Intl.NumberFormat("ja-JP").format(value);
 }
 
-function getComparisonCardTitle(card: HomeMeetComparisonCard): string {
+function renderComparisonCardTitle(card: HomeMeetComparisonCard) {
   if (card.state === "ready") {
-    return card.totalImprovementMs > 0
-      ? `みんなで前より${formatImprovementTotal(card.totalImprovementMs)}タイムアップ`
-      : "今回はまだ前回超えなし";
+    return card.totalImprovementMs > 0 ? (
+      <>
+        <span className="home-progress-title-line">みんなで前より</span>
+        <span className="home-progress-title-line">
+          {formatImprovementTotal(card.totalImprovementMs)}タイムアップ
+        </span>
+      </>
+    ) : (
+      "今回はまだ前回超えなし"
+    );
   }
 
   if (card.state === "not-comparable") {
@@ -29,6 +36,19 @@ function getComparisonCardTitle(card: HomeMeetComparisonCard): string {
   }
 
   return "さらに前の開催月が入ると表示";
+}
+
+function renderComparisonCardHeader(card: HomeMeetComparisonCard) {
+  return (
+    <div className="home-progress-header">
+      <p className="home-progress-slot">{card.slotLabel}</p>
+      {card.currentMeet ? (
+        <p className="home-progress-summary">
+          {card.currentMeet.title} / {formatCount(card.currentMeet.resultCount)}記録
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 function renderComparisonCardBody(card: HomeMeetComparisonCard) {
@@ -49,48 +69,6 @@ function renderComparisonCardBody(card: HomeMeetComparisonCard) {
   }
 
   return null;
-}
-
-function renderComparisonCardMeetPanels(card: HomeMeetComparisonCard) {
-  if (!card.currentMeet) {
-    return null;
-  }
-
-  const previousPlaceholderDate =
-    card.state === "waiting-older-month"
-      ? "さらに前の開催月が入ると表示"
-      : "次の開催月から比較できます";
-  const previousPlaceholderMeta =
-    card.state === "waiting-older-month" ? "前回の前回比を準備中" : "前回比の表示を準備中";
-
-  return (
-    <div className="home-progress-meets">
-      <article className="home-progress-meet home-progress-meet-current">
-        <p className="home-progress-meet-label">今回</p>
-        <h3 className="home-progress-meet-title">{card.currentMeet.title}</h3>
-        <p className="home-progress-meet-meta">{formatCount(card.currentMeet.resultCount)}記録</p>
-      </article>
-      <article
-        className={`home-progress-meet home-progress-meet-previous${
-          card.previousMeet ? "" : " is-empty"
-        }`}
-      >
-        <p className="home-progress-meet-label">前回</p>
-        {card.previousMeet ? (
-          <>
-            <h3 className="home-progress-meet-title">{card.previousMeet.title}</h3>
-            <p className="home-progress-meet-meta">{formatCount(card.previousMeet.resultCount)}記録</p>
-          </>
-        ) : (
-          <>
-            <h3 className="home-progress-meet-title">まだありません</h3>
-            <p className="home-progress-meet-date">{previousPlaceholderDate}</p>
-            <p className="home-progress-meet-meta">{previousPlaceholderMeta}</p>
-          </>
-        )}
-      </article>
-    </div>
-  );
 }
 
 export default async function HomePage() {
@@ -138,10 +116,9 @@ export default async function HomePage() {
                     : "home-progress-card-previous"
                 }${card.state === "unavailable" ? " is-empty" : ""}`}
               >
-                <p className="home-progress-slot">{card.slotLabel}</p>
-                <h2 className="home-progress-title">{getComparisonCardTitle(card)}</h2>
+                {renderComparisonCardHeader(card)}
+                <h2 className="home-progress-title">{renderComparisonCardTitle(card)}</h2>
                 {renderComparisonCardBody(card)}
-                {renderComparisonCardMeetPanels(card)}
               </article>
             ))}
           </div>
