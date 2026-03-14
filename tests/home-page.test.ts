@@ -23,10 +23,6 @@ vi.mock("@/lib/display-time", () => ({
   formatImprovementTotal: (value: number) => `${value}ms`
 }));
 
-vi.mock("@/lib/meet-context", () => ({
-  formatMeetLabel: (meet: { title: string }) => meet.title
-}));
-
 vi.mock("@/lib/publish", () => ({
   formatPublishRange: () => "公開期限は未設定です"
 }));
@@ -123,15 +119,17 @@ describe("HomePage", () => {
       state: "ready",
       currentMeet: {
         id: "current",
-        title: "2026年3月日曜",
+        title: "2026年3月",
         heldOn: new Date("2026-03-08T00:00:00.000Z"),
+        meetCount: 3,
         participantCount: 12,
         resultCount: 24
       },
       previousMeet: {
         id: "previous",
-        title: "2026年3月土曜",
-        heldOn: new Date("2026-03-07T00:00:00.000Z"),
+        title: "2025年9月",
+        heldOn: new Date("2025-09-30T00:00:00.000Z"),
+        meetCount: 2,
         participantCount: 10,
         resultCount: 20
       },
@@ -143,11 +141,16 @@ describe("HomePage", () => {
 
     const root = await HomePage();
     const texts = collectTextNodes(root).join("\n");
+    const compactText = texts.replace(/\s+/g, "");
 
     expect(texts).toContain("みんなの前回比");
     expect(texts).toContain("今回");
     expect(texts).toContain("前回");
     expect(texts).not.toContain("1つ前");
+    expect(texts).toContain("2026年3月");
+    expect(texts).toContain("2025年9月");
+    expect(compactText).toContain("記録会3回分");
+    expect(compactText).toContain("記録会2回分");
     expect(texts).toContain("比較対象");
     expect(texts).toContain("更新した記録");
     expect(texts).toContain("更新した子");

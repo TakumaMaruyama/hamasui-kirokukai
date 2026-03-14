@@ -45,39 +45,22 @@ function buildMeet(input: {
 }
 
 describe("buildHomeMeetComparisonSummary", () => {
-  it("selects the latest two swimming meets and ignores other programs", () => {
+  it("groups swimming meets by month and ignores other programs", () => {
     const summary = buildHomeMeetComparisonSummary([
       buildMeet({
         id: "school-newer",
         program: "school",
         title: "学校委託",
-        heldOn: "2025-10-01T00:00:00.000Z",
-        createdAt: "2025-10-02T00:00:00.000Z",
+        heldOn: "2026-04-01T00:00:00.000Z",
+        createdAt: "2026-04-02T00:00:00.000Z",
         results: []
       }),
       buildMeet({
-        id: "swim-previous",
+        id: "march-sun",
         program: "swimming",
-        title: "2025年8月",
-        heldOn: "2025-08-01T00:00:00.000Z",
-        createdAt: "2025-08-02T00:00:00.000Z",
-        results: [
-          buildResult({
-            athleteId: "a1",
-            fullName: "山田太郎",
-            gender: "male",
-            eventTitle: "25mクロール",
-            distanceM: 25,
-            timeMs: 19_100
-          })
-        ]
-      }),
-      buildMeet({
-        id: "swim-current",
-        program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
+        title: "2026年3月日曜",
+        heldOn: "2026-03-08T00:00:00.000Z",
+        createdAt: "2026-03-08T08:00:00.000Z",
         results: [
           buildResult({
             athleteId: "a1",
@@ -90,29 +73,68 @@ describe("buildHomeMeetComparisonSummary", () => {
         ]
       }),
       buildMeet({
+        id: "march-sat",
+        program: "swimming",
+        title: "2026年3月土曜",
+        heldOn: "2026-03-07T00:00:00.000Z",
+        createdAt: "2026-03-07T08:00:00.000Z",
+        results: [
+          buildResult({
+            athleteId: "a2",
+            fullName: "佐藤花子",
+            gender: "female",
+            eventTitle: "25m背泳ぎ",
+            distanceM: 25,
+            timeMs: 20_100
+          })
+        ]
+      }),
+      buildMeet({
+        id: "sep-sat",
+        program: "swimming",
+        title: "2025年9月土曜",
+        heldOn: "2025-09-06T00:00:00.000Z",
+        createdAt: "2025-09-06T08:00:00.000Z",
+        results: [
+          buildResult({
+            athleteId: "b1",
+            fullName: "山田太郎",
+            gender: "male",
+            eventTitle: "25mクロール",
+            distanceM: 25,
+            timeMs: 19_100
+          })
+        ]
+      }),
+      buildMeet({
         id: "challenge-middle",
         program: "challenge",
         title: "チャレンジ",
-        heldOn: "2025-08-15T00:00:00.000Z",
-        createdAt: "2025-08-16T00:00:00.000Z",
+        heldOn: "2026-03-01T00:00:00.000Z",
+        createdAt: "2026-03-01T08:00:00.000Z",
         results: []
       })
     ]);
 
     expect(summary).not.toBeNull();
-    expect(summary?.currentMeet.id).toBe("swim-current");
-    expect(summary?.previousMeet?.id).toBe("swim-previous");
+    expect(summary?.currentMeet.id).toBe("2026年3月");
+    expect(summary?.currentMeet.title).toBe("2026年3月");
+    expect(summary?.currentMeet.meetCount).toBe(2);
+    expect(summary?.currentMeet.participantCount).toBe(2);
+    expect(summary?.currentMeet.resultCount).toBe(2);
+    expect(summary?.previousMeet?.id).toBe("2025年9月");
+    expect(summary?.previousMeet?.meetCount).toBe(1);
     expect(summary?.state).toBe("ready");
   });
 
-  it("ignores the third latest meet even when it has comparable rows", () => {
+  it("compares the latest month with the previous distinct month and ignores older months", () => {
     const summary = buildHomeMeetComparisonSummary([
       buildMeet({
-        id: "current",
+        id: "march-sun",
         program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
+        title: "2026年3月日曜",
+        heldOn: "2026-03-08T00:00:00.000Z",
+        createdAt: "2026-03-08T08:00:00.000Z",
         results: [
           buildResult({
             athleteId: "a1",
@@ -125,11 +147,19 @@ describe("buildHomeMeetComparisonSummary", () => {
         ]
       }),
       buildMeet({
-        id: "previous",
+        id: "march-sat",
         program: "swimming",
-        title: "2025年8月",
-        heldOn: "2025-08-01T00:00:00.000Z",
-        createdAt: "2025-08-02T00:00:00.000Z",
+        title: "2026年3月土曜",
+        heldOn: "2026-03-07T00:00:00.000Z",
+        createdAt: "2026-03-07T08:00:00.000Z",
+        results: []
+      }),
+      buildMeet({
+        id: "sep",
+        program: "swimming",
+        title: "2025年9月",
+        heldOn: "2025-09-01T00:00:00.000Z",
+        createdAt: "2025-09-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "b1",
@@ -142,7 +172,7 @@ describe("buildHomeMeetComparisonSummary", () => {
         ]
       }),
       buildMeet({
-        id: "older",
+        id: "july",
         program: "swimming",
         title: "2025年7月",
         heldOn: "2025-07-01T00:00:00.000Z",
@@ -160,52 +190,20 @@ describe("buildHomeMeetComparisonSummary", () => {
       })
     ]);
 
-    expect(summary?.currentMeet.id).toBe("current");
-    expect(summary?.previousMeet?.id).toBe("previous");
+    expect(summary?.currentMeet.id).toBe("2026年3月");
+    expect(summary?.previousMeet?.id).toBe("2025年9月");
     expect(summary?.state).toBe("not-comparable");
     expect(summary?.comparedEntryCount).toBe(0);
   });
 
-  it("uses createdAt as the tiebreaker when heldOn is the same", () => {
+  it("uses the best monthly time across multiple meets in the same month", () => {
     const summary = buildHomeMeetComparisonSummary([
       buildMeet({
-        id: "older-created",
+        id: "march-sun",
         program: "swimming",
-        title: "2025年3月 土曜",
-        heldOn: "2025-03-01T00:00:00.000Z",
-        createdAt: "2025-03-01T01:00:00.000Z",
-        results: []
-      }),
-      buildMeet({
-        id: "newer-created",
-        program: "swimming",
-        title: "2025年3月 日曜",
-        heldOn: "2025-03-01T00:00:00.000Z",
-        createdAt: "2025-03-01T02:00:00.000Z",
-        results: []
-      }),
-      buildMeet({
-        id: "oldest",
-        program: "swimming",
-        title: "2025年2月",
-        heldOn: "2025-02-01T00:00:00.000Z",
-        createdAt: "2025-02-02T00:00:00.000Z",
-        results: []
-      })
-    ]);
-
-    expect(summary?.currentMeet.id).toBe("newer-created");
-    expect(summary?.previousMeet?.id).toBe("older-created");
-  });
-
-  it("matches rows across whitespace, school year changes, and full/half-width event text", () => {
-    const summary = buildHomeMeetComparisonSummary([
-      buildMeet({
-        id: "current",
-        program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
+        title: "2026年3月日曜",
+        heldOn: "2026-03-08T00:00:00.000Z",
+        createdAt: "2026-03-08T08:00:00.000Z",
         results: [
           buildResult({
             athleteId: "a-new-grade",
@@ -213,16 +211,33 @@ describe("buildHomeMeetComparisonSummary", () => {
             gender: "male",
             eventTitle: "25ｍ クロール",
             distanceM: 25,
+            timeMs: 18_000
+          })
+        ]
+      }),
+      buildMeet({
+        id: "march-sat",
+        program: "swimming",
+        title: "2026年3月土曜",
+        heldOn: "2026-03-07T00:00:00.000Z",
+        createdAt: "2026-03-07T08:00:00.000Z",
+        results: [
+          buildResult({
+            athleteId: "a-new-grade",
+            fullName: "山田太郎",
+            gender: "male",
+            eventTitle: "25mクロール",
+            distanceM: 25,
             timeMs: 17_800
           })
         ]
       }),
       buildMeet({
-        id: "previous",
+        id: "sep",
         program: "swimming",
-        title: "2025年8月",
-        heldOn: "2025-08-01T00:00:00.000Z",
-        createdAt: "2025-08-02T00:00:00.000Z",
+        title: "2025年9月",
+        heldOn: "2025-09-01T00:00:00.000Z",
+        createdAt: "2025-09-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "a-old-grade",
@@ -245,11 +260,11 @@ describe("buildHomeMeetComparisonSummary", () => {
   it("treats freestyle label variants as the same comparable event", () => {
     const summary = buildHomeMeetComparisonSummary([
       buildMeet({
-        id: "current",
+        id: "march",
         program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
+        title: "2026年3月",
+        heldOn: "2026-03-01T00:00:00.000Z",
+        createdAt: "2026-03-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "a1",
@@ -262,11 +277,11 @@ describe("buildHomeMeetComparisonSummary", () => {
         ]
       }),
       buildMeet({
-        id: "previous",
+        id: "sep",
         program: "swimming",
-        title: "2025年3月",
-        heldOn: "2025-03-01T00:00:00.000Z",
-        createdAt: "2025-03-02T00:00:00.000Z",
+        title: "2025年9月",
+        heldOn: "2025-09-01T00:00:00.000Z",
+        createdAt: "2025-09-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "b1",
@@ -289,11 +304,11 @@ describe("buildHomeMeetComparisonSummary", () => {
   it("adds only positive improvements and ignores slower, tied, or missing rows", () => {
     const summary = buildHomeMeetComparisonSummary([
       buildMeet({
-        id: "current",
+        id: "march",
         program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
+        title: "2026年3月",
+        heldOn: "2026-03-01T00:00:00.000Z",
+        createdAt: "2026-03-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "a1",
@@ -330,11 +345,11 @@ describe("buildHomeMeetComparisonSummary", () => {
         ]
       }),
       buildMeet({
-        id: "previous",
+        id: "sep",
         program: "swimming",
-        title: "2025年8月",
-        heldOn: "2025-08-01T00:00:00.000Z",
-        createdAt: "2025-08-02T00:00:00.000Z",
+        title: "2025年9月",
+        heldOn: "2025-09-01T00:00:00.000Z",
+        createdAt: "2025-09-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "b1",
@@ -381,11 +396,11 @@ describe("buildHomeMeetComparisonSummary", () => {
   it("counts a child once even when the child improves in multiple events", () => {
     const summary = buildHomeMeetComparisonSummary([
       buildMeet({
-        id: "current",
+        id: "march",
         program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
+        title: "2026年3月",
+        heldOn: "2026-03-01T00:00:00.000Z",
+        createdAt: "2026-03-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "a1",
@@ -414,11 +429,11 @@ describe("buildHomeMeetComparisonSummary", () => {
         ]
       }),
       buildMeet({
-        id: "previous",
+        id: "sep",
         program: "swimming",
-        title: "2025年8月",
-        heldOn: "2025-08-01T00:00:00.000Z",
-        createdAt: "2025-08-02T00:00:00.000Z",
+        title: "2025年9月",
+        heldOn: "2025-09-01T00:00:00.000Z",
+        createdAt: "2025-09-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "b1",
@@ -452,14 +467,14 @@ describe("buildHomeMeetComparisonSummary", () => {
     expect(summary?.improvedChildCount).toBe(2);
   });
 
-  it("uses the fastest record when duplicated comparison keys exist within the same meet", () => {
+  it("uses the fastest record when duplicate comparison keys appear across meets in the same month", () => {
     const summary = buildHomeMeetComparisonSummary([
       buildMeet({
-        id: "current",
+        id: "march-sun",
         program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
+        title: "2026年3月日曜",
+        heldOn: "2026-03-08T00:00:00.000Z",
+        createdAt: "2026-03-08T08:00:00.000Z",
         results: [
           buildResult({
             athleteId: "a1",
@@ -468,7 +483,16 @@ describe("buildHomeMeetComparisonSummary", () => {
             eventTitle: "25mクロール",
             distanceM: 25,
             timeMs: 17_800
-          }),
+          })
+        ]
+      }),
+      buildMeet({
+        id: "march-sat",
+        program: "swimming",
+        title: "2026年3月土曜",
+        heldOn: "2026-03-07T00:00:00.000Z",
+        createdAt: "2026-03-07T08:00:00.000Z",
+        results: [
           buildResult({
             athleteId: "a2",
             fullName: "山田 太郎",
@@ -480,11 +504,11 @@ describe("buildHomeMeetComparisonSummary", () => {
         ]
       }),
       buildMeet({
-        id: "previous",
+        id: "sep",
         program: "swimming",
-        title: "2025年8月",
-        heldOn: "2025-08-01T00:00:00.000Z",
-        createdAt: "2025-08-02T00:00:00.000Z",
+        title: "2025年9月",
+        heldOn: "2025-09-01T00:00:00.000Z",
+        createdAt: "2025-09-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "b1",
@@ -505,25 +529,33 @@ describe("buildHomeMeetComparisonSummary", () => {
     expect(summary?.totalImprovementMs).toBe(300);
   });
 
-  it("returns fallback states for one meet and for two meets without overlap", () => {
-    const oneMeetSummary = buildHomeMeetComparisonSummary([
+  it("returns fallback states for one month only and for two months without overlap", () => {
+    const oneMonthSummary = buildHomeMeetComparisonSummary([
       buildMeet({
-        id: "current-only",
+        id: "march-sun",
         program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
+        title: "2026年3月日曜",
+        heldOn: "2026-03-08T00:00:00.000Z",
+        createdAt: "2026-03-08T08:00:00.000Z",
+        results: []
+      }),
+      buildMeet({
+        id: "march-sat",
+        program: "swimming",
+        title: "2026年3月土曜",
+        heldOn: "2026-03-07T00:00:00.000Z",
+        createdAt: "2026-03-07T08:00:00.000Z",
         results: []
       })
     ]);
 
     const noOverlapSummary = buildHomeMeetComparisonSummary([
       buildMeet({
-        id: "current",
+        id: "march",
         program: "swimming",
-        title: "2025年9月",
-        heldOn: "2025-09-01T00:00:00.000Z",
-        createdAt: "2025-09-02T00:00:00.000Z",
+        title: "2026年3月",
+        heldOn: "2026-03-01T00:00:00.000Z",
+        createdAt: "2026-03-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "a1",
@@ -536,11 +568,11 @@ describe("buildHomeMeetComparisonSummary", () => {
         ]
       }),
       buildMeet({
-        id: "previous",
+        id: "sep",
         program: "swimming",
-        title: "2025年8月",
-        heldOn: "2025-08-01T00:00:00.000Z",
-        createdAt: "2025-08-02T00:00:00.000Z",
+        title: "2025年9月",
+        heldOn: "2025-09-01T00:00:00.000Z",
+        createdAt: "2025-09-02T00:00:00.000Z",
         results: [
           buildResult({
             athleteId: "b1",
@@ -554,8 +586,10 @@ describe("buildHomeMeetComparisonSummary", () => {
       })
     ]);
 
-    expect(oneMeetSummary?.state).toBe("waiting-next-meet");
-    expect(oneMeetSummary?.previousMeet).toBeNull();
+    expect(oneMonthSummary?.state).toBe("waiting-next-meet");
+    expect(oneMonthSummary?.currentMeet.title).toBe("2026年3月");
+    expect(oneMonthSummary?.currentMeet.meetCount).toBe(2);
+    expect(oneMonthSummary?.previousMeet).toBeNull();
     expect(noOverlapSummary?.state).toBe("not-comparable");
     expect(noOverlapSummary?.comparedEntryCount).toBe(0);
   });

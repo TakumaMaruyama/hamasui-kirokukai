@@ -4,20 +4,10 @@ import SearchForm from "./search-form";
 import { prisma } from "@/lib/prisma";
 import { formatImprovementTotal } from "@/lib/display-time";
 import { getHomeMeetComparisonSummary } from "@/lib/home-meet-summary";
-import { formatMeetLabel } from "@/lib/meet-context";
 import { formatPublishRange } from "@/lib/publish";
 
 function formatCount(value: number): string {
   return new Intl.NumberFormat("ja-JP").format(value);
-}
-
-function formatHeldOn(value: Date): string {
-  return new Intl.DateTimeFormat("ja-JP", {
-    timeZone: "UTC",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).format(value);
 }
 
 export default async function HomePage() {
@@ -62,7 +52,7 @@ export default async function HomePage() {
                   みんなで前回より {formatImprovementTotal(comparisonSummary.totalImprovementMs)} 短縮
                 </h2>
                 <p className="home-progress-body">
-                  同じ子・同じ種目で比べると、今回は{" "}
+                  同じ子・同じ種目の月内ベストで比べると、今回は{" "}
                   {formatCount(comparisonSummary.improvedEntryCount)}記録が前回超えでした。
                 </p>
               </>
@@ -73,7 +63,7 @@ export default async function HomePage() {
                 </h2>
                 <p className="home-progress-body">
                   比較できた {formatCount(comparisonSummary.comparedEntryCount)}
-                  記録をもとに集計しています。次の記録会で更新を狙おう。
+                  記録をもとに集計しています。次の開催月で更新を狙おう。
                 </p>
               </>
             )
@@ -83,7 +73,7 @@ export default async function HomePage() {
                 比較できる同一記録がまだ少ない
               </h2>
               <p className="home-progress-body">
-                今回と前回で、同じ子・同じ種目がまだ十分そろっていません。次回以降に前回比を表示します。
+                今回の開催月と前回の開催月で、同じ子・同じ種目がまだ十分そろっていません。次回以降に前回比を表示します。
               </p>
             </>
           ) : (
@@ -92,7 +82,7 @@ export default async function HomePage() {
                 次回から前回比を表示
               </h2>
               <p className="home-progress-body">
-                直近の記録会がまだ1回分のため、次の記録会が入ると「前回より何秒速くなったか」を表示できます。
+                まだ比較できる前回開催月がないため、次の開催月が入ると「前回より何秒速くなったか」を表示できます。
               </p>
             </>
           )}
@@ -127,11 +117,9 @@ export default async function HomePage() {
           <div className="home-progress-meets">
             <article className="home-progress-meet home-progress-meet-current">
               <p className="home-progress-meet-label">今回</p>
-              <h3 className="home-progress-meet-title">
-                {formatMeetLabel(comparisonSummary.currentMeet)}
-              </h3>
+              <h3 className="home-progress-meet-title">{comparisonSummary.currentMeet.title}</h3>
               <p className="home-progress-meet-date">
-                {formatHeldOn(comparisonSummary.currentMeet.heldOn)}
+                記録会{formatCount(comparisonSummary.currentMeet.meetCount)}回分
               </p>
               <p className="home-progress-meet-meta">
                 {formatCount(comparisonSummary.currentMeet.participantCount)}人 /{" "}
@@ -146,11 +134,9 @@ export default async function HomePage() {
               <p className="home-progress-meet-label">前回</p>
               {comparisonSummary.previousMeet ? (
                 <>
-                  <h3 className="home-progress-meet-title">
-                    {formatMeetLabel(comparisonSummary.previousMeet)}
-                  </h3>
+                  <h3 className="home-progress-meet-title">{comparisonSummary.previousMeet.title}</h3>
                   <p className="home-progress-meet-date">
-                    {formatHeldOn(comparisonSummary.previousMeet.heldOn)}
+                    記録会{formatCount(comparisonSummary.previousMeet.meetCount)}回分
                   </p>
                   <p className="home-progress-meet-meta">
                     {formatCount(comparisonSummary.previousMeet.participantCount)}人 /{" "}
@@ -168,7 +154,7 @@ export default async function HomePage() {
           </div>
 
           <p className="home-progress-note">
-            同じ子・同じ種目が両方の記録会にあるものだけを比較しています。同じ比較キーが同一回に重複する場合は、その回の最速記録を使います。
+            同じ子・同じ種目が両方の開催月にあるものだけを比較しています。同じ月の中で複数回記録がある場合は、その月の最速記録を使います。
           </p>
         </section>
       ) : null}
