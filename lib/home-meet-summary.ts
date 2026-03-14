@@ -39,13 +39,9 @@ export type HomeMeetComparisonSummary = {
   currentMeet: HomeMeetOverview;
   previousMeet: HomeMeetOverview | null;
   totalImprovementMs: number;
-  comparedEntryCount: number;
-  improvedEntryCount: number;
-  improvedChildCount: number;
 };
 
 type ComparisonEntry = {
-  childKey: string;
   timeMs: number;
 };
 
@@ -102,7 +98,6 @@ function buildUniqueResultMap(
 
     if (!existing || result.timeMs < existing.timeMs) {
       uniqueResults.set(key, {
-        childKey: `${nameSearchKey(result.athlete.fullName)}:${result.athlete.gender}`,
         timeMs: result.timeMs
       });
     }
@@ -141,15 +136,15 @@ function buildMonthGroups(meets: HomeMeetSummaryInput[]): HomeMeetMonthGroup[] {
 export function buildHomeMeetComparisonSummary(
   meets: HomeMeetSummaryInput[]
 ): HomeMeetComparisonSummary | null {
-  const latestMeets = buildMonthGroups(meets);
+  const latestMonths = buildMonthGroups(meets);
 
-  const currentMeet = latestMeets[0];
+  const currentMeet = latestMonths[0];
   if (!currentMeet) {
     return null;
   }
 
   const currentOverview = toMeetOverview(currentMeet);
-  const previousMeet = latestMeets[1];
+  const previousMeet = latestMonths[1];
   const previousOverview = previousMeet ? toMeetOverview(previousMeet) : null;
 
   if (!previousMeet) {
@@ -157,19 +152,14 @@ export function buildHomeMeetComparisonSummary(
       state: "waiting-next-meet",
       currentMeet: currentOverview,
       previousMeet: null,
-      totalImprovementMs: 0,
-      comparedEntryCount: 0,
-      improvedEntryCount: 0,
-      improvedChildCount: 0
+      totalImprovementMs: 0
     };
   }
 
   const currentResults = buildUniqueResultMap(currentMeet);
   const previousResults = buildUniqueResultMap(previousMeet);
-  const improvedChildren = new Set<string>();
   let totalImprovementMs = 0;
   let comparedEntryCount = 0;
-  let improvedEntryCount = 0;
 
   for (const [key, currentResult] of currentResults.entries()) {
     const previousResult = previousResults.get(key);
@@ -185,18 +175,13 @@ export function buildHomeMeetComparisonSummary(
     }
 
     totalImprovementMs += improvementMs;
-    improvedEntryCount += 1;
-    improvedChildren.add(currentResult.childKey);
   }
 
   return {
     state: comparedEntryCount > 0 ? "ready" : "not-comparable",
     currentMeet: currentOverview,
     previousMeet: previousOverview,
-    totalImprovementMs,
-    comparedEntryCount,
-    improvedEntryCount,
-    improvedChildCount: improvedChildren.size
+    totalImprovementMs
   };
 }
 

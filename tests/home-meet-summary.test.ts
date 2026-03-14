@@ -191,7 +191,6 @@ describe("buildHomeMeetComparisonSummary", () => {
     expect(summary?.currentMeet.id).toBe("2026年3月");
     expect(summary?.previousMeet?.id).toBe("2025年9月");
     expect(summary?.state).toBe("not-comparable");
-    expect(summary?.comparedEntryCount).toBe(0);
   });
 
   it("uses the best monthly time across multiple meets in the same month", () => {
@@ -249,10 +248,8 @@ describe("buildHomeMeetComparisonSummary", () => {
       })
     ]);
 
-    expect(summary?.comparedEntryCount).toBe(1);
+    expect(summary?.state).toBe("ready");
     expect(summary?.totalImprovementMs).toBe(300);
-    expect(summary?.improvedEntryCount).toBe(1);
-    expect(summary?.improvedChildCount).toBe(1);
   });
 
   it("treats freestyle label variants as the same comparable event", () => {
@@ -294,8 +291,6 @@ describe("buildHomeMeetComparisonSummary", () => {
     ]);
 
     expect(summary?.state).toBe("ready");
-    expect(summary?.comparedEntryCount).toBe(1);
-    expect(summary?.improvedEntryCount).toBe(1);
     expect(summary?.totalImprovementMs).toBe(300);
   });
 
@@ -314,7 +309,7 @@ describe("buildHomeMeetComparisonSummary", () => {
             gender: "male",
             eventTitle: "25mクロール",
             distanceM: 25,
-            timeMs: 17_800
+            timeMs: 15_100
           }),
           buildResult({
             athleteId: "a2",
@@ -322,7 +317,7 @@ describe("buildHomeMeetComparisonSummary", () => {
             gender: "female",
             eventTitle: "25m背泳ぎ",
             distanceM: 25,
-            timeMs: 20_500
+            timeMs: 10_300
           }),
           buildResult({
             athleteId: "a3",
@@ -330,7 +325,7 @@ describe("buildHomeMeetComparisonSummary", () => {
             gender: "male",
             eventTitle: "25m平泳ぎ",
             distanceM: 25,
-            timeMs: 22_100
+            timeMs: 22_500
           }),
           buildResult({
             athleteId: "a4",
@@ -385,13 +380,11 @@ describe("buildHomeMeetComparisonSummary", () => {
       })
     ]);
 
-    expect(summary?.comparedEntryCount).toBe(3);
-    expect(summary?.totalImprovementMs).toBe(300);
-    expect(summary?.improvedEntryCount).toBe(1);
-    expect(summary?.improvedChildCount).toBe(1);
+    expect(summary?.state).toBe("ready");
+    expect(summary?.totalImprovementMs).toBe(13_000);
   });
 
-  it("counts a child once even when the child improves in multiple events", () => {
+  it("sums positive improvements across multiple matching events", () => {
     const summary = buildHomeMeetComparisonSummary([
       buildMeet({
         id: "march",
@@ -461,8 +454,8 @@ describe("buildHomeMeetComparisonSummary", () => {
       })
     ]);
 
-    expect(summary?.improvedEntryCount).toBe(3);
-    expect(summary?.improvedChildCount).toBe(2);
+    expect(summary?.state).toBe("ready");
+    expect(summary?.totalImprovementMs).toBe(1_000);
   });
 
   it("uses the fastest record when duplicate comparison keys appear across meets in the same month", () => {
@@ -521,9 +514,6 @@ describe("buildHomeMeetComparisonSummary", () => {
     ]);
 
     expect(summary?.state).toBe("ready");
-    expect(summary?.comparedEntryCount).toBe(1);
-    expect(summary?.improvedEntryCount).toBe(1);
-    expect(summary?.improvedChildCount).toBe(1);
     expect(summary?.totalImprovementMs).toBe(300);
   });
 
@@ -588,6 +578,5 @@ describe("buildHomeMeetComparisonSummary", () => {
     expect(oneMonthSummary?.currentMeet.title).toBe("2026年3月");
     expect(oneMonthSummary?.previousMeet).toBeNull();
     expect(noOverlapSummary?.state).toBe("not-comparable");
-    expect(noOverlapSummary?.comparedEntryCount).toBe(0);
   });
 });

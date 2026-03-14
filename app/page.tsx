@@ -52,8 +52,7 @@ export default async function HomePage() {
                   みんなで前回より {formatImprovementTotal(comparisonSummary.totalImprovementMs)} 短縮
                 </h2>
                 <p className="home-progress-body">
-                  同じ子・同じ種目の月内ベストで比べると、今回は{" "}
-                  {formatCount(comparisonSummary.improvedEntryCount)}記録が前回超えでした。
+                  今回の開催月と前回の開催月を、同じ子・同じ種目の月内ベストで比べています。
                 </p>
               </>
             ) : (
@@ -62,8 +61,7 @@ export default async function HomePage() {
                   今回はまだ前回超えなし
                 </h2>
                 <p className="home-progress-body">
-                  比較できた {formatCount(comparisonSummary.comparedEntryCount)}
-                  記録をもとに集計しています。次の開催月で更新を狙おう。
+                  今回の開催月と前回の開催月を、同じ子・同じ種目の月内ベストで比べています。次の開催月で更新を狙おう。
                 </p>
               </>
             )
@@ -86,33 +84,6 @@ export default async function HomePage() {
               </p>
             </>
           )}
-
-          <div className="home-progress-stats" aria-label="比較サマリー">
-            <div className="home-progress-stat">
-              <span className="home-progress-stat-label">比較対象</span>
-              <strong className="home-progress-stat-value">
-                {comparisonSummary.state === "waiting-next-meet"
-                  ? "-"
-                  : `${formatCount(comparisonSummary.comparedEntryCount)}記録`}
-              </strong>
-            </div>
-            <div className="home-progress-stat">
-              <span className="home-progress-stat-label">更新した記録</span>
-              <strong className="home-progress-stat-value">
-                {comparisonSummary.state === "waiting-next-meet"
-                  ? "-"
-                  : `${formatCount(comparisonSummary.improvedEntryCount)}記録`}
-              </strong>
-            </div>
-            <div className="home-progress-stat">
-              <span className="home-progress-stat-label">更新した子</span>
-              <strong className="home-progress-stat-value">
-                {comparisonSummary.state === "waiting-next-meet"
-                  ? "-"
-                  : `${formatCount(comparisonSummary.improvedChildCount)}人`}
-              </strong>
-            </div>
-          </div>
 
           <div className="home-progress-meets">
             <article className="home-progress-meet home-progress-meet-current">
@@ -140,7 +111,7 @@ export default async function HomePage() {
               ) : (
                 <>
                   <h3 className="home-progress-meet-title">まだありません</h3>
-                  <p className="home-progress-meet-date">次の記録会から比較できます</p>
+                  <p className="home-progress-meet-date">次の開催月から比較できます</p>
                   <p className="home-progress-meet-meta">前回比の表示を準備中</p>
                 </>
               )}
