@@ -16,7 +16,7 @@ function formatCount(value: number): string {
 function getComparisonCardTitle(card: HomeMeetComparisonCard): string {
   if (card.state === "ready") {
     return card.totalImprovementMs > 0
-      ? `みんなで前回より ${formatImprovementTotal(card.totalImprovementMs)} 短縮`
+      ? `みんなで前より${formatImprovementTotal(card.totalImprovementMs)}タイムアップ`
       : "今回はまだ前回超えなし";
   }
 
@@ -68,10 +68,7 @@ function renderComparisonCardMeetPanels(card: HomeMeetComparisonCard) {
       <article className="home-progress-meet home-progress-meet-current">
         <p className="home-progress-meet-label">今回</p>
         <h3 className="home-progress-meet-title">{card.currentMeet.title}</h3>
-        <p className="home-progress-meet-meta">
-          {formatCount(card.currentMeet.participantCount)}人 /{" "}
-          {formatCount(card.currentMeet.resultCount)}記録
-        </p>
+        <p className="home-progress-meet-meta">{formatCount(card.currentMeet.resultCount)}記録</p>
       </article>
       <article
         className={`home-progress-meet home-progress-meet-previous${
@@ -82,10 +79,7 @@ function renderComparisonCardMeetPanels(card: HomeMeetComparisonCard) {
         {card.previousMeet ? (
           <>
             <h3 className="home-progress-meet-title">{card.previousMeet.title}</h3>
-            <p className="home-progress-meet-meta">
-              {formatCount(card.previousMeet.participantCount)}人 /{" "}
-              {formatCount(card.previousMeet.resultCount)}記録
-            </p>
+            <p className="home-progress-meet-meta">{formatCount(card.previousMeet.resultCount)}記録</p>
           </>
         ) : (
           <>

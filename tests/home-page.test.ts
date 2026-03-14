@@ -166,8 +166,14 @@ describe("HomePage", () => {
     expect(texts).toContain("2026年3月");
     expect(texts).toContain("2025年9月");
     expect(texts).toContain("2025年7月");
-    expect(texts).toContain("13000ms");
-    expect(texts).toContain("2400ms");
+    expect(compactText).toContain("みんなで前より13000msタイムアップ");
+    expect(compactText).toContain("みんなで前より2400msタイムアップ");
+    expect(compactText).toContain("24記録");
+    expect(compactText).toContain("20記録");
+    expect(compactText).toContain("14記録");
+    expect(compactText).not.toContain("12人");
+    expect(compactText).not.toContain("10人");
+    expect(compactText).not.toContain("8人");
     expect(texts).not.toContain("1つ前");
     expect(texts).not.toContain("2026年3月日曜");
     expect(texts).not.toContain("2026年3月土曜");
@@ -217,12 +223,15 @@ describe("HomePage", () => {
 
     const root = await HomePage();
     const texts = collectTextNodes(root).join("\n");
+    const compactText = texts.replace(/\s+/g, "");
 
     expect(texts).toContain("前回の前回比");
     expect(texts).toContain("さらに前の開催月が入ると表示");
     expect(texts).toContain("2025年9月");
     expect(texts).toContain("まだありません");
     expect(texts).toContain("前回の前回比を準備中");
+    expect(compactText).toContain("20記録");
+    expect(compactText).not.toContain("10人");
     expect(collectElementsByClassName(root, "home-progress-card")).toHaveLength(2);
     expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(4);
   });
@@ -253,12 +262,15 @@ describe("HomePage", () => {
 
     const root = await HomePage();
     const texts = collectTextNodes(root).join("\n");
+    const compactText = texts.replace(/\s+/g, "");
 
     expect(texts).toContain("次回から前回比を表示");
     expect(texts).toContain("さらに前の開催月が入ると表示");
     expect(texts).toContain("2026年3月");
     expect(texts).toContain("まだありません");
     expect(texts).toContain("次の開催月から比較できます");
+    expect(compactText).toContain("24記録");
+    expect(compactText).not.toContain("12人");
     expect(texts).not.toContain("比較対象");
     expect(texts).not.toContain("更新した記録");
     expect(texts).not.toContain("更新した子");
