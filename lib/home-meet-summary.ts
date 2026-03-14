@@ -34,9 +34,15 @@ export type HomeMeetOverview = {
   resultCount: number;
 };
 
-export type HomeMeetComparisonSummary = {
-  state: "ready" | "not-comparable" | "waiting-next-meet";
-  currentMeet: HomeMeetOverview;
+export type HomeMeetComparisonCard = {
+  slotLabel: "今回" | "前回の前回比";
+  state:
+    | "ready"
+    | "not-comparable"
+    | "waiting-next-meet"
+    | "waiting-older-month"
+    | "unavailable";
+  currentMeet: HomeMeetOverview | null;
   previousMeet: HomeMeetOverview | null;
   totalImprovementMs: number;
 };
@@ -69,9 +75,7 @@ function compareMeetOrder(
   return b.id.localeCompare(a.id, "en");
 }
 
-function toMeetOverview(
-  meet: HomeMeetMonthGroup
-): HomeMeetOverview {
+function toMeetOverview(meet: HomeMeetMonthGroup): HomeMeetOverview {
   return {
     id: meet.id,
     title: meet.title,
@@ -130,36 +134,42 @@ function buildMonthGroups(meets: HomeMeetSummaryInput[]): HomeMeetMonthGroup[] {
     existingGroup.results.push(...meet.results);
   }
 
-  return Array.from(monthlyGroups.values()).slice(0, 2);
+  return Array.from(monthlyGroups.values()).slice(0, 3);
 }
 
-export function buildHomeMeetComparisonSummary(
-  meets: HomeMeetSummaryInput[]
-): HomeMeetComparisonSummary | null {
-  const latestMonths = buildMonthGroups(meets);
-
-  const currentMeet = latestMonths[0];
-  if (!currentMeet) {
-    return null;
-  }
-
-  const currentOverview = toMeetOverview(currentMeet);
-  const previousMeet = latestMonths[1];
-  const previousOverview = previousMeet ? toMeetOverview(previousMeet) : null;
-
-  if (!previousMeet) {
+function buildComparisonCard(input: {
+  slotLabel: HomeMeetComparisonCard["slotLabel"];
+  currentMonth: HomeMeetMonthGroup | null | undefined;
+  previousMonth: HomeMeetMonthGroup | null | undefined;
+  waitingState: "waiting-next-meet" | "waiting-older-month";
+}): HomeMeetComparisonCard {
+  if (!input.currentMonth) {
     return {
-      state: "waiting-next-meet",
-      currentMeet: currentOverview,
+      slotLabel: input.slotLabel,
+      state: "unavailable",
+      currentMeet: null,
       previousMeet: null,
       totalImprovementMs: 0
     };
   }
 
-  const currentResults = buildUniqueResultMap(currentMeet);
-  const previousResults = buildUniqueResultMap(previousMeet);
+  const currentMeet = toMeetOverview(input.currentMonth);
+
+  if (!input.previousMonth) {
+    return {
+      slotLabel: input.slotLabel,
+      state: input.waitingState,
+      currentMeet,
+      previousMeet: null,
+      totalImprovementMs: 0
+    };
+  }
+
+  const previousMeet = toMeetOverview(input.previousMonth);
+  const currentResults = buildUniqueResultMap(input.currentMonth);
+  const previousResults = buildUniqueResultMap(input.previousMonth);
   let totalImprovementMs = 0;
-  let comparedEntryCount = 0;
+  let hasComparableRecord = false;
 
   for (const [key, currentResult] of currentResults.entries()) {
     const previousResult = previousResults.get(key);
@@ -167,7 +177,7 @@ export function buildHomeMeetComparisonSummary(
       continue;
     }
 
-    comparedEntryCount += 1;
+    hasComparableRecord = true;
 
     const improvementMs = previousResult.timeMs - currentResult.timeMs;
     if (improvementMs <= 0) {
@@ -178,14 +188,40 @@ export function buildHomeMeetComparisonSummary(
   }
 
   return {
-    state: comparedEntryCount > 0 ? "ready" : "not-comparable",
-    currentMeet: currentOverview,
-    previousMeet: previousOverview,
+    slotLabel: input.slotLabel,
+    state: hasComparableRecord ? "ready" : "not-comparable",
+    currentMeet,
+    previousMeet,
     totalImprovementMs
   };
 }
 
-export async function getHomeMeetComparisonSummary() {
+export function buildHomeMeetComparisonCards(
+  meets: HomeMeetSummaryInput[]
+): HomeMeetComparisonCard[] | null {
+  const latestMonths = buildMonthGroups(meets);
+
+  if (!latestMonths[0]) {
+    return null;
+  }
+
+  return [
+    buildComparisonCard({
+      slotLabel: "今回",
+      currentMonth: latestMonths[0],
+      previousMonth: latestMonths[1],
+      waitingState: "waiting-next-meet"
+    }),
+    buildComparisonCard({
+      slotLabel: "前回の前回比",
+      currentMonth: latestMonths[1],
+      previousMonth: latestMonths[2],
+      waitingState: "waiting-older-month"
+    })
+  ];
+}
+
+export async function getHomeMeetComparisonCards() {
   const meets = await prisma.meet.findMany({
     where: {
       program: "swimming"
@@ -218,5 +254,5 @@ export async function getHomeMeetComparisonSummary() {
     }
   });
 
-  return buildHomeMeetComparisonSummary(meets);
+  return buildHomeMeetComparisonCards(meets);
 }
