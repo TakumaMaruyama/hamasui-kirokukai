@@ -195,10 +195,25 @@ button.secondary {
 }
 
 .home-progress-slot {
-  margin: 0 0 10px;
+  margin: 0;
   color: #31548f;
   font-size: 0.85rem;
   font-weight: 800;
+}
+
+.home-progress-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.home-progress-summary {
+  margin: 0;
+  color: #55657f;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .home-progress-title {
@@ -208,59 +223,14 @@ button.secondary {
   line-height: 1.35;
 }
 
+.home-progress-title-line {
+  display: block;
+}
+
 .home-progress-body {
   margin: 10px 0 0;
   color: #284061;
   line-height: 1.65;
-}
-
-.home-progress-meets {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 18px;
-}
-
-.home-progress-meet {
-  padding: 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(67, 94, 141, 0.14);
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.home-progress-meet-current {
-  border-color: rgba(47, 92, 255, 0.22);
-}
-
-.home-progress-meet-previous {
-  border-color: rgba(123, 146, 184, 0.2);
-}
-
-.home-progress-meet.is-empty {
-  color: #64748b;
-  background: rgba(255, 255, 255, 0.66);
-}
-
-.home-progress-meet-label {
-  margin: 0 0 8px;
-  color: #31548f;
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
-.home-progress-meet-title {
-  margin: 0;
-  color: #12284f;
-  font-size: 1.02rem;
-  line-height: 1.45;
-}
-
-.home-progress-meet-date,
-.home-progress-meet-meta {
-  margin: 8px 0 0;
-  color: #55657f;
-  font-size: 0.9rem;
-  line-height: 1.5;
 }
 
 @media (max-width: 640px) {
@@ -268,8 +238,7 @@ button.secondary {
     padding: 20px;
   }
 
-  .home-progress-grid,
-  .home-progress-meets {
+  .home-progress-grid {
     grid-template-columns: 1fr;
   }
 
