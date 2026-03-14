@@ -15,16 +15,9 @@ function formatCount(value: number): string {
 
 function renderComparisonCardTitle(card: HomeMeetComparisonCard) {
   if (card.state === "ready") {
-    return card.totalImprovementMs > 0 ? (
-      <>
-        <span className="home-progress-title-line">みんなで前より</span>
-        <span className="home-progress-title-line">
-          {formatImprovementTotal(card.totalImprovementMs)}タイムアップ
-        </span>
-      </>
-    ) : (
-      "今回はまだ前回超えなし"
-    );
+    return card.totalImprovementMs > 0
+      ? `みんなで前より${formatImprovementTotal(card.totalImprovementMs)}タイムアップ`
+      : "今回はまだ前回超えなし";
   }
 
   if (card.state === "not-comparable") {
