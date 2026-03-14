@@ -97,8 +97,7 @@ export default async function HomePage() {
         </p>
       </header>
       {comparisonCards ? (
-        <section className="home-progress-section" aria-label="みんなの前回比">
-          <p className="home-progress-eyebrow">みんなの前回比</p>
+        <section className="home-progress-section">
           <div className="home-progress-grid">
             {comparisonCards.map((card) => (
               <article

@@ -35,7 +35,7 @@ export type HomeMeetOverview = {
 };
 
 export type HomeMeetComparisonCard = {
-  slotLabel: "今回" | "前回の前回比";
+  slotLabel: "今回" | "前回";
   state:
     | "ready"
     | "not-comparable"
@@ -213,7 +213,7 @@ export function buildHomeMeetComparisonCards(
       waitingState: "waiting-next-meet"
     }),
     buildComparisonCard({
-      slotLabel: "前回の前回比",
+      slotLabel: "前回",
       currentMonth: latestMonths[1],
       previousMonth: latestMonths[2],
       waitingState: "waiting-older-month"
