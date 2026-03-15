@@ -1,18 +1,19 @@
 import { type RecordCertificate, buildRecordCertificates, type RecordCertificateSourceRow } from "./record-certificate";
-import { parseMeetTitleContext, WEEKDAY_VALUES } from "./meet-context";
+import { type MeetWeekday, parseMeetTitleContext, WEEKDAY_VALUES } from "./meet-context";
 
 export const UNKNOWN_WEEKDAY_FOLDER_NAME = "曜日なし";
+type WeekdayFolderName = MeetWeekday | typeof UNKNOWN_WEEKDAY_FOLDER_NAME;
 
 export type SwimmingRecordOutput = RecordCertificate & {
   outputPath: string;
 };
 
 const WEEKDAY_FOLDER_ORDER = [...WEEKDAY_VALUES, UNKNOWN_WEEKDAY_FOLDER_NAME] as const;
-const WEEKDAY_FOLDER_ORDER_MAP = new Map(
+const WEEKDAY_FOLDER_ORDER_MAP = new Map<WeekdayFolderName, number>(
   WEEKDAY_FOLDER_ORDER.map((folderName, index) => [folderName, index])
 );
 
-function resolveWeekdayFolderName(title?: string | null): string {
+function resolveWeekdayFolderName(title?: string | null): WeekdayFolderName {
   const weekday = title ? parseMeetTitleContext(title)?.weekday : undefined;
   return weekday ?? UNKNOWN_WEEKDAY_FOLDER_NAME;
 }
@@ -37,7 +38,7 @@ export function buildSwimmingRecordOutputs(
     }));
   }
 
-  const rowsByFolder = new Map<string, RecordCertificateSourceRow[]>();
+  const rowsByFolder = new Map<WeekdayFolderName, RecordCertificateSourceRow[]>();
 
   for (const row of rows) {
     const folderName = resolveWeekdayFolderName(row.meet.title);
