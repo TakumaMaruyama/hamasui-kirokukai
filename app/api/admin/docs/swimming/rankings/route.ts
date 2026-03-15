@@ -7,6 +7,7 @@ import { zipBuffers } from "@/lib/zip";
 import { parseDocsFilterInput } from "@/lib/docs-filter";
 import { buildChallengeEventRankingGroups } from "@/lib/ranking-report";
 import { assignMonthlyRanks } from "@/lib/monthly-rank";
+import { buildSwimmingRankingDocumentMeta } from "@/lib/swimming-ranking-doc";
 
 export const runtime = "nodejs";
 
@@ -93,9 +94,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "条件に一致するランキングデータがありません" }, { status: 400 });
     }
 
-    const periodLabel = `${filter.year}年${filter.month}月`;
+    const { periodLabel, fileName } = buildSwimmingRankingDocumentMeta(filter.year, filter.month);
     const buffer = await renderChallengeRankingPdf({ periodLabel, groups });
-    const name = `${periodLabel}_ranking.pdf`;
+    const name = fileName;
     const storageKey = await saveBuffer(`swimming/rankings/${name}`, buffer);
 
     await prisma.generatedDoc.create({

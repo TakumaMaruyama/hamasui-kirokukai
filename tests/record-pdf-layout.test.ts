@@ -161,7 +161,7 @@ describe("record PDF layout", () => {
     mockState.lastDocument = null;
   });
 
-  it("renders swimming records in exactly three fixed rows", async () => {
+  it("renders swimming records in exactly four fixed rows", async () => {
     await renderRecordCertificatePdf({
       athlete: {
         fullName: "窪園 彩希",
@@ -180,10 +180,11 @@ describe("record PDF layout", () => {
     expect(root).toBeTruthy();
     expect(root.type).toBe("Document");
     const rowViews = collectRecordRowViews(root);
-    expect(rowViews).toHaveLength(3);
+    expect(rowViews).toHaveLength(4);
     expect(collectTextNodes(rowViews[0]).join("")).toContain("15mクロール");
     expect(collectTextNodes(rowViews[1]).join("")).toContain("30mクロール");
     expect(collectTextNodes(rowViews[2]).join("").trim()).toBe("");
+    expect(collectTextNodes(rowViews[3]).join("").trim()).toBe("");
 
     const texts = collectTextNodes(root).join("\n");
     expect(texts).toContain("はまだスイミングスクール記録会");
@@ -198,6 +199,8 @@ describe("record PDF layout", () => {
     expect(texts).toContain("発行年月 2025年9月");
     expect(texts).toContain("窪園 彩希");
     expect(texts).toContain("くぼその さき");
+    expect(texts).toContain("12秒96");
+    expect(texts).toContain("28秒46");
     expect(texts).not.toContain("※ ");
     expect(collectNodeTypes(root)).not.toContain("Image");
 
@@ -212,7 +215,7 @@ describe("record PDF layout", () => {
     expect(collectRecordDecorDots(root)).toHaveLength(0);
   });
 
-  it("renders school record footer and keeps three rows with blanks", async () => {
+  it("renders school record footer and keeps four rows with blanks", async () => {
     await renderRecordPdf({
       athlete: {
         fullName: "窪園 彩希",
@@ -225,18 +228,20 @@ describe("record PDF layout", () => {
 
     const root = mockState.lastDocument as any;
     const rowViews = collectRecordRowViews(root);
-    expect(rowViews).toHaveLength(3);
+    expect(rowViews).toHaveLength(4);
     expect(collectTextNodes(rowViews[0]).join("")).toContain("15mクロール");
     expect(collectTextNodes(rowViews[1]).join("").trim()).toBe("");
     expect(collectTextNodes(rowViews[2]).join("").trim()).toBe("");
+    expect(collectTextNodes(rowViews[3]).join("").trim()).toBe("");
 
     const texts = collectTextNodes(root).join("\n");
     expect(texts).toContain("学校委託コース");
     expect(texts).toContain("学校委託コース記録証");
+    expect(texts).toContain("12秒96");
     expect(texts).not.toContain("発行年月");
   });
 
-  it("renders three filled rows and silently truncates a fourth entry", async () => {
+  it("renders four filled rows and silently truncates a fifth entry", async () => {
     await renderRecordCertificatePdf({
       athlete: {
         fullName: "窪園 彩希",
@@ -244,7 +249,7 @@ describe("record PDF layout", () => {
         grade: 8,
         gender: "female"
       },
-      entries: Array.from({ length: 4 }, (_, index) => ({
+      entries: Array.from({ length: 5 }, (_, index) => ({
         eventTitle: `${index + 1}種目`,
         timeText: `${index + 10}.00`
       })),
@@ -253,13 +258,17 @@ describe("record PDF layout", () => {
 
     const root = mockState.lastDocument as any;
     const rowViews = collectRecordRowViews(root);
-    expect(rowViews).toHaveLength(3);
+    expect(rowViews).toHaveLength(4);
     expect(rowViews.every((row) => collectTextNodes(row).join("").trim().length > 0)).toBe(true);
 
     const texts = collectTextNodes(root).join("\n");
     expect(texts).toContain("1種目");
+    expect(texts).toContain("4種目");
     expect(texts).toContain("3種目");
-    expect(texts).not.toContain("4種目");
+    expect(texts).toContain("10秒00");
+    expect(texts).toContain("13秒00");
+    expect(texts).toContain("12秒00");
+    expect(texts).not.toContain("5種目");
     expect(texts).not.toContain("※ ");
   });
 

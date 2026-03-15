@@ -26,7 +26,7 @@ const TEMPLATE_EMBED_WIDTH = 1240;
 const TEMPLATE_EMBED_HEIGHT = 1754;
 const TEMPLATE_DIRECT_FILE_BYTES_LIMIT = 350 * 1024;
 const TEMPLATE_JPEG_QUALITY = 82;
-const MAX_RECORD_TABLE_ROWS = 3;
+const MAX_RECORD_TABLE_ROWS = 4;
 
 const templateCache = new Map<string, { dataUri: string; filePath: string; mtimeMs: number }>();
 let fontRegistered = false;
@@ -1211,7 +1211,7 @@ export async function renderRankingPdf({
                       >
                         <Text style={[styles.cell, styles.cellRank]}>{entry.rank}位</Text>
                         <Text style={[styles.cell, styles.cellEvent]}>{entry.displayName || entry.fullName}</Text>
-                        <Text style={[styles.cell, styles.cellTime]}>{entry.timeText}</Text>
+                        <Text style={[styles.cell, styles.cellTime]}>{formatTimeForDocument({ timeText: entry.timeText })}</Text>
                       </View>
                     ))}
                   </View>

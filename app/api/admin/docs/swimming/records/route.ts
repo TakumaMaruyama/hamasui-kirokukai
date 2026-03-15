@@ -5,7 +5,8 @@ import { renderRecordCertificatePdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
-import { buildRecordCertificates, type RecordCertificateSourceRow } from "@/lib/record-certificate";
+import { type RecordCertificateSourceRow } from "@/lib/record-certificate";
+import { buildSwimmingRecordOutputs } from "@/lib/swimming-record-output";
 
 export const runtime = "nodejs";
 
@@ -51,7 +52,8 @@ async function findRecordCertificateRows(options: {
         },
         meet: {
           select: {
-            heldOn: true
+            heldOn: true,
+            title: true
           }
         }
       },
@@ -73,7 +75,8 @@ async function findRecordCertificateRows(options: {
       timeText: row.timeText,
       timeMs: row.timeMs,
       meet: {
-        heldOn: row.meet.heldOn
+        heldOn: row.meet.heldOn,
+        title: row.meet.title
       }
     }));
   } catch (error) {
@@ -101,7 +104,8 @@ async function findRecordCertificateRows(options: {
       },
       meet: {
         select: {
-          heldOn: true
+          heldOn: true,
+          title: true
         }
       }
     },
@@ -123,7 +127,8 @@ async function findRecordCertificateRows(options: {
     timeText: row.timeText,
     timeMs: row.timeMs,
     meet: {
-      heldOn: row.meet.heldOn
+      heldOn: row.meet.heldOn,
+      title: row.meet.title
     }
   }));
 }
@@ -167,21 +172,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "条件に一致する記録がありません" }, { status: 400 });
     }
 
-    const certificates = buildRecordCertificates(
+    const outputs = buildSwimmingRecordOutputs(
       rows,
       filter.hasMonthFilter && typeof filter.year === "number" && typeof filter.month === "number"
-        ? { year: filter.year, month: filter.month }
+        ? {
+            year: filter.year,
+            month: filter.month,
+            groupByWeekdayFolders: !filter.weekday
+          }
         : undefined
     );
 
     const files = [] as { name: string; buffer: Buffer }[];
-    for (const certificate of certificates) {
+    for (const output of outputs) {
       const buffer = await renderRecordCertificatePdf({
-        athlete: certificate.athlete,
-        entries: certificate.entries,
-        issueLabel: certificate.issueLabel
+        athlete: output.athlete,
+        entries: output.entries,
+        issueLabel: output.issueLabel
       });
-      const name = certificate.fileName;
+      const name = output.outputPath;
       const storageKey = await saveBuffer(`swimming/records/${name}`, buffer);
 
       await prisma.generatedDoc.create({

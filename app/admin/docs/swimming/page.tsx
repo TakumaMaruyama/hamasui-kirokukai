@@ -6,6 +6,9 @@ export default function SwimmingDocsPage() {
       <header>
         <h1>一般コース記録証</h1>
         <p className="notice">
+          記録証は1人1枚あたり4件まで掲載します。年・月指定で曜日を指定しない場合は、ZIP内を曜日別フォルダに分けて出力します。
+        </p>
+        <p className="notice">
           記録証・賞状は年・月・曜日で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
         </p>
         <p className="notice">

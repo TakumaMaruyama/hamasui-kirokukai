@@ -239,7 +239,7 @@ describe("first prize award PDF layout", () => {
     const kanaElement = findTextElement(root, (text) => text.includes("よこて しょうたろう"));
     const metaElement = findTextElement(root, (text) => text.includes("小学6年生 男子"));
     const eventElement = findTextElement(root, (text) => text.includes("30mクロール"));
-    const timeElement = findTextElement(root, (text) => text.includes("記録 29.49"));
+    const timeElement = findTextElement(root, (text) => text.includes("記録 29秒49"));
     const issueElement = findTextElement(root, (text) => text.includes("2025年9月"));
     const issuerElement = findTextElement(root, (text) => text.includes("はまだスイミングスクール"));
 

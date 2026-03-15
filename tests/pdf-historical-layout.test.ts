@@ -136,6 +136,7 @@ describe("renderChallengeRankingPdf historical layout", () => {
     expect(texts.some((text) => text.includes("新記録者"))).toBe(true);
     expect(texts.filter((text) => text.includes("NEW")).length).toBeGreaterThanOrEqual(2);
     expect(texts.some((text) => text.includes("タイム・年月"))).toBe(true);
+    expect(texts.some((text) => text.includes("18秒00"))).toBe(true);
     expect(texts.some((text) => text.includes("2025年9月"))).toBe(true);
   });
 });

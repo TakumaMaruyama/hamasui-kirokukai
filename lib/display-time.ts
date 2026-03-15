@@ -6,16 +6,18 @@ type DisplayTimeInput = {
 };
 
 function formatMsAsJapanese(ms: number): string {
-  const minutes = Math.floor(ms / 60_000);
-  const restMs = ms - minutes * 60_000;
+  const normalizedMs = Math.max(0, Math.floor(ms));
+  const minutes = Math.floor(normalizedMs / 60_000);
+  const restMs = normalizedMs - minutes * 60_000;
   const seconds = Math.floor(restMs / 1000);
   const hundredths = Math.floor((restMs % 1000) / 10);
 
-  if (hundredths > 0) {
+  if (normalizedMs > 60_000) {
     return `${minutes}分${seconds}秒${String(hundredths).padStart(2, "0")}`;
   }
 
-  return `${minutes}分${seconds}秒`;
+  const totalSeconds = Math.floor(normalizedMs / 1000);
+  return `${totalSeconds}秒${String(hundredths).padStart(2, "0")}`;
 }
 
 export function formatImprovementTotal(ms: number): string {
@@ -38,9 +40,5 @@ export function formatTimeForDocument(input: DisplayTimeInput): string {
     }
   }
 
-  if (ms > 60_000) {
-    return formatMsAsJapanese(ms);
-  }
-
-  return trimmed;
+  return formatMsAsJapanese(ms);
 }
