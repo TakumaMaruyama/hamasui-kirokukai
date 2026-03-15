@@ -6,6 +6,7 @@ import { saveBuffer } from "@/lib/storage";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
 import { type RecordCertificateSourceRow } from "@/lib/record-certificate";
 import { buildSwimmingRecordOutputs } from "@/lib/swimming-record-output";
+import { buildAttachmentContentDisposition } from "@/lib/content-disposition";
 
 export const runtime = "nodejs";
 
@@ -240,7 +241,7 @@ export async function POST(request: Request) {
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${name}"`
+        "Content-Disposition": buildAttachmentContentDisposition(name, "swimming_records.pdf")
       }
     });
   } catch (error) {

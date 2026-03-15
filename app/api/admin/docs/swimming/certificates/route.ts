@@ -5,6 +5,7 @@ import { renderFirstPrizeAwardsPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
 import { buildFirstPrizeAwards, type FirstPrizeSourceRow } from "@/lib/first-prize";
+import { buildAttachmentContentDisposition } from "@/lib/content-disposition";
 export const runtime = "nodejs";
 
 function isMissingFullNameKanaColumnError(error: unknown): boolean {
@@ -225,7 +226,7 @@ export async function POST(request: Request) {
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${name}"`
+        "Content-Disposition": buildAttachmentContentDisposition(name, "swimming_certificates.pdf")
       }
     });
   } catch (error) {
