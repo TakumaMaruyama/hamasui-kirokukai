@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { renderFirstPrizeAwardPdf } from "@/lib/pdf";
+import { renderFirstPrizeAwardsPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
-import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
 import { buildFirstPrizeAwards, type FirstPrizeSourceRow } from "@/lib/first-prize";
 export const runtime = "nodejs";
@@ -120,6 +119,33 @@ async function findFirstPrizeRows(options: {
   }));
 }
 
+function sanitizeFileNamePart(value: string): string {
+  const cleaned = value
+    .replace(/[\\/:*?"<>|\r\n\t]+/g, "_")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned || "unknown";
+}
+
+function buildCombinedCertificatePdfName(options: {
+  latestMeetTitle?: string;
+  year?: number;
+  month?: number;
+  weekday?: string;
+  fullName?: string;
+}): string {
+  const periodLabel = typeof options.year === "number" && typeof options.month === "number"
+    ? `${options.year}年${options.month}月${options.weekday ?? ""}`
+    : (options.latestMeetTitle ?? "swimming");
+
+  return [
+    sanitizeFileNamePart(periodLabel),
+    ...(options.fullName ? [sanitizeFileNamePart(options.fullName)] : []),
+    "first_prize"
+  ].join("_") + ".pdf";
+}
+
 export async function POST(request: Request) {
   if (!isAdminAuthenticated()) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -166,39 +192,40 @@ export async function POST(request: Request) {
         : undefined
     );
 
-    const files = [] as { name: string; buffer: Buffer }[];
-    for (const award of awards) {
-      const buffer = await renderFirstPrizeAwardPdf({
+    if (awards.length === 0) {
+      return NextResponse.json({ message: "条件に一致する賞状対象がありません" }, { status: 400 });
+    }
+
+    const buffer = await renderFirstPrizeAwardsPdf(
+      awards.map((award) => ({
         athlete: award.athlete,
         eventTitle: award.eventTitle,
         timeText: award.timeText,
         timeMs: award.timeMs,
         issueLabel: award.issueLabel
-      });
-      const name = award.fileName;
-      const storageKey = await saveBuffer(`swimming/certificates/${name}`, buffer);
+      }))
+    );
+    const name = buildCombinedCertificatePdfName({
+      latestMeetTitle: latestMeet?.title,
+      year: filter.year,
+      month: filter.month,
+      weekday: filter.weekday,
+      fullName: filter.fullName
+    });
+    const storageKey = await saveBuffer(`swimming/certificates/${name}`, buffer);
 
-      await prisma.generatedDoc.create({
-        data: {
-          program: "swimming",
-          kind: "certificate",
-          storageKey
-        }
-      });
+    await prisma.generatedDoc.create({
+      data: {
+        program: "swimming",
+        kind: "certificate",
+        storageKey
+      }
+    });
 
-      files.push({ name, buffer });
-    }
-
-    if (files.length === 0) {
-      return NextResponse.json({ message: "条件に一致する賞状対象がありません" }, { status: 400 });
-    }
-
-    const zip = await zipBuffers(files);
-
-    return new NextResponse(zip, {
+    return new NextResponse(buffer, {
       headers: {
-        "Content-Type": "application/zip",
-        "Content-Disposition": "attachment; filename=swimming_certificates.zip"
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${name}"`
       }
     });
   } catch (error) {

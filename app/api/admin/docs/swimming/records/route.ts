@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { renderRecordCertificatePdf } from "@/lib/pdf";
+import { renderRecordCertificatesPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
-import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
 import { type RecordCertificateSourceRow } from "@/lib/record-certificate";
 import { buildSwimmingRecordOutputs } from "@/lib/swimming-record-output";
@@ -133,6 +132,33 @@ async function findRecordCertificateRows(options: {
   }));
 }
 
+function sanitizeFileNamePart(value: string): string {
+  const cleaned = value
+    .replace(/[\\/:*?"<>|\r\n\t]+/g, "_")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned || "unknown";
+}
+
+function buildCombinedRecordPdfName(options: {
+  latestMeetTitle?: string;
+  year?: number;
+  month?: number;
+  weekday?: string;
+  fullName?: string;
+}): string {
+  const periodLabel = typeof options.year === "number" && typeof options.month === "number"
+    ? `${options.year}年${options.month}月${options.weekday ?? ""}`
+    : (options.latestMeetTitle ?? "swimming");
+
+  return [
+    sanitizeFileNamePart(periodLabel),
+    ...(options.fullName ? [sanitizeFileNamePart(options.fullName)] : []),
+    "record"
+  ].join("_") + ".pdf";
+}
+
 export async function POST(request: Request) {
   if (!isAdminAuthenticated()) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -183,37 +209,38 @@ export async function POST(request: Request) {
         : undefined
     );
 
-    const files = [] as { name: string; buffer: Buffer }[];
-    for (const output of outputs) {
-      const buffer = await renderRecordCertificatePdf({
-        athlete: output.athlete,
-        entries: output.entries,
-        issueLabel: output.issueLabel
-      });
-      const name = output.outputPath;
-      const storageKey = await saveBuffer(`swimming/records/${name}`, buffer);
-
-      await prisma.generatedDoc.create({
-        data: {
-          program: "swimming",
-          kind: "record",
-          storageKey
-        }
-      });
-
-      files.push({ name, buffer });
-    }
-
-    if (files.length === 0) {
+    if (outputs.length === 0) {
       return NextResponse.json({ message: "条件に一致する記録がありません" }, { status: 400 });
     }
 
-    const zip = await zipBuffers(files);
+    const buffer = await renderRecordCertificatesPdf(
+      outputs.map((output) => ({
+        athlete: output.athlete,
+        entries: output.entries,
+        issueLabel: output.issueLabel
+      }))
+    );
+    const name = buildCombinedRecordPdfName({
+      latestMeetTitle: latestMeet?.title,
+      year: filter.year,
+      month: filter.month,
+      weekday: filter.weekday,
+      fullName: filter.fullName
+    });
+    const storageKey = await saveBuffer(`swimming/records/${name}`, buffer);
 
-    return new NextResponse(zip, {
+    await prisma.generatedDoc.create({
+      data: {
+        program: "swimming",
+        kind: "record",
+        storageKey
+      }
+    });
+
+    return new NextResponse(buffer, {
       headers: {
-        "Content-Type": "application/zip",
-        "Content-Disposition": "attachment; filename=swimming_records.zip"
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${name}"`
       }
     });
   } catch (error) {

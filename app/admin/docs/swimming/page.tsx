@@ -6,10 +6,13 @@ export default function SwimmingDocsPage() {
       <header>
         <h1>一般コース記録証</h1>
         <p className="notice">
-          記録証は1人1枚あたり4件まで掲載します。年・月指定で曜日を指定しない場合は、ZIP内を曜日別フォルダに分けて出力します。
+          記録証は1人1枚あたり4件まで掲載します。年・月指定で曜日を指定しない場合は、曜日順にまとめて1つのPDFへ出力します。
         </p>
         <p className="notice">
           記録証・賞状は年・月・曜日で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
+        </p>
+        <p className="notice">
+          記録証と1位賞状は、条件に一致した全員分をそれぞれ1つのPDFにまとめて出力します。
         </p>
         <p className="notice">
           ランキングは種目ごとに男女左右で1〜3位を出力し、小6までを対象に最小学年から最大学年まで欠番なしで表示します。中1以降は出力しません。
@@ -19,12 +22,12 @@ export default function SwimmingDocsPage() {
         <DocsAction
           title="記録証PDFを一括生成"
           endpoint="/api/admin/docs/swimming/records"
-          filename="swimming_records.zip"
+          filename="swimming_records.pdf"
         />
         <DocsAction
           title="賞状PDFを一括生成"
           endpoint="/api/admin/docs/swimming/certificates"
-          filename="swimming_certificates.zip"
+          filename="swimming_certificates.pdf"
         />
         <DocsAction
           title="ランキングPDFを生成（月ごと・男女左右1〜3位）"
