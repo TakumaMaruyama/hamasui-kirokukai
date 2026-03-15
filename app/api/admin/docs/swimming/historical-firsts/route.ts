@@ -6,9 +6,9 @@ import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
 import { parseDocsFilterInput } from "@/lib/docs-filter";
 import { buildHistoricalFirstChallengeGroups } from "@/lib/ranking-report";
+import { RANKING_OUTPUT_GRADE_SEQUENCE } from "@/lib/grade";
 
 export const runtime = "nodejs";
-const HISTORICAL_GRADE_SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 export async function POST(request: Request) {
   if (!isAdminAuthenticated()) {
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         targetMonthStart: filter.monthStart,
         targetMonthEnd: filter.monthEnd,
         gradeRangeMode: "existing",
-        gradeSequence: [...HISTORICAL_GRADE_SEQUENCE],
+        gradeSequence: [...RANKING_OUTPUT_GRADE_SEQUENCE],
         excludeOtherGender: true
       }
     );

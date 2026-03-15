@@ -6,7 +6,7 @@ export default function ChallengeDocsPage() {
       <header>
         <h1>チャレンジコースPDF生成</h1>
         <p className="notice">
-          年・月を指定して、種目ごとに男女左右で1〜3位ランキングを出力します。学年は最小学年から最大学年まで欠番なしで表示されます。
+          年・月を指定して、種目ごとに男女左右で1〜3位ランキングを出力します。学年は小6までを対象に最小学年から最大学年まで欠番なしで表示し、中1以降は出力しません。
         </p>
       </header>
       <div className="card">
