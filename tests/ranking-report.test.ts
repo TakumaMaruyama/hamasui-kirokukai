@@ -672,6 +672,33 @@ describe("buildChallengeEventRankingGroups", () => {
     expect(groups[0]?.gradeGroups[1]?.femaleEntries).toHaveLength(0);
   });
 
+  it("keeps middle school grades when no explicit grade sequence is applied", () => {
+    const groups = buildChallengeEventRankingGroups(
+      [
+        {
+          rank: 1,
+          timeText: "20.00",
+          athlete: { fullName: "小1男子" },
+          event: { id: "e1", title: "15mキック", grade: 4, gender: "male" }
+        },
+        {
+          rank: 1,
+          timeText: "21.00",
+          athlete: { fullName: "中1女子" },
+          event: { id: "e2", title: "15mキック", grade: 10, gender: "female" }
+        }
+      ],
+      {
+        gradeRangeMode: "minToMax"
+      }
+    );
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.gradeGroups.map((group) => group.grade)).toEqual([4, 5, 6, 7, 8, 9, 10]);
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["小1男子"]);
+    expect(groups[0]?.gradeGroups[6]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["中1女子"]);
+  });
+
   it("uses explicit grade sequence when provided", () => {
     const groups = buildChallengeEventRankingGroups(
       [
