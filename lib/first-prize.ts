@@ -1,5 +1,6 @@
 import type { Gender } from "@prisma/client";
 import { formatGradeLabel } from "./grade";
+import { assignMonthlyRanks } from "./monthly-rank";
 
 export type FirstPrizeSourceRow = {
   athlete: {
@@ -10,6 +11,28 @@ export type FirstPrizeSourceRow = {
   };
   event: {
     title: string;
+  };
+  timeText: string;
+  timeMs: number;
+  meet: {
+    heldOn: Date;
+  };
+};
+
+export type MonthlyFirstPrizeSourceRow = {
+  id: string;
+  athlete: {
+    fullName: string;
+    fullNameKana?: string | null;
+    grade: number;
+    gender: Gender;
+  };
+  event: {
+    title: string;
+    distanceM: number;
+    style: string;
+    grade: number;
+    gender: Gender;
   };
   timeText: string;
   timeMs: number;
@@ -111,6 +134,43 @@ function ensureUniqueFileName(baseName: string, usedNames: Set<string>): string 
   }
 
   throw new Error("1位賞状のファイル名が重複しすぎています");
+}
+
+export function selectMonthlyFirstPrizeRows(rows: MonthlyFirstPrizeSourceRow[]): FirstPrizeSourceRow[] {
+  const monthlyRanks = assignMonthlyRanks(
+    rows.map((row) => ({
+      id: row.id,
+      heldOn: row.meet.heldOn,
+      timeMs: row.timeMs,
+      athleteName: row.athlete.fullName,
+      event: {
+        title: row.event.title,
+        distanceM: row.event.distanceM,
+        style: row.event.style,
+        grade: row.event.grade,
+        gender: row.event.gender
+      }
+    }))
+  );
+
+  return rows
+    .filter((row) => monthlyRanks.get(row.id) === 1)
+    .map((row) => ({
+      athlete: {
+        fullName: row.athlete.fullName,
+        fullNameKana: row.athlete.fullNameKana,
+        grade: row.athlete.grade,
+        gender: row.athlete.gender
+      },
+      event: {
+        title: row.event.title
+      },
+      timeText: row.timeText,
+      timeMs: row.timeMs,
+      meet: {
+        heldOn: row.meet.heldOn
+      }
+    }));
 }
 
 export function buildFirstPrizeAwards(

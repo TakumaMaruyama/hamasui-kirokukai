@@ -4,8 +4,13 @@ import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { renderFirstPrizeAwardsPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
-import { buildFirstPrizeAwards, type FirstPrizeSourceRow } from "@/lib/first-prize";
+import {
+  buildFirstPrizeAwards,
+  selectMonthlyFirstPrizeRows,
+  type MonthlyFirstPrizeSourceRow
+} from "@/lib/first-prize";
 import { buildAttachmentContentDisposition } from "@/lib/content-disposition";
+
 export const runtime = "nodejs";
 
 function isMissingFullNameKanaColumnError(error: unknown): boolean {
@@ -13,13 +18,12 @@ function isMissingFullNameKanaColumnError(error: unknown): boolean {
   return /Athlete\.fullNameKana|column .*fullNameKana.* does not exist/i.test(message);
 }
 
-async function findFirstPrizeRows(options: {
-  meetWhere: ReturnType<typeof buildMeetWhere> | { id: string };
+async function findMonthlyFirstPrizeRows(options: {
+  meetWhere: ReturnType<typeof buildMeetWhere>;
   fullName?: string;
-}): Promise<FirstPrizeSourceRow[]> {
+}): Promise<MonthlyFirstPrizeSourceRow[]> {
   const where = {
     meet: options.meetWhere,
-    rank: 1,
     ...(options.fullName ? { athlete: { is: { fullName: options.fullName } } } : {})
   } as const;
 
@@ -44,7 +48,11 @@ async function findFirstPrizeRows(options: {
         },
         event: {
           select: {
-            title: true
+            title: true,
+            distanceM: true,
+            style: true,
+            grade: true,
+            gender: true
           }
         },
         meet: {
@@ -57,6 +65,7 @@ async function findFirstPrizeRows(options: {
     });
 
     return rows.map((row) => ({
+      id: row.id,
       athlete: {
         fullName: row.athlete.fullName,
         fullNameKana: row.athlete.fullNameKana,
@@ -64,7 +73,11 @@ async function findFirstPrizeRows(options: {
         gender: row.athlete.gender
       },
       event: {
-        title: row.event.title
+        title: row.event.title,
+        distanceM: row.event.distanceM,
+        style: row.event.style,
+        grade: row.event.grade,
+        gender: row.event.gender
       },
       timeText: row.timeText,
       timeMs: row.timeMs,
@@ -90,7 +103,11 @@ async function findFirstPrizeRows(options: {
       },
       event: {
         select: {
-          title: true
+          title: true,
+          distanceM: true,
+          style: true,
+          grade: true,
+          gender: true
         }
       },
       meet: {
@@ -103,6 +120,7 @@ async function findFirstPrizeRows(options: {
   });
 
   return rows.map((row) => ({
+    id: row.id,
     athlete: {
       fullName: row.athlete.fullName,
       fullNameKana: null,
@@ -110,7 +128,11 @@ async function findFirstPrizeRows(options: {
       gender: row.athlete.gender
     },
     event: {
-      title: row.event.title
+      title: row.event.title,
+      distanceM: row.event.distanceM,
+      style: row.event.style,
+      grade: row.event.grade,
+      gender: row.event.gender
     },
     timeText: row.timeText,
     timeMs: row.timeMs,
@@ -130,15 +152,11 @@ function sanitizeFileNamePart(value: string): string {
 }
 
 function buildCombinedCertificatePdfName(options: {
-  latestMeetTitle?: string;
-  year?: number;
-  month?: number;
-  weekday?: string;
+  year: number;
+  month: number;
   fullName?: string;
 }): string {
-  const periodLabel = typeof options.year === "number" && typeof options.month === "number"
-    ? `${options.year}年${options.month}月${options.weekday ?? ""}`
-    : (options.latestMeetTitle ?? "swimming");
+  const periodLabel = `${options.year}年${options.month}月`;
 
   return [
     sanitizeFileNamePart(periodLabel),
@@ -163,39 +181,32 @@ export async function POST(request: Request) {
 
   try {
     const filter = parsedFilter.value;
-    const latestMeet = filter.hasMonthFilter
-      ? null
-      : await prisma.meet.findFirst({
-          where: { program: "swimming" },
-          orderBy: { heldOn: "desc" }
-        });
-
-    if (!filter.hasMonthFilter && !latestMeet) {
-      return NextResponse.json({ message: "条件に一致する記録会がありません" }, { status: 400 });
+    if (!filter.hasMonthFilter || !filter.year || !filter.month || !filter.monthStart || !filter.monthEnd) {
+      return NextResponse.json({ message: "1位賞状の出力には年・月の指定が必要です" }, { status: 400 });
     }
 
-    const meetWhere = filter.hasMonthFilter
-      ? buildMeetWhere("swimming", filter)
-      : { id: latestMeet!.id };
+    if (filter.weekday) {
+      return NextResponse.json({ message: "1位賞状では曜日指定はできません" }, { status: 400 });
+    }
 
-    const rankOneRows = await findFirstPrizeRows({
-      meetWhere,
+    const monthlyRows = await findMonthlyFirstPrizeRows({
+      meetWhere: buildMeetWhere("swimming", filter),
       fullName: filter.fullName
     });
+
+    if (monthlyRows.length === 0) {
+      return NextResponse.json({ message: "条件に一致する賞状対象がありません" }, { status: 400 });
+    }
+
+    const rankOneRows = selectMonthlyFirstPrizeRows(monthlyRows);
     if (rankOneRows.length === 0) {
       return NextResponse.json({ message: "条件に一致する賞状対象がありません" }, { status: 400 });
     }
 
-    const awards = buildFirstPrizeAwards(
-      rankOneRows,
-      filter.hasMonthFilter && typeof filter.year === "number" && typeof filter.month === "number"
-        ? { year: filter.year, month: filter.month }
-        : undefined
-    );
-
-    if (awards.length === 0) {
-      return NextResponse.json({ message: "条件に一致する賞状対象がありません" }, { status: 400 });
-    }
+    const awards = buildFirstPrizeAwards(rankOneRows, {
+      year: filter.year,
+      month: filter.month
+    });
 
     const buffer = await renderFirstPrizeAwardsPdf(
       awards.map((award) => ({
@@ -207,10 +218,8 @@ export async function POST(request: Request) {
       }))
     );
     const name = buildCombinedCertificatePdfName({
-      latestMeetTitle: latestMeet?.title,
       year: filter.year,
       month: filter.month,
-      weekday: filter.weekday,
       fullName: filter.fullName
     });
     const storageKey = await saveBuffer(`swimming/certificates/${name}`, buffer);
