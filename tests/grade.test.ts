@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatGradeLabel, formatGradeShortLabel } from "../lib/grade";
+import {
+  formatGradeLabel,
+  formatGradeShortLabel,
+  RANKING_OUTPUT_GRADE_SEQUENCE,
+  RANKING_OUTPUT_MAX_GRADE
+} from "../lib/grade";
 
 describe("grade label formatting", () => {
   it("formats preschool labels", () => {
@@ -20,5 +25,10 @@ describe("grade label formatting", () => {
     expect(formatGradeShortLabel(2)).toBe("年中");
     expect(formatGradeShortLabel(4)).toBe("小1");
     expect(formatGradeShortLabel(10)).toBe("中1");
+  });
+
+  it("defines ranking output grades only up to elementary school", () => {
+    expect(RANKING_OUTPUT_MAX_GRADE).toBe(9);
+    expect([...RANKING_OUTPUT_GRADE_SEQUENCE]).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });
 });

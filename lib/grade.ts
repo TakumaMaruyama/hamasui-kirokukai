@@ -1,3 +1,6 @@
+export const RANKING_OUTPUT_MAX_GRADE = 9;
+export const RANKING_OUTPUT_GRADE_SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+
 export function formatGradeLabel(grade: number): string {
   if (grade === 0) {
     return "年少々";
