@@ -9,10 +9,10 @@ export default function SwimmingDocsPage() {
           記録証は1人1枚あたり4件まで掲載します。年・月指定で曜日を指定しない場合は、曜日順にまとめて1つのPDFへ出力します。
         </p>
         <p className="notice">
-          記録証・賞状は年・月・曜日で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
+          記録証は年・月・曜日で絞り込めます。1位賞状は年・月必須で、氏名を入れるとその子どもの指定年月データだけを出力できます。
         </p>
         <p className="notice">
-          記録証と1位賞状は、条件に一致した全員分をそれぞれ1つのPDFにまとめて出力します。
+          1位賞状は、その年月内の各種目・学年別・男女別1位を対象に、条件に一致した全員分を1つのPDFにまとめて出力します。同タイ1位は全員出力します。
         </p>
         <p className="notice">
           ランキングは種目ごとに男女左右で1〜3位を出力し、小6までを対象に最小学年から最大学年まで欠番なしで表示します。中1以降は出力しません。
@@ -28,6 +28,7 @@ export default function SwimmingDocsPage() {
           title="賞状PDFを一括生成"
           endpoint="/api/admin/docs/swimming/certificates"
           filename="swimming_certificates.pdf"
+          allowWeekday={false}
         />
         <DocsAction
           title="ランキングPDFを生成（月ごと・男女左右1〜3位）"
