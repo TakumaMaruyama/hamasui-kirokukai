@@ -7,7 +7,6 @@ import { zipBuffers } from "@/lib/zip";
 import { parseDocsFilterInput } from "@/lib/docs-filter";
 import { buildChallengeEventRankingGroups } from "@/lib/ranking-report";
 import { assignMonthlyRanks } from "@/lib/monthly-rank";
-import { RANKING_OUTPUT_MAX_GRADE } from "@/lib/grade";
 
 export const runtime = "nodejs";
 
@@ -78,7 +77,7 @@ export async function POST(request: Request) {
         ...row,
         rank: monthlyRanks.get(row.id) ?? 0
       }))
-      .filter((row) => row.rank > 0 && row.event.grade <= RANKING_OUTPUT_MAX_GRADE);
+      .filter((row) => row.rank > 0);
 
     const groups = buildChallengeEventRankingGroups(rankedRows, {
       preschoolNameMode: "kanaOnly",
