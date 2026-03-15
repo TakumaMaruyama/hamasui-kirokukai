@@ -16,6 +16,7 @@ export type RecordCertificateSourceRow = {
   timeMs: number;
   meet: {
     heldOn: Date;
+    title?: string | null;
   };
 };
 
