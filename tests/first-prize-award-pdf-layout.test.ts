@@ -1,6 +1,6 @@
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderFirstPrizeAwardPdf } from "../lib/pdf";
+import { renderFirstPrizeAwardPdf, renderFirstPrizeAwardsPdf } from "../lib/pdf";
 
 const mockState = vi.hoisted(() => ({
   lastDocument: null as any
@@ -265,5 +265,46 @@ describe("first prize award PDF layout", () => {
     expect(flattenStyle(issueElement.props.style).color).toBe("#111827");
     expect(flattenStyle(issuerElement.props.style).fontSize).toBe(11);
     expect(flattenStyle(issuerElement.props.style).color).toBe("#111827");
+  });
+
+  it("renders multiple first prize awards into a single multi-page document", async () => {
+    await renderFirstPrizeAwardsPdf([
+      {
+        athlete: {
+          fullName: "徳重 湊仁",
+          fullNameKana: "とくしげ みなと",
+          grade: 4,
+          gender: "male"
+        },
+        eventTitle: "15m板キック",
+        timeText: "2分1秒77",
+        timeMs: 121_770,
+        issueLabel: "2026年2月"
+      },
+      {
+        athlete: {
+          fullName: "横手 翔太朗",
+          fullNameKana: "よこて しょうたろう",
+          grade: 9,
+          gender: "male"
+        },
+        eventTitle: "30mクロール",
+        timeText: "29.49",
+        timeMs: 29_490,
+        issueLabel: "2025年9月"
+      }
+    ]);
+
+    const root = mockState.lastDocument as any;
+    expect(root).toBeTruthy();
+    expect(root.type).toBe("Document");
+    const pageCount = collectNodeTypes(root).filter((type) => type === "Page").length;
+    expect(pageCount).toBe(2);
+
+    const texts = collectTextNodes(root).join("");
+    expect(texts).toContain("徳重 湊仁");
+    expect(texts).toContain("横手 翔太朗");
+    expect(texts).toContain("記録 2分1秒77");
+    expect(texts).toContain("記録 29秒49");
   });
 });

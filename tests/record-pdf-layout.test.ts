@@ -1,6 +1,6 @@
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderRecordCertificatePdf, renderRecordPdf } from "../lib/pdf";
+import { renderRecordCertificatePdf, renderRecordCertificatesPdf, renderRecordPdf } from "../lib/pdf";
 
 const mockState = vi.hoisted(() => ({
   lastDocument: null as any
@@ -290,5 +290,41 @@ describe("record PDF layout", () => {
     const nameElement = findTextElement(root, (text) => text.includes(longName));
     expect(nameElement).toBeTruthy();
     expect(flattenStyle(nameElement.props.style).fontSize).toBe(18);
+  });
+
+  it("renders multiple record certificates into a single multi-page document", async () => {
+    await renderRecordCertificatesPdf([
+      {
+        athlete: {
+          fullName: "窪園 彩希",
+          fullNameKana: "くぼその さき",
+          grade: 8,
+          gender: "female"
+        },
+        entries: [{ eventTitle: "15mクロール", timeText: "12.96" }],
+        issueLabel: "2025年9月"
+      },
+      {
+        athlete: {
+          fullName: "横手 翔太朗",
+          fullNameKana: "よこて しょうたろう",
+          grade: 9,
+          gender: "male"
+        },
+        entries: [{ eventTitle: "30mクロール", timeText: "29.49" }],
+        issueLabel: "2025年9月"
+      }
+    ]);
+
+    const root = mockState.lastDocument as any;
+    expect(root).toBeTruthy();
+    expect(root.type).toBe("Document");
+    expect(collectElementsByType(root, "Page")).toHaveLength(2);
+
+    const texts = collectTextNodes(root).join("\n");
+    expect(texts).toContain("窪園 彩希");
+    expect(texts).toContain("横手 翔太朗");
+    expect(texts).toContain("12秒96");
+    expect(texts).toContain("29秒49");
   });
 });

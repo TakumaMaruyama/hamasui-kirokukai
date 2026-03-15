@@ -928,73 +928,91 @@ function buildReadableRecordDocument({
   entries: RecordPdfEntry[];
   issueLabel?: string;
 }): ReactElement {
+  return (
+    <Document>
+      {buildReadableRecordPage({ variant, athlete, entries, issueLabel })}
+    </Document>
+  );
+}
+
+function buildReadableRecordPage({
+  variant,
+  athlete,
+  entries,
+  issueLabel,
+  pageKey
+}: {
+  variant: RecordLayoutVariant;
+  athlete: PdfAthlete;
+  entries: RecordPdfEntry[];
+  issueLabel?: string;
+  pageKey?: string;
+}): ReactElement {
   const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
   const nameFontSize = resolveRecordNameFontSize(athlete.fullName);
   const display = buildRecordDisplayModel({ variant, entries, issueLabel });
 
   return (
-    <Document>
-      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.recordPage} wrap={false}>
-        <View style={styles.recordCard}>
-          <View style={styles.recordHeaderBand}>
-            <View style={styles.recordHeaderPill}>
-              <Text style={styles.recordHeaderEyebrow}>はまだスイミングスクール記録会</Text>
+    <Page key={pageKey} size={CERTIFICATE_PAGE_SIZE} style={styles.recordPage} wrap={false}>
+      <View style={styles.recordCard}>
+        <View style={styles.recordHeaderBand}>
+          <View style={styles.recordHeaderPill}>
+            <Text style={styles.recordHeaderEyebrow}>はまだスイミングスクール記録会</Text>
+          </View>
+          <Text style={styles.recordHeaderTitle}>記録証</Text>
+          {display.headerSubtitle ? <Text style={styles.recordHeaderSubtitle}>{display.headerSubtitle}</Text> : null}
+        </View>
+
+        <View style={styles.recordBody}>
+          <View style={styles.recordInfoRow}>
+            <View style={styles.recordInfoNameCard}>
+              <Text style={styles.recordInfoKanaValue}>{nameKana}</Text>
+              <Text style={[styles.recordInfoNameValue, { fontSize: nameFontSize }]}>{athlete.fullName}</Text>
             </View>
-            <Text style={styles.recordHeaderTitle}>記録証</Text>
-            {display.headerSubtitle ? <Text style={styles.recordHeaderSubtitle}>{display.headerSubtitle}</Text> : null}
+
+            <View style={styles.recordInfoGradeCard}>
+              <Text style={styles.recordInfoLabel}>学年</Text>
+              <Text style={styles.recordInfoGradeValue}>{formatGradeLabel(athlete.grade)}</Text>
+            </View>
           </View>
 
-          <View style={styles.recordBody}>
-            <View style={styles.recordInfoRow}>
-              <View style={styles.recordInfoNameCard}>
-                <Text style={styles.recordInfoKanaValue}>{nameKana}</Text>
-                <Text style={[styles.recordInfoNameValue, { fontSize: nameFontSize }]}>{athlete.fullName}</Text>
-              </View>
-
-              <View style={styles.recordInfoGradeCard}>
-                <Text style={styles.recordInfoLabel}>学年</Text>
-                <Text style={styles.recordInfoGradeValue}>{formatGradeLabel(athlete.grade)}</Text>
-              </View>
+          <Text style={styles.recordTableSectionTitle}>今回の記録</Text>
+          <View style={styles.recordTableWrap}>
+            <View style={styles.recordTableHeader}>
+              <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderEvent]}>種目</Text>
+              <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderTime]}>記録</Text>
             </View>
 
-            <Text style={styles.recordTableSectionTitle}>今回の記録</Text>
-            <View style={styles.recordTableWrap}>
-              <View style={styles.recordTableHeader}>
-                <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderEvent]}>種目</Text>
-                <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderTime]}>記録</Text>
-              </View>
-
-              {display.tableRows.map((row, index) => (
-                <View
-                  key={row.kind === "filled" ? `${row.entry.eventTitle}-${row.entry.timeText}-${index}` : `empty-row-${index}`}
-                  style={[
-                    styles.recordTableRow,
-                    ...(index === display.tableRows.length - 1 ? [styles.recordTableRowLast] : []),
-                    { backgroundColor: index % 2 === 0 ? "#ffffff" : "#f4fbff" }
-                  ]}
-                >
-                  <View style={[styles.recordTableCell, styles.recordTableCellEvent]}>
-                    <Text style={styles.recordTableEventText}>{row.kind === "filled" ? row.entry.eventTitle : ""}</Text>
-                  </View>
-                  <View style={[styles.recordTableCell, styles.recordTableCellTime]}>
-                    <Text style={styles.recordTableTimeText}>
-                      {row.kind === "filled"
-                        ? formatTimeForDocument({ timeText: row.entry.timeText, timeMs: row.entry.timeMs })
-                        : ""}
-                    </Text>
-                  </View>
+            {display.tableRows.map((row, index) => (
+              <View
+                key={row.kind === "filled" ? `${row.entry.eventTitle}-${row.entry.timeText}-${index}` : `empty-row-${index}`}
+                style={[
+                  styles.recordTableRow,
+                  ...(index === display.tableRows.length - 1 ? [styles.recordTableRowLast] : []),
+                  { backgroundColor: index % 2 === 0 ? "#ffffff" : "#f4fbff" }
+                ]}
+              >
+                <View style={[styles.recordTableCell, styles.recordTableCellEvent]}>
+                  <Text style={styles.recordTableEventText}>{row.kind === "filled" ? row.entry.eventTitle : ""}</Text>
                 </View>
-              ))}
-            </View>
+                <View style={[styles.recordTableCell, styles.recordTableCellTime]}>
+                  <Text style={styles.recordTableTimeText}>
+                    {row.kind === "filled"
+                      ? formatTimeForDocument({ timeText: row.entry.timeText, timeMs: row.entry.timeMs })
+                      : ""}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
 
-            <View style={styles.recordFooterSpacer} />
-            <View style={styles.recordFooterPill}>
-              <Text style={styles.recordFooterText}>{display.footerText}</Text>
-            </View>
+          <View style={styles.recordFooterSpacer} />
+          <View style={styles.recordFooterPill}>
+            <Text style={styles.recordFooterText}>{display.footerText}</Text>
           </View>
         </View>
-      </Page>
-    </Document>
+      </View>
+    </Page>
   );
 }
 
@@ -1071,24 +1089,38 @@ function buildFirstPrizeAwardTemplateDocument({
   issueLabel,
   templateDataUri
 }: FirstPrizeAwardPdfInput & { templateDataUri: string }): ReactElement {
+  return (
+    <Document>
+      {buildFirstPrizeAwardTemplatePage({ athlete, eventTitle, timeText, timeMs, issueLabel, templateDataUri })}
+    </Document>
+  );
+}
+
+function buildFirstPrizeAwardTemplatePage({
+  athlete,
+  eventTitle,
+  timeText,
+  timeMs,
+  issueLabel,
+  templateDataUri,
+  pageKey
+}: FirstPrizeAwardPdfInput & { templateDataUri: string; pageKey?: string }): ReactElement {
   const nameFontSize = resolveFirstPrizeAwardNameFontSize(athlete.fullName);
   const eventFontSize = resolveFirstPrizeAwardEventFontSize(eventTitle);
   const gradeAndGenderLabel = `${formatGradeLabel(athlete.grade)} ${genderLabel(athlete.gender)}`;
 
   return (
-    <Document>
-      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
-        <View style={styles.templateFlowSpacer} />
-        <Image fixed style={styles.templateBackground} src={templateDataUri} />
-        <Text style={styles.firstPrizeAwardKana}>{athlete.fullNameKana?.trim() || athlete.fullName}</Text>
-        <Text style={[styles.firstPrizeAwardName, { fontSize: nameFontSize }]}>{athlete.fullName}</Text>
-        <Text style={styles.firstPrizeAwardMeta}>{gradeAndGenderLabel}</Text>
-        <Text style={[styles.firstPrizeAwardEvent, { fontSize: eventFontSize }]}>{eventTitle}</Text>
-        <Text style={styles.firstPrizeAwardTime}>記録 {formatTimeForDocument({ timeText, timeMs })}</Text>
-        <Text style={styles.firstPrizeAwardIssueLabel}>{issueLabel}</Text>
-        <Text style={styles.firstPrizeAwardIssuer}>はまだスイミングスクール</Text>
-      </Page>
-    </Document>
+    <Page key={pageKey} size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
+      <View style={styles.templateFlowSpacer} />
+      <Image fixed style={styles.templateBackground} src={templateDataUri} />
+      <Text style={styles.firstPrizeAwardKana}>{athlete.fullNameKana?.trim() || athlete.fullName}</Text>
+      <Text style={[styles.firstPrizeAwardName, { fontSize: nameFontSize }]}>{athlete.fullName}</Text>
+      <Text style={styles.firstPrizeAwardMeta}>{gradeAndGenderLabel}</Text>
+      <Text style={[styles.firstPrizeAwardEvent, { fontSize: eventFontSize }]}>{eventTitle}</Text>
+      <Text style={styles.firstPrizeAwardTime}>記録 {formatTimeForDocument({ timeText, timeMs })}</Text>
+      <Text style={styles.firstPrizeAwardIssueLabel}>{issueLabel}</Text>
+      <Text style={styles.firstPrizeAwardIssuer}>はまだスイミングスクール</Text>
+    </Page>
   );
 }
 
@@ -1099,22 +1131,35 @@ function buildFirstPrizeAwardFallbackDocument({
   timeMs,
   issueLabel
 }: FirstPrizeAwardPdfInput): ReactElement {
+  return (
+    <Document>
+      {buildFirstPrizeAwardFallbackPage({ athlete, eventTitle, timeText, timeMs, issueLabel })}
+    </Document>
+  );
+}
+
+function buildFirstPrizeAwardFallbackPage({
+  athlete,
+  eventTitle,
+  timeText,
+  timeMs,
+  issueLabel,
+  pageKey
+}: FirstPrizeAwardPdfInput & { pageKey?: string }): ReactElement {
   const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
 
   return (
-    <Document>
-      <Page size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
-        <Text style={styles.title}>第1位 賞状</Text>
-        <Text style={styles.meta}>ふりがな: {nameKana}</Text>
-        <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
-        <Text style={styles.meta}>
-          学年・性別: {formatGradeLabel(athlete.grade)} {genderLabel(athlete.gender)}
-        </Text>
-        <Text style={styles.meta}>種目: {eventTitle}</Text>
-        <Text style={styles.meta}>記録: {formatTimeForDocument({ timeText, timeMs })}</Text>
-        <Text style={styles.meta}>発行年月: {issueLabel}</Text>
-      </Page>
-    </Document>
+    <Page key={pageKey} size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
+      <Text style={styles.title}>第1位 賞状</Text>
+      <Text style={styles.meta}>ふりがな: {nameKana}</Text>
+      <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
+      <Text style={styles.meta}>
+        学年・性別: {formatGradeLabel(athlete.grade)} {genderLabel(athlete.gender)}
+      </Text>
+      <Text style={styles.meta}>種目: {eventTitle}</Text>
+      <Text style={styles.meta}>記録: {formatTimeForDocument({ timeText, timeMs })}</Text>
+      <Text style={styles.meta}>発行年月: {issueLabel}</Text>
+    </Page>
   );
 }
 
@@ -1130,6 +1175,22 @@ export async function renderRecordPdf({
 
 export async function renderRecordCertificatePdf(input: RecordCertificatePdfInput): Promise<Buffer> {
   return renderPdfDocument(buildReadableRecordDocument({ variant: "swimming", ...input }));
+}
+
+export async function renderRecordCertificatesPdf(inputs: RecordCertificatePdfInput[]): Promise<Buffer> {
+  return renderPdfDocument(
+    <Document>
+      {inputs.map((input, index) =>
+        buildReadableRecordPage({
+          variant: "swimming",
+          athlete: input.athlete,
+          entries: input.entries,
+          issueLabel: input.issueLabel,
+          pageKey: `${input.athlete.fullName}-${input.issueLabel}-${index}`
+        })
+      )}
+    </Document>
+  );
 }
 
 export async function renderCertificatePdf({
@@ -1154,6 +1215,27 @@ export async function renderFirstPrizeAwardPdf(input: FirstPrizeAwardPdfInput): 
   }
 
   return renderPdfDocument(buildFirstPrizeAwardFallbackDocument(input));
+}
+
+export async function renderFirstPrizeAwardsPdf(inputs: FirstPrizeAwardPdfInput[]): Promise<Buffer> {
+  const templateDataUri = await getTemplateDataUri(FIRST_PRIZE_TEMPLATE_NAME);
+
+  return renderPdfDocument(
+    <Document>
+      {inputs.map((input, index) =>
+        templateDataUri
+          ? buildFirstPrizeAwardTemplatePage({
+              ...input,
+              templateDataUri,
+              pageKey: `${input.athlete.fullName}-${input.eventTitle}-${input.issueLabel}-${index}`
+            })
+          : buildFirstPrizeAwardFallbackPage({
+              ...input,
+              pageKey: `${input.athlete.fullName}-${input.eventTitle}-${input.issueLabel}-${index}`
+            })
+      )}
+    </Document>
+  );
 }
 
 export async function renderRankingPdf({
