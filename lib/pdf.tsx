@@ -11,7 +11,7 @@ import { formatGradeLabel, formatGradeShortLabel } from "./grade";
 import { paginateRankingGroups } from "./ranking-pagination";
 
 const FONT_FAMILY = "NotoSansJP";
-const NOTO_SANS_JP_FONT_URL = "https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Regular.otf";
+const LOCAL_NOTO_SANS_JP_FONT_PATH = path.join(process.cwd(), "public", "fonts", "NotoSansCJKjp-Regular.otf");
 const A4_WIDTH = 595.28;
 const A4_HEIGHT = 841.89;
 const A5_WIDTH = 419.53;
@@ -86,7 +86,7 @@ function ensureFontRegistered() {
 
   Font.register({
     family: FONT_FAMILY,
-    src: NOTO_SANS_JP_FONT_URL
+    src: LOCAL_NOTO_SANS_JP_FONT_PATH
   });
 
   fontRegistered = true;
