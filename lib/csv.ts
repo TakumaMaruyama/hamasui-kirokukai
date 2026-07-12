@@ -1,5 +1,6 @@
 import { parse } from "csv-parse/sync";
 import { MeetContext, formatMeetTitle, heldOnFromMeetContext } from "./meet-context";
+import { normalizeSchoolTimeText } from "./school-attendance";
 
 export type CsvRow = {
   meet_title: string;
@@ -21,6 +22,7 @@ type RawCsvRow = Record<string, CsvValue>;
 type ParseCsvOptions = {
   fileName?: string;
   meetContext?: MeetContext;
+  schoolMode?: boolean;
 };
 
 const REQUIRED_COLUMNS: Array<keyof CsvRow> = [
@@ -87,6 +89,31 @@ function pickCellValue(value: CsvValue, mode: "first" | "last" = "first"): strin
 
   const candidates = mode === "first" ? value : [...value].reverse();
 
+  for (const candidate of candidates) {
+    const trimmed = normalizeCell(candidate);
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return normalizeCell(value[0]);
+}
+
+function pickEventTitle(
+  value: CsvValue,
+  options: { preserveOriginal?: boolean; mode?: "first" | "last" } = {}
+): string {
+  if (!options.preserveOriginal) {
+    return pickCellValue(value, options.mode);
+  }
+
+  const normalizeCell = (input: string | undefined): string => (input ?? "").trim();
+
+  if (!Array.isArray(value)) {
+    return normalizeCell(value);
+  }
+
+  const candidates = options.mode === "last" ? [...value].reverse() : value;
   for (const candidate of candidates) {
     const trimmed = normalizeCell(candidate);
     if (trimmed) {
@@ -313,20 +340,28 @@ function hasColumns(columnSet: Set<string>, requiredColumns: string[]): boolean 
   return requiredColumns.every((column) => columnSet.has(column));
 }
 
-function normalizeCanonicalRows(rows: RawCsvRow[]): CsvRow[] {
-  return rows.map((row) => ({
-    meet_title: pickCellValue(row.meet_title),
-    held_on: pickCellValue(row.held_on),
-    full_name: pickCellValue(row.full_name),
-    full_name_kana: pickCellValue(row.full_name_kana) || undefined,
-    grade: normalizeGrade(pickCellValue(row.grade)),
-    gender: pickCellValue(row.gender),
-    event_title: pickCellValue(row.event_title),
-    style: pickCellValue(row.style),
-    distance_m: pickCellValue(row.distance_m),
-    lane: pickCellValue(row.lane) || undefined,
-    time_text: pickCellValue(row.time_text)
-  }));
+function normalizeCanonicalRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRow[] {
+  return rows.map((row) => {
+    const eventTitle = pickEventTitle(row.event_title, { preserveOriginal: options.schoolMode });
+    const style = pickCellValue(row.style);
+    const distanceM = pickCellValue(row.distance_m);
+
+    return {
+      meet_title: pickCellValue(row.meet_title),
+      held_on: pickCellValue(row.held_on),
+      full_name: pickCellValue(row.full_name),
+      full_name_kana: pickCellValue(row.full_name_kana) || undefined,
+      grade: normalizeGrade(pickCellValue(row.grade)),
+      gender: pickCellValue(row.gender),
+      event_title: eventTitle,
+      style: options.schoolMode ? style || normalizeStyle(eventTitle) : style,
+      distance_m: options.schoolMode ? distanceM || extractDistance(eventTitle) || "0" : distanceM,
+      lane: pickCellValue(row.lane) || undefined,
+      time_text: options.schoolMode
+        ? normalizeSchoolTimeText(pickCellValue(row.time_text))
+        : pickCellValue(row.time_text)
+    };
+  });
 }
 
 function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRow[] {
@@ -344,12 +379,13 @@ function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRo
   const normalizedRows: CsvRow[] = [];
 
   for (const [index, row] of rows.entries()) {
-    const eventTitle = pickCellValue(row.event_title);
+    const eventTitle = pickEventTitle(row.event_title, { preserveOriginal: options.schoolMode });
     const fullName = pickCellValue(row.full_name).replace(/\s+/g, " ").trim();
     const fullNameKana = pickCellValue(row.full_name_kana).replace(/\s+/g, " ").trim();
     const gender = normalizeGender(pickCellValue(row.gender));
     const grade = normalizeGrade(pickCellValue(row.grade), { legacyNumericElementary: true });
-    const timeText = pickCellValue(row.time_text).replace(/\s+/g, "");
+    const rawTimeText = pickCellValue(row.time_text).replace(/\s+/g, "");
+    const timeText = options.schoolMode ? normalizeSchoolTimeText(rawTimeText) : rawTimeText;
     const lane = pickCellValue(row.lane);
 
     if (!fullName && !timeText) {
@@ -375,7 +411,7 @@ function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRo
     }
 
     const distanceM = extractDistance(eventTitle);
-    if (!distanceM) {
+    if (!distanceM && !options.schoolMode) {
       throw new Error(`${index + 2}行目: 種目から距離を判定できませんでした (${eventTitle})`);
     }
 
@@ -388,7 +424,8 @@ function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRo
       gender,
       event_title: eventTitle,
       style: normalizeStyle(eventTitle),
-      distance_m: distanceM,
+      // 小学校の種目名は自由入力。距離を含まない場合は分類用の 0 を使う。
+      distance_m: distanceM || "0",
       lane: lane || undefined,
       time_text: timeText
     });
@@ -419,7 +456,7 @@ export function parseCsv(content: string, options: ParseCsvOptions = {}): CsvRow
     const columns = toSet(Object.keys(rows[0]));
 
     if (hasColumns(columns, REQUIRED_COLUMNS)) {
-      return normalizeCanonicalRows(rows);
+      return normalizeCanonicalRows(rows, options);
     }
 
     if (hasColumns(columns, LEGACY_COLUMNS) && !columns.has("meet_title") && !columns.has("held_on")) {
@@ -431,7 +468,7 @@ export function parseCsv(content: string, options: ParseCsvOptions = {}): CsvRow
       throw new Error(`必須列が不足しています: ${missing.join(", ")}`);
     }
 
-    return normalizeCanonicalRows(rows);
+    return normalizeCanonicalRows(rows, options);
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`CSV解析に失敗しました: ${error.message}`);

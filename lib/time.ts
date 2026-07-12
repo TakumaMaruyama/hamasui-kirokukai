@@ -1,27 +1,27 @@
 export function parseTimeToMs(timeText: string): number {
-  const trimmed = timeText.trim();
+  const trimmed = timeText.normalize("NFKC").trim();
   if (!trimmed) {
     throw new Error("time_text is empty");
   }
 
-  const parts = trimmed.split(":");
-  let minutes = 0;
-  let secondsPart = trimmed;
-
-  if (parts.length === 2) {
-    minutes = Number(parts[0]);
-    secondsPart = parts[1];
-  } else if (parts.length > 2) {
+  const match = trimmed.match(/^(?:(\d+):)?(\d+)(?:\.(\d{1,3}))?$/);
+  if (!match) {
     throw new Error("Invalid time format");
   }
 
-  const [secStr, msStr] = secondsPart.split(".");
-  const seconds = Number(secStr);
-  const milliseconds = msStr ? Number(msStr.padEnd(3, "0")) : 0;
+  const hasMinutes = typeof match[1] === "string";
+  const minutes = hasMinutes ? Number(match[1]) : 0;
+  const seconds = Number(match[2]);
+  const milliseconds = match[3] ? Number(match[3].padEnd(3, "0")) : 0;
 
-  if ([minutes, seconds, milliseconds].some((value) => Number.isNaN(value))) {
+  if (hasMinutes && seconds >= 60) {
     throw new Error("Invalid time format");
   }
 
-  return minutes * 60_000 + seconds * 1000 + milliseconds;
+  const total = minutes * 60_000 + seconds * 1000 + milliseconds;
+  if (!Number.isSafeInteger(total)) {
+    throw new Error("Invalid time format");
+  }
+
+  return total;
 }

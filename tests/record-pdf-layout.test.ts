@@ -215,7 +215,7 @@ describe("record PDF layout", () => {
     expect(collectRecordDecorDots(root)).toHaveLength(0);
   });
 
-  it("renders school record footer and keeps four rows with blanks", async () => {
+  it("renders the school encouragement message without referring to next year", async () => {
     await renderRecordPdf({
       athlete: {
         fullName: "窪園 彩希",
@@ -223,7 +223,8 @@ describe("record PDF layout", () => {
         grade: 8,
         gender: "female"
       },
-      entries: [{ eventTitle: "15mクロール", timeText: "12.96" }]
+      entries: [{ eventTitle: "15mクロール", timeText: "12.96" }],
+      issueLabel: "2026年7月"
     });
 
     const root = mockState.lastDocument as any;
@@ -235,10 +236,72 @@ describe("record PDF layout", () => {
     expect(collectTextNodes(rowViews[3]).join("").trim()).toBe("");
 
     const texts = collectTextNodes(root).join("\n");
-    expect(texts).toContain("学校委託コース");
-    expect(texts).toContain("学校委託コース記録証");
+    expect(texts).not.toContain("学校委託コース");
+    expect(texts).toContain("水泳学習、よくがんばりました。");
+    expect(texts).toContain("開催年月 2026年7月");
+    expect(texts).not.toContain("来年");
     expect(texts).toContain("12秒96");
     expect(texts).not.toContain("発行年月");
+  });
+
+  it("shows an entered event name and leaves the record blank for a school absence marker", async () => {
+    await renderRecordPdf({
+      athlete: {
+        fullName: "山田 太郎",
+        fullNameKana: "やまだ たろう",
+        grade: 5,
+        gender: "male"
+      },
+      entries: [{ eventTitle: "けのびチャレンジ", timeText: "a", timeMs: -1 }],
+      issueLabel: "2026年7月"
+    });
+
+    const texts = collectTextNodes(mockState.lastDocument).join("\n");
+    expect(texts).toContain("けのびチャレンジ");
+    expect(texts).not.toContain("欠席");
+    expect(texts).not.toContain("\na\n");
+    expect(texts).toContain("よくがんばりました");
+    expect(texts).not.toContain("来年");
+  });
+
+  it("continues school records on another page instead of dropping a fifth event", async () => {
+    await renderRecordPdf({
+      athlete: {
+        fullName: "五種目 太郎",
+        fullNameKana: "ごしゅもく たろう",
+        grade: 6,
+        gender: "male"
+      },
+      entries: Array.from({ length: 5 }, (_, index) => ({
+        eventTitle: `${index + 1}種目`,
+        timeText: `${index + 10}.00`
+      })),
+      issueLabel: "2026年7月"
+    });
+
+    const root = mockState.lastDocument as any;
+    expect(collectElementsByType(root, "Page")).toHaveLength(2);
+    expect(collectRecordRowViews(root)).toHaveLength(8);
+    expect(collectTextNodes(root).join("\n")).toContain("5種目");
+  });
+
+  it("keeps a long free-form school event name and reduces its font size", async () => {
+    const longEventTitle = "先生が入力したとても長いけのびとバタ足のチャレンジ種目名";
+
+    await renderRecordPdf({
+      athlete: {
+        fullName: "自由入力 太郎",
+        fullNameKana: "じゆうにゅうりょく たろう",
+        grade: 5,
+        gender: "male"
+      },
+      entries: [{ eventTitle: longEventTitle, timeText: "45.00" }],
+      issueLabel: "2026年7月"
+    });
+
+    const eventElement = findTextElement(mockState.lastDocument, (text) => text === longEventTitle);
+    expect(eventElement).toBeTruthy();
+    expect(flattenStyle(eventElement.props.style).fontSize).toBe(8);
   });
 
   it("renders four filled rows and silently truncates a fifth entry", async () => {

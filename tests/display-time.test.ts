@@ -11,6 +11,11 @@ describe("formatTimeForDocument", () => {
     expect(formatTimeForDocument({ timeText: "1:05.32", timeMs: 65_320 })).toBe("1分5秒32");
     expect(formatTimeForDocument({ timeText: "2:03.00", timeMs: 123_000 })).toBe("2分3秒00");
   });
+
+  it("leaves a school absence marker blank", () => {
+    expect(formatTimeForDocument({ timeText: "a", timeMs: -1 })).toBe("");
+    expect(formatTimeForDocument({ timeText: " Ａ " })).toBe("");
+  });
 });
 
 describe("formatImprovementTotal", () => {
