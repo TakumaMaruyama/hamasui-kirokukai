@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const rows: ReturnType<typeof parseCsv> = [];
     for (const file of files) {
       const content = await readCsvText(file);
-      rows.push(...parseCsv(content, { fileName: file.name, meetContext: context.data }));
+      rows.push(...parseCsv(content, { fileName: file.name, meetContext: context.data, schoolMode: true }));
     }
     return NextResponse.json({ rows });
   } catch (error) {

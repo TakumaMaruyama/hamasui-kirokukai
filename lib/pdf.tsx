@@ -27,6 +27,7 @@ const TEMPLATE_EMBED_HEIGHT = 1754;
 const TEMPLATE_DIRECT_FILE_BYTES_LIMIT = 350 * 1024;
 const TEMPLATE_JPEG_QUALITY = 82;
 const MAX_RECORD_TABLE_ROWS = 4;
+const SCHOOL_RECORD_FOOTER_TEXT = "水泳学習、よくがんばりました。";
 
 const templateCache = new Map<string, { dataUri: string; filePath: string; mtimeMs: number }>();
 let fontRegistered = false;
@@ -69,7 +70,7 @@ type RecordTableRow = {
 type RecordDisplayModel = {
   tableRows: RecordTableRow[];
   footerText: string;
-  headerSubtitle: string | null;
+  footerDetailText: string | null;
 };
 
 type PdfAthlete = {
@@ -219,8 +220,8 @@ function buildRecordDisplayModel({
 
   return {
     tableRows,
-    footerText: variant === "swimming" && issueLabel ? `発行年月 ${issueLabel}` : "学校委託コース記録証",
-    headerSubtitle: variant === "swimming" ? null : "学校委託コース"
+    footerText: variant === "swimming" && issueLabel ? `発行年月 ${issueLabel}` : SCHOOL_RECORD_FOOTER_TEXT,
+    footerDetailText: variant === "school" && issueLabel ? `開催年月 ${issueLabel}` : null
   };
 }
 
@@ -236,6 +237,20 @@ function resolveRecordNameFontSize(fullName: string): 24 | 21 | 18 {
   }
 
   return 24;
+}
+
+function resolveRecordEventFontSize(eventTitle: string): 12 | 10 | 8 {
+  const normalizedLength = eventTitle.replace(/\s+/g, "").length;
+
+  if (normalizedLength >= 24) {
+    return 8;
+  }
+
+  if (normalizedLength >= 16) {
+    return 10;
+  }
+
+  return 12;
 }
 
 function resolveFirstPrizeAwardNameFontSize(fullName: string): 36 | 32 | 28 {
@@ -478,11 +493,6 @@ const styles = StyleSheet.create({
     color: "#12385b",
     marginBottom: 3
   },
-  recordHeaderSubtitle: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: "#456886"
-  },
   recordBody: {
     flex: 1,
     paddingTop: 20,
@@ -628,6 +638,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: 700,
     color: "#12385b",
+    textAlign: "center"
+  },
+  recordFooterDetailText: {
+    marginTop: 6,
+    fontSize: 9,
+    color: "#456886",
     textAlign: "center"
   },
   prizeName: {
@@ -928,9 +944,25 @@ function buildReadableRecordDocument({
   entries: RecordPdfEntry[];
   issueLabel?: string;
 }): ReactElement {
+  const pageEntries = variant === "school"
+    ? (entries.length > 0
+        ? Array.from({ length: Math.ceil(entries.length / MAX_RECORD_TABLE_ROWS) }, (_, index) =>
+            entries.slice(index * MAX_RECORD_TABLE_ROWS, (index + 1) * MAX_RECORD_TABLE_ROWS)
+          )
+        : [[]])
+    : [entries];
+
   return (
     <Document>
-      {buildReadableRecordPage({ variant, athlete, entries, issueLabel })}
+      {pageEntries.map((entriesForPage, index) =>
+        buildReadableRecordPage({
+          variant,
+          athlete,
+          entries: entriesForPage,
+          issueLabel,
+          pageKey: `${athlete.fullName}-${variant}-${index}`
+        })
+      )}
     </Document>
   );
 }
@@ -960,7 +992,6 @@ function buildReadableRecordPage({
             <Text style={styles.recordHeaderEyebrow}>はまだスイミングスクール記録会</Text>
           </View>
           <Text style={styles.recordHeaderTitle}>記録証</Text>
-          {display.headerSubtitle ? <Text style={styles.recordHeaderSubtitle}>{display.headerSubtitle}</Text> : null}
         </View>
 
         <View style={styles.recordBody}>
@@ -993,7 +1024,15 @@ function buildReadableRecordPage({
                 ]}
               >
                 <View style={[styles.recordTableCell, styles.recordTableCellEvent]}>
-                  <Text style={styles.recordTableEventText}>{row.kind === "filled" ? row.entry.eventTitle : ""}</Text>
+                  <Text
+                    style={
+                      row.kind === "filled"
+                        ? [styles.recordTableEventText, { fontSize: resolveRecordEventFontSize(row.entry.eventTitle) }]
+                        : styles.recordTableEventText
+                    }
+                  >
+                    {row.kind === "filled" ? row.entry.eventTitle : ""}
+                  </Text>
                 </View>
                 <View style={[styles.recordTableCell, styles.recordTableCellTime]}>
                   <Text style={styles.recordTableTimeText}>
@@ -1010,6 +1049,9 @@ function buildReadableRecordPage({
           <View style={styles.recordFooterPill}>
             <Text style={styles.recordFooterText}>{display.footerText}</Text>
           </View>
+          {display.footerDetailText ? (
+            <Text style={styles.recordFooterDetailText}>{display.footerDetailText}</Text>
+          ) : null}
         </View>
       </View>
     </Page>
@@ -1165,12 +1207,14 @@ function buildFirstPrizeAwardFallbackPage({
 
 export async function renderRecordPdf({
   athlete,
-  entries
+  entries,
+  issueLabel
 }: {
   athlete: PdfAthlete;
   entries: RecordPdfEntry[];
+  issueLabel: string;
 }): Promise<Buffer> {
-  return renderPdfDocument(buildReadableRecordDocument({ variant: "school", athlete, entries }));
+  return renderPdfDocument(buildReadableRecordDocument({ variant: "school", athlete, entries, issueLabel }));
 }
 
 export async function renderRecordCertificatePdf(input: RecordCertificatePdfInput): Promise<Buffer> {

@@ -2,6 +2,12 @@ import { Prisma, Program } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseTimeToMs } from "@/lib/time";
 import { assignDenseRanks } from "@/lib/rank";
+import {
+  isSchoolAbsenceResult,
+  isSchoolAbsenceTimeText,
+  normalizeSchoolTimeText,
+  SCHOOL_ABSENCE_TIME_MS
+} from "@/lib/school-attendance";
 
 export type ImportRow = {
   meet_title: string;
@@ -31,6 +37,22 @@ const GENDER_MAP: Record<string, Prisma.AthleteUncheckedCreateInput["gender"]> =
 };
 
 const MAX_MEET_TITLE_ATTEMPTS = 200;
+
+type ParsedImportRow = {
+  sourceIndex: number;
+  meetTitle: string;
+  heldOn: Date;
+  fullName: string;
+  fullNameKana?: string;
+  grade: number;
+  gender: Prisma.AthleteUncheckedCreateInput["gender"];
+  eventTitle: string;
+  style: string;
+  distanceM: number;
+  lane: number | null;
+  timeText: string;
+  timeMs: number;
+};
 
 function parseRequiredText(value: string | undefined, fieldName: string): string {
   const normalized = value?.trim();
@@ -110,6 +132,28 @@ function parseDate(value: string, fieldName: string): Date {
   return parsed;
 }
 
+function parseImportRow(program: Program, row: ImportRow, sourceIndex: number): ParsedImportRow {
+  const rawTimeText = parseRequiredText(row.time_text, "time_text");
+  const isAbsent = program === "school" && isSchoolAbsenceTimeText(rawTimeText);
+  const timeText = isAbsent ? normalizeSchoolTimeText(rawTimeText) : rawTimeText;
+
+  return {
+    sourceIndex,
+    meetTitle: parseRequiredText(row.meet_title, "meet_title"),
+    heldOn: parseDate(row.held_on, "held_on"),
+    fullName: normalizeFullName(parseRequiredText(row.full_name, "full_name")),
+    fullNameKana: normalizeOptionalFullNameKana(row.full_name_kana),
+    grade: parseRequiredInt(row.grade, "grade"),
+    gender: parseGender(row.gender),
+    eventTitle: parseRequiredText(row.event_title, "event_title"),
+    style: parseRequiredText(row.style, "style"),
+    distanceM: parseRequiredInt(row.distance_m, "distance_m"),
+    lane: parseOptionalInt(row.lane, "lane"),
+    timeText,
+    timeMs: isAbsent ? SCHOOL_ABSENCE_TIME_MS : parseTimeToMs(timeText)
+  };
+}
+
 function isMeetUniqueConstraintError(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
@@ -151,20 +195,33 @@ export async function importRows(program: Program, rows: ImportRow[]) {
   const rankTargets = new Set<string>();
   const importMeetCache = new Map<string, Promise<{ id: string }>>();
 
-  for (const [index, row] of rows.entries()) {
+  // Validate every row before the first database write. This prevents a bad
+  // row near the end of a CSV from leaving a partially imported meet behind.
+  const parsedRows = rows.map((row, sourceIndex) => {
     try {
-      const meetTitle = parseRequiredText(row.meet_title, "meet_title");
-      const heldOn = parseDate(row.held_on, "held_on");
-      const fullName = normalizeFullName(parseRequiredText(row.full_name, "full_name"));
-      const fullNameKana = normalizeOptionalFullNameKana(row.full_name_kana);
-      const grade = parseRequiredInt(row.grade, "grade");
-      const gender = parseGender(row.gender);
-      const eventTitle = parseRequiredText(row.event_title, "event_title");
-      const style = parseRequiredText(row.style, "style");
-      const distanceM = parseRequiredInt(row.distance_m, "distance_m");
-      const lane = parseOptionalInt(row.lane, "lane");
-      const timeText = parseRequiredText(row.time_text, "time_text");
-      const timeMs = parseTimeToMs(timeText);
+      return parseImportRow(program, row, sourceIndex);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "不明なエラー";
+      throw new Error(`${sourceIndex + 2}行目: ${message}`);
+    }
+  });
+
+  for (const row of parsedRows) {
+    try {
+      const {
+        meetTitle,
+        heldOn,
+        fullName,
+        fullNameKana,
+        grade,
+        gender,
+        eventTitle,
+        style,
+        distanceM,
+        lane,
+        timeText,
+        timeMs
+      } = row;
 
       const existingAthlete = await prisma.athlete.findFirst({
         where: {
@@ -274,7 +331,7 @@ export async function importRows(program: Program, rows: ImportRow[]) {
       rankTargets.add(`${meet.id}:${event.id}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "不明なエラー";
-      throw new Error(`${index + 2}行目: ${message}`);
+      throw new Error(`${row.sourceIndex + 2}行目: ${message}`);
     }
   }
 
@@ -282,10 +339,11 @@ export async function importRows(program: Program, rows: ImportRow[]) {
     const [meetId, eventId] = target.split(":");
     const results = await prisma.result.findMany({
       where: { meetId, eventId },
-      select: { id: true, timeMs: true }
+      select: { id: true, timeText: true, timeMs: true }
     });
 
-    const ranks = assignDenseRanks(results);
+    const recordedResults = results.filter((result) => !isSchoolAbsenceResult(result));
+    const ranks = assignDenseRanks(recordedResults);
     await prisma.$transaction(
       results.map((result) =>
         prisma.result.update({

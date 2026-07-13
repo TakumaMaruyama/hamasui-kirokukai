@@ -1,4 +1,5 @@
 import { parseTimeToMs } from "./time";
+import { isSchoolAbsenceTimeText } from "./school-attendance";
 
 type DisplayTimeInput = {
   timeText: string;
@@ -28,6 +29,10 @@ export function formatImprovementTotal(ms: number): string {
 export function formatTimeForDocument(input: DisplayTimeInput): string {
   const trimmed = input.timeText.trim();
   if (!trimmed) {
+    return "";
+  }
+
+  if (isSchoolAbsenceTimeText(trimmed)) {
     return "";
   }
 

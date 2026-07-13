@@ -47,6 +47,34 @@ describe("parseCsv", () => {
     });
   });
 
+  it("normalizes explicit school absence markers", () => {
+    const content =
+      "記録会名称,開催日,氏名,学年,性別,種目名,泳法,距離,レーン,記録\n" +
+      "学校委託記録会,2026-07-01,欠席 太郎,5,male,２５ｍ自由形,free,25,1,Ａ";
+
+    const rows = parseCsv(content, { schoolMode: true });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.time_text).toBe("a");
+    expect(rows[0]?.event_title).toBe("２５ｍ自由形");
+  });
+
+  it("fills internal classification values for a canonical free-form school event", () => {
+    const content =
+      "記録会名称,開催日,氏名,学年,性別,種目名,泳法,距離,レーン,記録\n" +
+      "学校委託記録会,2026-07-01,自由 花子,5,female,けのびチャレンジ,,,,a";
+
+    const rows = parseCsv(content, { schoolMode: true });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      event_title: "けのびチャレンジ",
+      style: "other",
+      distance_m: "0",
+      time_text: "a"
+    });
+  });
+
   it("throws when required columns are missing", () => {
     const content =
       "meet_title,held_on,full_name,grade,gender,event_title,distance_m,time_text\n" +
@@ -124,6 +152,25 @@ describe("parseCsv", () => {
       full_name: "満留 一智",
       grade: "2",
       gender: "male"
+    });
+  });
+
+  it("keeps free-form event names that do not contain a distance", () => {
+    const content =
+      "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +
+      "けのびチャレンジ,1,,自由 太郎,男,じゆう たろう,小2,a,\n";
+
+    const rows = parseCsv(content, {
+      meetContext: { year: 2026, month: 7 },
+      schoolMode: true
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      event_title: "けのびチャレンジ",
+      style: "other",
+      distance_m: "0",
+      time_text: "a"
     });
   });
 

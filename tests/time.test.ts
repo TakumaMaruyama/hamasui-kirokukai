@@ -8,5 +8,12 @@ describe("parseTimeToMs", () => {
 
   it("parses seconds only", () => {
     expect(parseTimeToMs("45.1")).toBe(45_100);
+    expect(parseTimeToMs("65.29")).toBe(65_290);
+  });
+
+  it("rejects negative and malformed times", () => {
+    expect(() => parseTimeToMs("-0.001")).toThrow("Invalid time format");
+    expect(() => parseTimeToMs("1:60.00")).toThrow("Invalid time format");
+    expect(() => parseTimeToMs("1.2.3")).toThrow("Invalid time format");
   });
 });

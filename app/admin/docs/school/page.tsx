@@ -7,6 +7,7 @@ export default function SchoolDocsPage() {
         <h1>小学校記録証</h1>
         <p className="notice">
           年・月・曜日で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
+          タイムが「a」の子どもは記録欄を空欄にし、入力された種目名と開催年月を使って記録証を作成します。
         </p>
       </header>
       <div className="card">
