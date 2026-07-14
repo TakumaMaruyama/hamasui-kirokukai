@@ -6,8 +6,8 @@ export default function SchoolDocsPage() {
       <header>
         <h1>小学校記録証</h1>
         <p className="notice">
-          年・月・曜日で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
-          タイムが「a」の子どもは記録欄を空欄にし、入力された種目名と開催年月を使って記録証を作成します。
+          年・月で絞り込めます。氏名を入れると、その子どもの指定年月データだけを出力できます。
+          学校ごとに1つのPDFへまとめます。タイムが「a」の子どもは、記録表のない専用デザインで作成します。
         </p>
       </header>
       <div className="card">
@@ -15,6 +15,7 @@ export default function SchoolDocsPage() {
           title="記録証PDFを一括生成"
           endpoint="/api/admin/docs/school/records"
           filename="school_records.zip"
+          allowWeekday={false}
         />
       </div>
     </main>

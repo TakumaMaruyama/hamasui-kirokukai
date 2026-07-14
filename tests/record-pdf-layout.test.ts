@@ -1,6 +1,11 @@
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderRecordCertificatePdf, renderRecordCertificatesPdf, renderRecordPdf } from "../lib/pdf";
+import {
+  renderRecordCertificatePdf,
+  renderRecordCertificatesPdf,
+  renderRecordPdf,
+  renderSchoolRecordCertificatesPdf
+} from "../lib/pdf";
 
 const mockState = vi.hoisted(() => ({
   lastDocument: null as any
@@ -237,14 +242,15 @@ describe("record PDF layout", () => {
 
     const texts = collectTextNodes(root).join("\n");
     expect(texts).not.toContain("学校委託コース");
-    expect(texts).toContain("水泳学習、よくがんばりました。");
+    expect(texts).toContain("水泳学習");
+    expect(texts).toContain("よくがんばりました。");
     expect(texts).toContain("開催年月 2026年7月");
     expect(texts).not.toContain("来年");
     expect(texts).toContain("12秒96");
     expect(texts).not.toContain("発行年月");
   });
 
-  it("shows an entered event name and leaves the record blank for a school absence marker", async () => {
+  it("uses a table-free school design for an absentee", async () => {
     await renderRecordPdf({
       athlete: {
         fullName: "山田 太郎",
@@ -252,16 +258,41 @@ describe("record PDF layout", () => {
         grade: 5,
         gender: "male"
       },
-      entries: [{ eventTitle: "けのびチャレンジ", timeText: "a", timeMs: -1 }],
+      entries: [{ eventTitle: "", timeText: "a", timeMs: -1 }],
       issueLabel: "2026年7月"
     });
 
     const texts = collectTextNodes(mockState.lastDocument).join("\n");
-    expect(texts).toContain("けのびチャレンジ");
+    expect(collectRecordRowViews(mockState.lastDocument)).toHaveLength(0);
+    expect(texts).not.toContain("今回の記録");
+    expect(texts).not.toContain("種目");
+    expect(texts).not.toContain("記録\n");
     expect(texts).not.toContain("欠席");
     expect(texts).not.toContain("\na\n");
-    expect(texts).toContain("よくがんばりました");
+    expect(texts).toContain("水泳学習");
+    expect(texts).toContain("よくがんばりました。");
+    expect(texts).toContain("開催年月 2026年7月");
     expect(texts).not.toContain("来年");
+  });
+
+  it("combines all children from one school into one multi-page PDF", async () => {
+    await renderSchoolRecordCertificatesPdf([
+      {
+        athlete: { fullName: "児童 一", grade: 5, gender: "male" },
+        entries: [{ eventTitle: "けのび", timeText: "30.00" }],
+        issueLabel: "2026年7月"
+      },
+      {
+        athlete: { fullName: "児童 二", grade: 6, gender: "female" },
+        entries: [{ eventTitle: "", timeText: "a", timeMs: -1 }],
+        issueLabel: "2026年7月"
+      }
+    ]);
+
+    expect(collectElementsByType(mockState.lastDocument, "Page")).toHaveLength(2);
+    const texts = collectTextNodes(mockState.lastDocument).join("\n");
+    expect(texts).toContain("児童 一");
+    expect(texts).toContain("児童 二");
   });
 
   it("continues school records on another page instead of dropping a fifth event", async () => {

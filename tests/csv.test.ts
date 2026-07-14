@@ -50,13 +50,14 @@ describe("parseCsv", () => {
   it("normalizes explicit school absence markers", () => {
     const content =
       "記録会名称,開催日,氏名,学年,性別,種目名,泳法,距離,レーン,記録\n" +
-      "学校委託記録会,2026-07-01,欠席 太郎,5,male,２５ｍ自由形,free,25,1,Ａ";
+      "浜田小学校,2026-07-01,欠席 太郎,5,male,,other,0,1,Ａ";
 
     const rows = parseCsv(content, { schoolMode: true });
 
     expect(rows).toHaveLength(1);
     expect(rows[0]?.time_text).toBe("a");
-    expect(rows[0]?.event_title).toBe("２５ｍ自由形");
+    expect(rows[0]?.event_title).toBe("");
+    expect(rows[0]?.meet_title).toBe("浜田小学校");
   });
 
   it("fills internal classification values for a canonical free-form school event", () => {
@@ -158,7 +159,7 @@ describe("parseCsv", () => {
   it("keeps free-form event names that do not contain a distance", () => {
     const content =
       "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +
-      "けのびチャレンジ,1,,自由 太郎,男,じゆう たろう,小2,a,\n";
+      "けのびチャレンジ,1,,自由 太郎,男,じゆう たろう,小2,45.00,\n";
 
     const rows = parseCsv(content, {
       meetContext: { year: 2026, month: 7 },
@@ -170,8 +171,40 @@ describe("parseCsv", () => {
       event_title: "けのびチャレンジ",
       style: "other",
       distance_m: "0",
+      time_text: "45.00"
+    });
+  });
+
+  it("imports a school absentee with a blank event and uses the file name as the school name", () => {
+    const content =
+      "種目,組,コース,名前,性別,ふりがな,学年,タイム,備考\n" +
+      ",1,,欠席 太郎,男,けっせき たろう,小2,a,\n";
+
+    const rows = parseCsv(content, {
+      fileName: "浜田小学校.csv",
+      meetContext: { year: 2026, month: 7 },
+      schoolMode: true
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      meet_title: "浜田小学校",
+      held_on: "2026-07-01",
+      event_title: "",
+      style: "other",
+      distance_m: "0",
       time_text: "a"
     });
+  });
+
+  it("accepts 学校名 as the canonical school-name header", () => {
+    const content =
+      "学校名,開催日,氏名,学年,性別,種目名,泳法,距離,記録\n" +
+      "石見小学校,2026-07-01,出席 花子,5,female,けのび,other,0,31.20";
+
+    const rows = parseCsv(content, { schoolMode: true });
+
+    expect(rows[0]?.meet_title).toBe("石見小学校");
   });
 
   it("normalizes elementary and middle school grades without overlap", () => {

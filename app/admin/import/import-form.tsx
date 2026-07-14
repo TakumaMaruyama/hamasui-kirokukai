@@ -41,6 +41,7 @@ export default function ImportForm({ program }: Props) {
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const showWeekday = program !== "school";
   const importContextLabel = `${year}年${month}月${weekday ? ` ${weekday}` : ""}`;
 
   const buildPreviewFormData = (selectedFiles: File[]) => {
@@ -50,7 +51,7 @@ export default function ImportForm({ program }: Props) {
     }
     formData.append("year", year);
     formData.append("month", month);
-    if (weekday) {
+    if (showWeekday && weekday) {
       formData.append("weekday", weekday);
     }
 
@@ -175,7 +176,7 @@ export default function ImportForm({ program }: Props) {
   return (
     <div>
       <form onSubmit={handlePreview}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(120px, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${showWeekday ? 3 : 2}, minmax(120px, 1fr))`, gap: 12 }}>
           <div>
             <label htmlFor="importYear">年</label>
             <input
@@ -208,25 +209,27 @@ export default function ImportForm({ program }: Props) {
               required
             />
           </div>
-          <div>
-            <label htmlFor="importWeekday">曜日</label>
-            <select
-              id="importWeekday"
-              value={weekday}
-              onChange={(event) => {
-                setWeekday(event.target.value as MeetWeekday | "");
-                setPreview(null);
-                setMessage(null);
-              }}
-            >
-              <option value="">指定なし</option>
-              {WEEKDAY_VALUES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
+          {showWeekday && (
+            <div>
+              <label htmlFor="importWeekday">曜日</label>
+              <select
+                id="importWeekday"
+                value={weekday}
+                onChange={(event) => {
+                  setWeekday(event.target.value as MeetWeekday | "");
+                  setPreview(null);
+                  setMessage(null);
+                }}
+              >
+                <option value="">指定なし</option>
+                {WEEKDAY_VALUES.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div style={{ marginTop: 12 }}>
@@ -247,6 +250,11 @@ export default function ImportForm({ program }: Props) {
         {files.length > 0 && (
           <p className="notice" style={{ marginTop: 8 }}>
             選択中: {files.length}ファイル
+          </p>
+        )}
+        {program === "school" && (
+          <p className="notice" style={{ marginTop: 8 }}>
+            簡易CSVは1校につき1ファイルに分け、ファイル名を学校名にしてください。
           </p>
         )}
         <div style={{ marginTop: 16 }}>

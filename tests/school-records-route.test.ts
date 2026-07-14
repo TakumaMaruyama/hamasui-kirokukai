@@ -4,7 +4,7 @@ const mockState = vi.hoisted(() => ({
   findLatestMeet: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
   findMany: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
   createGeneratedDoc: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-  renderPdf: vi.fn<(...args: unknown[]) => Promise<Buffer>>(async () => Buffer.from("mock-pdf")),
+  renderSchoolPdfs: vi.fn<(...args: unknown[]) => Promise<Buffer>>(async () => Buffer.from("mock-pdf")),
   saveBuffer: vi.fn<(...args: unknown[]) => Promise<string>>(async (...args) => String(args[0])),
   zipBuffers: vi.fn<(...args: unknown[]) => Promise<Buffer>>(async () => Buffer.from("mock-zip"))
 }));
@@ -28,7 +28,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/pdf", () => ({
-  renderRecordPdf: (...args: unknown[]) => mockState.renderPdf(...args)
+  renderSchoolRecordCertificatesPdf: (...args: unknown[]) => mockState.renderSchoolPdfs(...args)
 }));
 
 vi.mock("@/lib/storage", () => ({
@@ -55,6 +55,7 @@ function buildRow(input: {
   fullName?: string;
   fullNameKana?: string;
   eventTitle?: string;
+  schoolName?: string;
   timeText: string;
   timeMs: number;
 }) {
@@ -72,6 +73,10 @@ function buildRow(input: {
       id: input.eventId ?? "event-1",
       title: input.eventTitle ?? "けのびチャレンジ"
     },
+    meet: {
+      id: `meet-${input.schoolName ?? "浜田小学校"}`,
+      title: input.schoolName ?? "浜田小学校"
+    },
     timeText: input.timeText,
     timeMs: input.timeMs
   };
@@ -82,7 +87,7 @@ describe("POST /api/admin/docs/school/records", () => {
     mockState.findLatestMeet.mockReset();
     mockState.findMany.mockReset();
     mockState.createGeneratedDoc.mockReset();
-    mockState.renderPdf.mockClear();
+    mockState.renderSchoolPdfs.mockClear();
     mockState.saveBuffer.mockClear();
     mockState.zipBuffers.mockClear();
   });
@@ -95,15 +100,17 @@ describe("POST /api/admin/docs/school/records", () => {
     const response = await POST(buildRequest({ year: 2026, month: 7 }));
 
     expect(response.status).toBe(200);
-    expect(mockState.renderPdf).toHaveBeenCalledTimes(1);
-    expect(mockState.renderPdf).toHaveBeenCalledWith({
-      athlete: expect.objectContaining({
-        fullName: "欠席 太郎",
-        fullNameKana: "けっせき たろう"
-      }),
-      entries: [{ eventTitle: "けのびチャレンジ", timeText: "a", timeMs: -1 }],
-      issueLabel: "2026年7月"
-    });
+    expect(mockState.renderSchoolPdfs).toHaveBeenCalledTimes(1);
+    expect(mockState.renderSchoolPdfs).toHaveBeenCalledWith([
+      {
+        athlete: expect.objectContaining({
+          fullName: "欠席 太郎",
+          fullNameKana: "けっせき たろう"
+        }),
+        entries: [{ eventTitle: "けのびチャレンジ", timeText: "a", timeMs: -1 }],
+        issueLabel: "2026年7月"
+      }
+    ]);
   });
 
   it("prefers a recorded time over an absence for the same event and month", async () => {
@@ -115,10 +122,10 @@ describe("POST /api/admin/docs/school/records", () => {
     const response = await POST(buildRequest({ year: 2026, month: 7 }));
 
     expect(response.status).toBe(200);
-    const input = mockState.renderPdf.mock.calls[0]?.[0] as {
+    const input = mockState.renderSchoolPdfs.mock.calls[0]?.[0] as Array<{
       entries: Array<{ timeText: string; timeMs: number }>;
-    };
-    expect(input.entries).toEqual([
+    }>;
+    expect(input[0]?.entries).toEqual([
       expect.objectContaining({ timeText: "42.18", timeMs: 42_180 })
     ]);
   });
@@ -134,26 +141,41 @@ describe("POST /api/admin/docs/school/records", () => {
 
     expect(response.status).toBe(200);
     expect(mockState.findMany).toHaveBeenCalledTimes(2);
-    expect(mockState.renderPdf).toHaveBeenCalledWith(
+    expect(mockState.renderSchoolPdfs).toHaveBeenCalledWith([
       expect.objectContaining({
         athlete: expect.objectContaining({ fullNameKana: null })
       })
-    );
+    ]);
   });
 
-  it("sanitizes and de-duplicates PDF names", async () => {
+  it("creates one PDF per school and sanitizes school names", async () => {
     mockState.findMany.mockResolvedValue([
-      buildRow({ athleteId: "athlete-1", fullName: "同姓/同名", timeText: "40.00", timeMs: 40_000 }),
-      buildRow({ athleteId: "athlete-2", fullName: "同姓/同名", timeText: "41.00", timeMs: 41_000 })
+      buildRow({ athleteId: "athlete-1", fullName: "児童 一", schoolName: "浜田/小学校", timeText: "40.00", timeMs: 40_000 }),
+      buildRow({ athleteId: "athlete-2", fullName: "児童 二", schoolName: "石見小学校", timeText: "41.00", timeMs: 41_000 })
     ]);
 
     const response = await POST(buildRequest({ year: 2026, month: 7 }));
 
     expect(response.status).toBe(200);
+    expect(mockState.renderSchoolPdfs).toHaveBeenCalledTimes(2);
     const files = mockState.zipBuffers.mock.calls[0]?.[0] as Array<{ name: string }>;
     expect(files.map((file) => file.name)).toEqual([
-      "同姓_同名_2026年7月_record.pdf",
-      "同姓_同名_2026年7月_record_2.pdf"
+      "浜田_小学校_2026年7月_records.pdf",
+      "石見小学校_2026年7月_records.pdf"
     ]);
+  });
+
+  it("hides the private blank-event sentinel before PDF rendering", async () => {
+    mockState.findMany.mockResolvedValue([
+      buildRow({ eventTitle: "__school_absence__", timeText: "a", timeMs: -1 })
+    ]);
+
+    const response = await POST(buildRequest({ year: 2026, month: 7 }));
+
+    expect(response.status).toBe(200);
+    const certificates = mockState.renderSchoolPdfs.mock.calls[0]?.[0] as Array<{
+      entries: Array<{ eventTitle: string }>;
+    }>;
+    expect(certificates[0]?.entries[0]?.eventTitle).toBe("");
   });
 });

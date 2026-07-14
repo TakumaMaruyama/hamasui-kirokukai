@@ -37,6 +37,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { importRows, type ImportRow } from "../lib/importer";
+import { SCHOOL_ABSENCE_EVENT_TITLE } from "../lib/school-attendance";
 
 function buildRow(overrides: Partial<ImportRow> = {}): ImportRow {
   return {
@@ -85,32 +86,29 @@ describe("importRows", () => {
         }),
         update: expect.objectContaining({
           timeText: "a",
-          timeMs: -1
+          timeMs: -1,
+          rank: 0
         })
       })
     );
-    expect(mockState.resultUpdate).toHaveBeenCalledWith({
-      where: { id: "result-1" },
-      data: { rank: 0 }
+    expect(mockState.resultFindMany).not.toHaveBeenCalled();
+    expect(mockState.resultUpdate).not.toHaveBeenCalled();
+  });
+
+  it("stores a private event sentinel when an absentee event is blank", async () => {
+    await importRows("school", [buildRow({ event_title: "" })]);
+
+    expect(mockState.eventFindFirst).toHaveBeenCalledWith({
+      where: expect.objectContaining({ title: SCHOOL_ABSENCE_EVENT_TITLE })
     });
   });
 
-  it("keeps absences out of the event ranking", async () => {
-    mockState.resultFindMany.mockResolvedValue([
-      { id: "absent", timeText: "a", timeMs: -1 },
-      { id: "recorded", timeText: "40.00", timeMs: 40_000 }
-    ]);
+  it("does not calculate rankings for recorded school results", async () => {
+    await importRows("school", [buildRow({ time_text: "40.00" })]);
 
-    await importRows("school", [buildRow()]);
-
-    expect(mockState.resultUpdate).toHaveBeenCalledWith({
-      where: { id: "absent" },
-      data: { rank: 0 }
-    });
-    expect(mockState.resultUpdate).toHaveBeenCalledWith({
-      where: { id: "recorded" },
-      data: { rank: 1 }
-    });
+    expect(mockState.resultFindMany).not.toHaveBeenCalled();
+    expect(mockState.resultUpdate).not.toHaveBeenCalled();
+    expect(mockState.transaction).not.toHaveBeenCalled();
   });
 
   it("validates all rows before performing any database writes", async () => {

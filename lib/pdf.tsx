@@ -9,6 +9,7 @@ import { buildChallengeRankingTableRows, type ChallengeRankingTableRow } from ".
 import { formatTimeForDocument } from "./display-time";
 import { formatGradeLabel, formatGradeShortLabel } from "./grade";
 import { paginateRankingGroups } from "./ranking-pagination";
+import { isSchoolAbsenceResult } from "./school-attendance";
 
 const FONT_FAMILY = "NotoSansJP";
 const LOCAL_NOTO_SANS_JP_FONT_PATH = path.join(process.cwd(), "public", "fonts", "NotoSansCJKjp-Regular.otf");
@@ -456,6 +457,7 @@ const styles = StyleSheet.create({
   },
   recordCard: {
     flex: 1,
+    minHeight: A5_HEIGHT - 56,
     backgroundColor: "#ffffff",
     borderWidth: 2,
     borderColor: "#3b82d6",
@@ -620,6 +622,37 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 9,
     color: "#456886"
+  },
+  recordAbsencePanel: {
+    flexGrow: 1,
+    minHeight: 190,
+    backgroundColor: "#f4fbff",
+    borderWidth: 1.5,
+    borderColor: "#8cc7f2",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 30,
+    paddingHorizontal: 24
+  },
+  recordAbsenceLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#2470aa",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#8cc7f2",
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 18,
+    marginBottom: 20
+  },
+  recordAbsenceMessage: {
+    fontSize: 18,
+    fontWeight: 700,
+    color: "#12385b",
+    textAlign: "center",
+    lineHeight: 1.5
   },
   recordFooterSpacer: {
     flexGrow: 1
@@ -944,6 +977,26 @@ function buildReadableRecordDocument({
   entries: RecordPdfEntry[];
   issueLabel?: string;
 }): ReactElement {
+  return (
+    <Document>
+      {buildReadableRecordPages({ variant, athlete, entries, issueLabel })}
+    </Document>
+  );
+}
+
+function buildReadableRecordPages({
+  variant,
+  athlete,
+  entries,
+  issueLabel,
+  pageKeyPrefix
+}: {
+  variant: RecordLayoutVariant;
+  athlete: PdfAthlete;
+  entries: RecordPdfEntry[];
+  issueLabel?: string;
+  pageKeyPrefix?: string;
+}): ReactElement[] {
   const pageEntries = variant === "school"
     ? (entries.length > 0
         ? Array.from({ length: Math.ceil(entries.length / MAX_RECORD_TABLE_ROWS) }, (_, index) =>
@@ -952,18 +1005,14 @@ function buildReadableRecordDocument({
         : [[]])
     : [entries];
 
-  return (
-    <Document>
-      {pageEntries.map((entriesForPage, index) =>
-        buildReadableRecordPage({
-          variant,
-          athlete,
-          entries: entriesForPage,
-          issueLabel,
-          pageKey: `${athlete.fullName}-${variant}-${index}`
-        })
-      )}
-    </Document>
+  return pageEntries.map((entriesForPage, index) =>
+    buildReadableRecordPage({
+      variant,
+      athlete,
+      entries: entriesForPage,
+      issueLabel,
+      pageKey: `${pageKeyPrefix ?? athlete.fullName}-${variant}-${index}`
+    })
   );
 }
 
@@ -983,6 +1032,9 @@ function buildReadableRecordPage({
   const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
   const nameFontSize = resolveRecordNameFontSize(athlete.fullName);
   const display = buildRecordDisplayModel({ variant, entries, issueLabel });
+  const isAbsenceOnly = variant === "school"
+    && entries.length > 0
+    && entries.every((entry) => isSchoolAbsenceResult(entry));
 
   return (
     <Page key={pageKey} size={CERTIFICATE_PAGE_SIZE} style={styles.recordPage} wrap={false}>
@@ -1007,48 +1059,57 @@ function buildReadableRecordPage({
             </View>
           </View>
 
-          <Text style={styles.recordTableSectionTitle}>今回の記録</Text>
-          <View style={styles.recordTableWrap}>
-            <View style={styles.recordTableHeader}>
-              <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderEvent]}>種目</Text>
-              <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderTime]}>記録</Text>
+          {isAbsenceOnly ? (
+            <View style={styles.recordAbsencePanel}>
+              <Text style={styles.recordAbsenceLabel}>水泳学習</Text>
+              <Text style={styles.recordAbsenceMessage}>よくがんばりました。</Text>
             </View>
+          ) : (
+            <>
+              <Text style={styles.recordTableSectionTitle}>今回の記録</Text>
+              <View style={styles.recordTableWrap}>
+                <View style={styles.recordTableHeader}>
+                  <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderEvent]}>種目</Text>
+                  <Text style={[styles.recordTableHeaderCell, styles.recordTableHeaderTime]}>記録</Text>
+                </View>
 
-            {display.tableRows.map((row, index) => (
-              <View
-                key={row.kind === "filled" ? `${row.entry.eventTitle}-${row.entry.timeText}-${index}` : `empty-row-${index}`}
-                style={[
-                  styles.recordTableRow,
-                  ...(index === display.tableRows.length - 1 ? [styles.recordTableRowLast] : []),
-                  { backgroundColor: index % 2 === 0 ? "#ffffff" : "#f4fbff" }
-                ]}
-              >
-                <View style={[styles.recordTableCell, styles.recordTableCellEvent]}>
-                  <Text
-                    style={
-                      row.kind === "filled"
-                        ? [styles.recordTableEventText, { fontSize: resolveRecordEventFontSize(row.entry.eventTitle) }]
-                        : styles.recordTableEventText
-                    }
+                {display.tableRows.map((row, index) => (
+                  <View
+                    key={row.kind === "filled" ? `${row.entry.eventTitle}-${row.entry.timeText}-${index}` : `empty-row-${index}`}
+                    style={[
+                      styles.recordTableRow,
+                      ...(index === display.tableRows.length - 1 ? [styles.recordTableRowLast] : []),
+                      { backgroundColor: index % 2 === 0 ? "#ffffff" : "#f4fbff" }
+                    ]}
                   >
-                    {row.kind === "filled" ? row.entry.eventTitle : ""}
-                  </Text>
-                </View>
-                <View style={[styles.recordTableCell, styles.recordTableCellTime]}>
-                  <Text style={styles.recordTableTimeText}>
-                    {row.kind === "filled"
-                      ? formatTimeForDocument({ timeText: row.entry.timeText, timeMs: row.entry.timeMs })
-                      : ""}
-                  </Text>
-                </View>
+                    <View style={[styles.recordTableCell, styles.recordTableCellEvent]}>
+                      <Text
+                        style={
+                          row.kind === "filled"
+                            ? [styles.recordTableEventText, { fontSize: resolveRecordEventFontSize(row.entry.eventTitle) }]
+                            : styles.recordTableEventText
+                        }
+                      >
+                        {row.kind === "filled" ? row.entry.eventTitle : ""}
+                      </Text>
+                    </View>
+                    <View style={[styles.recordTableCell, styles.recordTableCellTime]}>
+                      <Text style={styles.recordTableTimeText}>
+                        {row.kind === "filled"
+                          ? formatTimeForDocument({ timeText: row.entry.timeText, timeMs: row.entry.timeMs })
+                          : ""}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
 
-          <View style={styles.recordFooterSpacer} />
-          <View style={styles.recordFooterPill}>
-            <Text style={styles.recordFooterText}>{display.footerText}</Text>
-          </View>
+              <View style={styles.recordFooterSpacer} />
+              <View style={styles.recordFooterPill}>
+                <Text style={styles.recordFooterText}>{display.footerText}</Text>
+              </View>
+            </>
+          )}
           {display.footerDetailText ? (
             <Text style={styles.recordFooterDetailText}>{display.footerDetailText}</Text>
           ) : null}
@@ -1215,6 +1276,20 @@ export async function renderRecordPdf({
   issueLabel: string;
 }): Promise<Buffer> {
   return renderPdfDocument(buildReadableRecordDocument({ variant: "school", athlete, entries, issueLabel }));
+}
+
+export async function renderSchoolRecordCertificatesPdf(inputs: RecordCertificatePdfInput[]): Promise<Buffer> {
+  return renderPdfDocument(
+    <Document>
+      {inputs.flatMap((input, index) =>
+        buildReadableRecordPages({
+          variant: "school",
+          ...input,
+          pageKeyPrefix: `${input.athlete.fullName}-${input.issueLabel}-${index}`
+        })
+      )}
+    </Document>
+  );
 }
 
 export async function renderRecordCertificatePdf(input: RecordCertificatePdfInput): Promise<Buffer> {

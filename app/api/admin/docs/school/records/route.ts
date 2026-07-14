@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import type { Gender, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { renderRecordPdf } from "@/lib/pdf";
+import { renderSchoolRecordCertificatesPdf } from "@/lib/pdf";
 import { saveBuffer } from "@/lib/storage";
 import { zipBuffers } from "@/lib/zip";
 import { buildMeetWhere, parseDocsFilterInput } from "@/lib/docs-filter";
-import { isSchoolAbsenceResult } from "@/lib/school-attendance";
+import { isSchoolAbsenceResult, toSchoolEventDisplayTitle } from "@/lib/school-attendance";
 
 type BestEntry = { eventTitle: string; timeText: string; timeMs: number };
 type SchoolRecordRow = {
@@ -22,6 +22,10 @@ type SchoolRecordRow = {
     gender: Gender;
   };
   event: {
+    id: string;
+    title: string;
+  };
+  meet: {
     id: string;
     title: string;
   };
@@ -58,6 +62,12 @@ async function findSchoolRecordRows(where: Prisma.ResultWhereInput): Promise<Sch
             id: true,
             title: true
           }
+        },
+        meet: {
+          select: {
+            id: true,
+            title: true
+          }
         }
       },
       orderBy
@@ -82,6 +92,12 @@ async function findSchoolRecordRows(where: Prisma.ResultWhereInput): Promise<Sch
         }
       },
       event: {
+        select: {
+          id: true,
+          title: true
+        }
+      },
+      meet: {
         select: {
           id: true,
           title: true
@@ -168,12 +184,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "条件に一致する記録会がありません" }, { status: 400 });
     }
 
+    const latestMonthStart = latestMeet
+      ? new Date(Date.UTC(latestMeet.heldOn.getUTCFullYear(), latestMeet.heldOn.getUTCMonth(), 1))
+      : null;
+    const latestMonthEnd = latestMeet
+      ? new Date(Date.UTC(latestMeet.heldOn.getUTCFullYear(), latestMeet.heldOn.getUTCMonth() + 1, 1))
+      : null;
     const meetWhere = filter.hasMonthFilter
       ? buildMeetWhere("school", filter)
-      : { id: latestMeet!.id };
+      : {
+          program: "school" as const,
+          heldOn: {
+            gte: latestMonthStart!,
+            lt: latestMonthEnd!
+          }
+        };
     const periodLabel = filter.hasMonthFilter && filter.year && filter.month
       ? `${filter.year}年${filter.month}月`
-      : latestMeet!.title;
+      : `${latestMeet!.heldOn.getUTCFullYear()}年${latestMeet!.heldOn.getUTCMonth() + 1}月`;
     const issueLabel = filter.hasMonthFilter && filter.year && filter.month
       ? `${filter.year}年${filter.month}月`
       : `${latestMeet!.heldOn.getUTCFullYear()}年${latestMeet!.heldOn.getUTCMonth() + 1}月`;
@@ -189,24 +217,31 @@ export async function POST(request: Request) {
 
     const files = [] as { name: string; buffer: Buffer }[];
     const usedFileNames = new Set<string>();
-    const grouped = new Map<string, { athlete: (typeof rows)[number]["athlete"]; bestByEvent: Map<string, BestEntry> }>();
+    const groupedBySchool = new Map<
+      string,
+      Map<string, { athlete: (typeof rows)[number]["athlete"]; bestByEvent: Map<string, BestEntry> }>
+    >();
 
     for (const row of rows) {
-      if (!grouped.has(row.athleteId)) {
-        grouped.set(row.athleteId, {
+      const schoolName = row.meet.title;
+      const schoolGroup = groupedBySchool.get(schoolName) ?? new Map();
+      groupedBySchool.set(schoolName, schoolGroup);
+
+      if (!schoolGroup.has(row.athleteId)) {
+        schoolGroup.set(row.athleteId, {
           athlete: row.athlete,
           bestByEvent: new Map<string, BestEntry>()
         });
       }
 
-      const athleteGroup = grouped.get(row.athleteId)!;
+      const athleteGroup = schoolGroup.get(row.athleteId)!;
       // For school certificates, the entered title is the event identity shown
       // to users. Internal distance/style classifications must not create
       // duplicate rows with the same displayed event name.
       const eventKey = row.event.title;
       const current = athleteGroup.bestByEvent.get(eventKey);
       const candidate = {
-        eventTitle: row.event.title,
+        eventTitle: toSchoolEventDisplayTitle(row.event.title),
         timeText: row.timeText,
         timeMs: row.timeMs
       };
@@ -215,18 +250,27 @@ export async function POST(request: Request) {
       }
     }
 
-    for (const { athlete, bestByEvent } of grouped.values()) {
-      const entries = Array.from(bestByEvent.values())
-        .sort((a, b) => a.eventTitle.localeCompare(b.eventTitle, "ja"))
-        .map((entry) => ({ eventTitle: entry.eventTitle, timeText: entry.timeText, timeMs: entry.timeMs }));
+    for (const [schoolName, schoolGroup] of groupedBySchool) {
+      const certificates = Array.from(schoolGroup.values())
+        .map(({ athlete, bestByEvent }) => ({
+          athlete,
+          entries: Array.from(bestByEvent.values())
+            .sort((a, b) => a.eventTitle.localeCompare(b.eventTitle, "ja"))
+            .map((entry) => ({
+              eventTitle: entry.eventTitle,
+              timeText: entry.timeText,
+              timeMs: entry.timeMs
+            })),
+          issueLabel
+        }))
+        .filter((certificate) => certificate.entries.length > 0)
+        .sort((a, b) => a.athlete.fullName.localeCompare(b.athlete.fullName, "ja"));
 
-      if (entries.length === 0) {
-        continue;
-      }
+      if (certificates.length === 0) continue;
 
-      const buffer = await renderRecordPdf({ athlete, entries, issueLabel });
+      const buffer = await renderSchoolRecordCertificatesPdf(certificates);
       const name = ensureUniqueFileName(
-        `${sanitizeFileNamePart(athlete.fullName)}_${sanitizeFileNamePart(periodLabel)}_record.pdf`,
+        `${sanitizeFileNamePart(schoolName)}_${sanitizeFileNamePart(periodLabel)}_records.pdf`,
         usedFileNames
       );
       const storageKey = await saveBuffer(`school/records/${name}`, buffer);

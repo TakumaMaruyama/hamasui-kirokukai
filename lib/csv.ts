@@ -42,6 +42,7 @@ const LEGACY_COLUMNS = ["full_name", "grade", "gender", "event_title", "time_tex
 const HEADER_ALIASES: Record<string, keyof CsvRow> = {
   meet_title: "meet_title",
   "記録会名称": "meet_title",
+  "学校名": "meet_title",
   held_on: "held_on",
   "開催日": "held_on",
   full_name: "full_name",
@@ -317,19 +318,29 @@ function deriveHeldOn(fileName?: string, meetContext?: MeetContext): string | nu
   return null;
 }
 
-function deriveMeetTitle(fileName?: string, meetContext?: MeetContext): string | null {
-  if (meetContext) {
-    return formatMeetTitle(meetContext);
-  }
-
-  if (!fileName) {
-    return null;
-  }
-
+function deriveTitleFromFileName(fileName?: string): string | null {
+  if (!fileName) return null;
   const fileNameOnly = fileName.split(/[/\\]/).at(-1) ?? fileName;
   const nameWithoutExtension = fileNameOnly.replace(/\.[^/.]+$/, "").trim();
   const normalized = toHalfWidthDigits(nameWithoutExtension);
   return normalized || null;
+}
+
+function deriveMeetTitle(
+  fileName?: string,
+  meetContext?: MeetContext,
+  options: { preferFileName?: boolean } = {}
+): string | null {
+  if (options.preferFileName) {
+    const fileTitle = deriveTitleFromFileName(fileName);
+    if (fileTitle) return fileTitle;
+  }
+
+  if (meetContext) {
+    return formatMeetTitle(meetContext);
+  }
+
+  return deriveTitleFromFileName(fileName);
 }
 
 function missingColumns(columnSet: Set<string>): string[] {
@@ -365,7 +376,11 @@ function normalizeCanonicalRows(rows: RawCsvRow[], options: ParseCsvOptions): Cs
 }
 
 function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRow[] {
-  const meetTitle = deriveMeetTitle(options.fileName, options.meetContext);
+  const meetTitle = deriveMeetTitle(options.fileName, options.meetContext, {
+    // One simplified CSV represents one school. Keeping the file name as the
+    // meet title lets certificate output stay separated by school.
+    preferFileName: options.schoolMode
+  });
   const heldOn = deriveHeldOn(options.fileName, options.meetContext);
 
   if (!meetTitle) {
@@ -397,8 +412,13 @@ function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRo
       continue;
     }
 
-    // 出欠簿ルール: 名前があるのに種目が空、またはタイムが空の場合は欠席として取り込み対象外にする
-    if (fullName && !eventTitle) {
+    const isSchoolAbsenceWithoutEvent = Boolean(
+      options.schoolMode && !eventTitle && timeText === "a"
+    );
+
+    // 通常の名簿行は種目必須。小学校でタイムが a の場合だけ、
+    // 欠席者として種目名の空欄を許可する。
+    if (fullName && !eventTitle && !isSchoolAbsenceWithoutEvent) {
       continue;
     }
 
@@ -406,7 +426,7 @@ function normalizeLegacyRows(rows: RawCsvRow[], options: ParseCsvOptions): CsvRo
       continue;
     }
 
-    if (!eventTitle || !fullName || !gender || !grade || !timeText) {
+    if ((!eventTitle && !isSchoolAbsenceWithoutEvent) || !fullName || !gender || !grade || !timeText) {
       throw new Error(`${index + 2}行目: 名簿CSVの必須項目が不足しています`);
     }
 

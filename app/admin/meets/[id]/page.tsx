@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Prisma, Program } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatMeetLabel } from "@/lib/meet-context";
+import { isSchoolAbsenceTimeText, toSchoolEventDisplayTitle } from "@/lib/school-attendance";
 
 type PageProps = {
     params: { id: string };
@@ -181,7 +182,7 @@ export default async function MeetPreviewPage({ params, searchParams }: PageProp
                                 <th>泳法</th>
                                 <th>レーン</th>
                                 <th>タイム</th>
-                                <th>順位</th>
+                                {meet.program !== "school" && <th>順位</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -190,12 +191,12 @@ export default async function MeetPreviewPage({ params, searchParams }: PageProp
                                     <td>{result.athlete.fullName}</td>
                                     <td>{result.athlete.grade}</td>
                                     <td>{formatGender(result.athlete.gender)}</td>
-                                    <td>{result.event.title}</td>
+                                    <td>{meet.program === "school" ? toSchoolEventDisplayTitle(result.event.title) : result.event.title}</td>
                                     <td>{result.event.distanceM}m</td>
                                     <td>{result.event.style}</td>
                                     <td>{result.lane ?? "-"}</td>
-                                    <td>{result.timeText}</td>
-                                    <td>{result.rank > 0 ? `${result.rank}位` : "-"}</td>
+                                    <td>{meet.program === "school" && isSchoolAbsenceTimeText(result.timeText) ? "" : result.timeText}</td>
+                                    {meet.program !== "school" && <td>{result.rank > 0 ? `${result.rank}位` : "-"}</td>}
                                 </tr>
                             ))}
                         </tbody>
