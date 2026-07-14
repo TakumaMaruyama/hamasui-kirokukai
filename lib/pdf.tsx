@@ -10,6 +10,7 @@ import { formatTimeForDocument } from "./display-time";
 import { formatGradeLabel, formatGradeShortLabel } from "./grade";
 import { paginateRankingGroups } from "./ranking-pagination";
 import { isSchoolAbsenceResult } from "./school-attendance";
+import { normalizePdfText } from "./pdf-text";
 
 const FONT_FAMILY = "NotoSansJP";
 const LOCAL_NOTO_SANS_JP_FONT_PATH = path.join(process.cwd(), "public", "fonts", "NotoSansCJKjp-Regular.otf");
@@ -635,20 +636,8 @@ const styles = StyleSheet.create({
     paddingVertical: 30,
     paddingHorizontal: 24
   },
-  recordAbsenceLabel: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: "#2470aa",
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#8cc7f2",
-    borderRadius: 999,
-    paddingVertical: 5,
-    paddingHorizontal: 18,
-    marginBottom: 20
-  },
   recordAbsenceMessage: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 700,
     color: "#12385b",
     textAlign: "center",
@@ -874,7 +863,7 @@ function formatChallengeEntryName(entry: RankingEntry | null): string {
     return "";
   }
 
-  return entry.displayName || entry.fullName;
+  return normalizePdfText(entry.displayName || entry.fullName);
 }
 
 function renderChallengeLegendText(legend: string): ReactElement {
@@ -1029,8 +1018,9 @@ function buildReadableRecordPage({
   issueLabel?: string;
   pageKey?: string;
 }): ReactElement {
-  const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
-  const nameFontSize = resolveRecordNameFontSize(athlete.fullName);
+  const displayFullName = normalizePdfText(athlete.fullName);
+  const nameKana = normalizePdfText(athlete.fullNameKana?.trim() || athlete.fullName);
+  const nameFontSize = resolveRecordNameFontSize(displayFullName);
   const display = buildRecordDisplayModel({ variant, entries, issueLabel });
   const isAbsenceOnly = variant === "school"
     && entries.length > 0
@@ -1050,7 +1040,7 @@ function buildReadableRecordPage({
           <View style={styles.recordInfoRow}>
             <View style={styles.recordInfoNameCard}>
               <Text style={styles.recordInfoKanaValue}>{nameKana}</Text>
-              <Text style={[styles.recordInfoNameValue, { fontSize: nameFontSize }]}>{athlete.fullName}</Text>
+              <Text style={[styles.recordInfoNameValue, { fontSize: nameFontSize }]}>{displayFullName}</Text>
             </View>
 
             <View style={styles.recordInfoGradeCard}>
@@ -1061,8 +1051,7 @@ function buildReadableRecordPage({
 
           {isAbsenceOnly ? (
             <View style={styles.recordAbsencePanel}>
-              <Text style={styles.recordAbsenceLabel}>水泳学習</Text>
-              <Text style={styles.recordAbsenceMessage}>よくがんばりました。</Text>
+              <Text style={styles.recordAbsenceMessage}>水泳学習、よくがんばりました。</Text>
             </View>
           ) : (
             <>
@@ -1133,7 +1122,8 @@ function buildFirstPrizeTemplateDocument({
   const timeLines = visibleEntries
     .map((entry) => formatTimeForDocument({ timeText: entry.timeText, timeMs: entry.timeMs }))
     .join("\n");
-  const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
+  const displayFullName = normalizePdfText(athlete.fullName);
+  const nameKana = normalizePdfText(athlete.fullNameKana?.trim() || athlete.fullName);
 
   return (
     <Document>
@@ -1141,7 +1131,7 @@ function buildFirstPrizeTemplateDocument({
         <View style={styles.templateFlowSpacer} />
         <Image fixed style={styles.templateBackground} src={templateDataUri} />
         <Text style={styles.prizeNameKana}>{nameKana}</Text>
-        <Text style={styles.prizeName}>{athlete.fullName}</Text>
+        <Text style={styles.prizeName}>{displayFullName}</Text>
         <Text style={styles.prizeMeta}>{`${formatGradeLabel(athlete.grade)} / ${genderLabel(athlete.gender)}`}</Text>
         <Text style={styles.prizeEvent}>{eventLines}</Text>
         <Text style={styles.prizeTime}>{timeLines}</Text>
@@ -1161,8 +1151,8 @@ function buildFirstPrizeFallbackDocument({
     <Document>
       <Page size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
         <Text style={styles.title}>賞状</Text>
-        <Text style={styles.meta}>ふりがな: {athlete.fullNameKana || athlete.fullName}</Text>
-        <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
+        <Text style={styles.meta}>ふりがな: {normalizePdfText(athlete.fullNameKana || athlete.fullName)}</Text>
+        <Text style={styles.meta}>氏名: {normalizePdfText(athlete.fullName)}</Text>
         <Text style={styles.meta}>
           学年: {formatGradeLabel(athlete.grade)} / 性別: {genderLabel(athlete.gender)}
         </Text>
@@ -1208,7 +1198,8 @@ function buildFirstPrizeAwardTemplatePage({
   templateDataUri,
   pageKey
 }: FirstPrizeAwardPdfInput & { templateDataUri: string; pageKey?: string }): ReactElement {
-  const nameFontSize = resolveFirstPrizeAwardNameFontSize(athlete.fullName);
+  const displayFullName = normalizePdfText(athlete.fullName);
+  const nameFontSize = resolveFirstPrizeAwardNameFontSize(displayFullName);
   const eventFontSize = resolveFirstPrizeAwardEventFontSize(eventTitle);
   const gradeAndGenderLabel = `${formatGradeLabel(athlete.grade)} ${genderLabel(athlete.gender)}`;
 
@@ -1216,8 +1207,8 @@ function buildFirstPrizeAwardTemplatePage({
     <Page key={pageKey} size={CERTIFICATE_PAGE_SIZE} style={styles.templatePage} wrap={false}>
       <View style={styles.templateFlowSpacer} />
       <Image fixed style={styles.templateBackground} src={templateDataUri} />
-      <Text style={styles.firstPrizeAwardKana}>{athlete.fullNameKana?.trim() || athlete.fullName}</Text>
-      <Text style={[styles.firstPrizeAwardName, { fontSize: nameFontSize }]}>{athlete.fullName}</Text>
+      <Text style={styles.firstPrizeAwardKana}>{normalizePdfText(athlete.fullNameKana?.trim() || athlete.fullName)}</Text>
+      <Text style={[styles.firstPrizeAwardName, { fontSize: nameFontSize }]}>{displayFullName}</Text>
       <Text style={styles.firstPrizeAwardMeta}>{gradeAndGenderLabel}</Text>
       <Text style={[styles.firstPrizeAwardEvent, { fontSize: eventFontSize }]}>{eventTitle}</Text>
       <Text style={styles.firstPrizeAwardTime}>記録 {formatTimeForDocument({ timeText, timeMs })}</Text>
@@ -1249,13 +1240,13 @@ function buildFirstPrizeAwardFallbackPage({
   issueLabel,
   pageKey
 }: FirstPrizeAwardPdfInput & { pageKey?: string }): ReactElement {
-  const nameKana = athlete.fullNameKana?.trim() || athlete.fullName;
+  const nameKana = normalizePdfText(athlete.fullNameKana?.trim() || athlete.fullName);
 
   return (
     <Page key={pageKey} size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
       <Text style={styles.title}>第1位 賞状</Text>
       <Text style={styles.meta}>ふりがな: {nameKana}</Text>
-      <Text style={styles.meta}>氏名: {athlete.fullName}</Text>
+      <Text style={styles.meta}>氏名: {normalizePdfText(athlete.fullName)}</Text>
       <Text style={styles.meta}>
         学年・性別: {formatGradeLabel(athlete.grade)} {genderLabel(athlete.gender)}
       </Text>
@@ -1411,7 +1402,7 @@ export async function renderRankingPdf({
                         }
                       >
                         <Text style={[styles.cell, styles.cellRank]}>{entry.rank}位</Text>
-                        <Text style={[styles.cell, styles.cellEvent]}>{entry.displayName || entry.fullName}</Text>
+                        <Text style={[styles.cell, styles.cellEvent]}>{normalizePdfText(entry.displayName || entry.fullName)}</Text>
                         <Text style={[styles.cell, styles.cellTime]}>{formatTimeForDocument({ timeText: entry.timeText })}</Text>
                       </View>
                     ))}
