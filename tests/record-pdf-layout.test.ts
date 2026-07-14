@@ -242,8 +242,7 @@ describe("record PDF layout", () => {
 
     const texts = collectTextNodes(root).join("\n");
     expect(texts).not.toContain("学校委託コース");
-    expect(texts).toContain("水泳学習");
-    expect(texts).toContain("よくがんばりました。");
+    expect(texts).toContain("水泳学習、よくがんばりました。");
     expect(texts).toContain("開催年月 2026年7月");
     expect(texts).not.toContain("来年");
     expect(texts).toContain("12秒96");
@@ -253,7 +252,7 @@ describe("record PDF layout", () => {
   it("uses a table-free school design for an absentee", async () => {
     await renderRecordPdf({
       athlete: {
-        fullName: "山田 太郎",
+        fullName: "𠮷田 太郎",
         fullNameKana: "やまだ たろう",
         grade: 5,
         gender: "male"
@@ -269,8 +268,9 @@ describe("record PDF layout", () => {
     expect(texts).not.toContain("記録\n");
     expect(texts).not.toContain("欠席");
     expect(texts).not.toContain("\na\n");
-    expect(texts).toContain("水泳学習");
-    expect(texts).toContain("よくがんばりました。");
+    expect(texts).toContain("水泳学習、よくがんばりました。");
+    expect(texts).toContain("吉田 太郎");
+    expect(texts).not.toContain("𠮷田 太郎");
     expect(texts).toContain("開催年月 2026年7月");
     expect(texts).not.toContain("来年");
   });
