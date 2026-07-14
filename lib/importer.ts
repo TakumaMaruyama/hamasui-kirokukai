@@ -6,6 +6,7 @@ import {
   isSchoolAbsenceResult,
   isSchoolAbsenceTimeText,
   normalizeSchoolTimeText,
+  SCHOOL_ABSENCE_EVENT_TITLE,
   SCHOOL_ABSENCE_TIME_MS
 } from "@/lib/school-attendance";
 
@@ -136,6 +137,10 @@ function parseImportRow(program: Program, row: ImportRow, sourceIndex: number): 
   const rawTimeText = parseRequiredText(row.time_text, "time_text");
   const isAbsent = program === "school" && isSchoolAbsenceTimeText(rawTimeText);
   const timeText = isAbsent ? normalizeSchoolTimeText(rawTimeText) : rawTimeText;
+  const rawEventTitle = row.event_title?.trim() ?? "";
+  const eventTitle = isAbsent && !rawEventTitle
+    ? SCHOOL_ABSENCE_EVENT_TITLE
+    : parseRequiredText(row.event_title, "event_title");
 
   return {
     sourceIndex,
@@ -145,7 +150,7 @@ function parseImportRow(program: Program, row: ImportRow, sourceIndex: number): 
     fullNameKana: normalizeOptionalFullNameKana(row.full_name_kana),
     grade: parseRequiredInt(row.grade, "grade"),
     gender: parseGender(row.gender),
-    eventTitle: parseRequiredText(row.event_title, "event_title"),
+    eventTitle,
     style: parseRequiredText(row.style, "style"),
     distanceM: parseRequiredInt(row.distance_m, "distance_m"),
     lane: parseOptionalInt(row.lane, "lane"),
@@ -324,11 +329,14 @@ export async function importRows(program: Program, rows: ImportRow[]) {
         update: {
           lane,
           timeText,
-          timeMs
+          timeMs,
+          ...(program === "school" ? { rank: 0 } : {})
         }
       });
 
-      rankTargets.add(`${meet.id}:${event.id}`);
+      if (program !== "school") {
+        rankTargets.add(`${meet.id}:${event.id}`);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "不明なエラー";
       throw new Error(`${row.sourceIndex + 2}行目: ${message}`);

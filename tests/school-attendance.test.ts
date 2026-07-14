@@ -3,7 +3,9 @@ import {
   isSchoolAbsenceResult,
   isSchoolAbsenceTimeText,
   normalizeSchoolTimeText,
-  SCHOOL_ABSENCE_TIME_MS
+  SCHOOL_ABSENCE_EVENT_TITLE,
+  SCHOOL_ABSENCE_TIME_MS,
+  toSchoolEventDisplayTitle
 } from "../lib/school-attendance";
 
 describe("school attendance markers", () => {
@@ -19,5 +21,10 @@ describe("school attendance markers", () => {
 
   it("recognizes a stored absence by its explicit marker", () => {
     expect(isSchoolAbsenceResult({ timeText: "a", timeMs: SCHOOL_ABSENCE_TIME_MS })).toBe(true);
+  });
+
+  it("hides the private absence event title", () => {
+    expect(toSchoolEventDisplayTitle(SCHOOL_ABSENCE_EVENT_TITLE)).toBe("");
+    expect(toSchoolEventDisplayTitle("けのび")).toBe("けのび");
   });
 });
