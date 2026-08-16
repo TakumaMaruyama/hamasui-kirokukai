@@ -161,13 +161,13 @@ describe("HomePage", () => {
     const compactText = texts.replace(/\s+/g, "");
 
     expect(texts).not.toContain("みんなの前回比");
-    expect(texts).toContain("今回");
-    expect(texts).toContain("前回");
+    expect(texts).not.toContain("今回");
+    expect(texts).not.toContain("前回");
     expect(texts).toContain("2026年3月");
     expect(texts).toContain("2025年9月");
-    expect(texts).not.toContain("2025年7月");
-    expect(compactText).toContain("今回2026年3月/24記録");
-    expect(compactText).toContain("前回2025年9月/20記録");
+    expect(texts).toContain("2025年7月");
+    expect(compactText).toContain("対象年月：2026年3月24記録比較対象：2025年9月");
+    expect(compactText).toContain("対象年月：2025年9月20記録比較対象：2025年7月");
     expect(compactText).toContain("みんなで前より13000msタイムアップ");
     expect(compactText).toContain("みんなで前より2400msタイムアップ");
     expect(compactText).not.toContain("12人");
@@ -225,8 +225,8 @@ describe("HomePage", () => {
     const texts = collectTextNodes(root).join("\n");
     const compactText = texts.replace(/\s+/g, "");
 
-    expect(texts).toContain("前回");
-    expect(compactText).toContain("前回2025年9月/20記録");
+    expect(texts).not.toContain("前回");
+    expect(compactText).toContain("対象年月：2025年9月20記録");
     expect(texts).toContain("さらに前の開催月が入ると表示");
     expect(texts).not.toContain("まだありません");
     expect(compactText).toContain("20記録");
@@ -266,7 +266,7 @@ describe("HomePage", () => {
 
     expect(texts).toContain("次回から前回比を表示");
     expect(texts).toContain("さらに前の開催月が入ると表示");
-    expect(compactText).toContain("今回2026年3月/24記録");
+    expect(compactText).toContain("対象年月：2026年3月24記録");
     expect(texts).not.toContain("まだありません");
     expect(texts).not.toContain("次の開催月から比較できます");
     expect(compactText).not.toContain("前回/");
@@ -277,5 +277,55 @@ describe("HomePage", () => {
     expect(collectElementsByClassName(root, "home-progress-card")).toHaveLength(2);
     expect(collectElementsByClassName(root, "home-progress-header")).toHaveLength(2);
     expect(collectElementsByClassName(root, "home-progress-meet")).toHaveLength(0);
+  });
+
+  it("renders net time changes as an up, down, or unchanged result", async () => {
+    mockState.cards = [
+      {
+        slotLabel: "今回",
+        state: "ready",
+        currentMeet: {
+          id: "current",
+          title: "2026年3月",
+          heldOn: new Date("2026-03-08T00:00:00.000Z"),
+          participantCount: 12,
+          resultCount: 24
+        },
+        previousMeet: {
+          id: "previous",
+          title: "2025年9月",
+          heldOn: new Date("2025-09-30T00:00:00.000Z"),
+          participantCount: 10,
+          resultCount: 20
+        },
+        totalImprovementMs: -1_234
+      },
+      {
+        slotLabel: "前回",
+        state: "ready",
+        currentMeet: {
+          id: "previous",
+          title: "2025年9月",
+          heldOn: new Date("2025-09-30T00:00:00.000Z"),
+          participantCount: 10,
+          resultCount: 20
+        },
+        previousMeet: {
+          id: "older",
+          title: "2025年7月",
+          heldOn: new Date("2025-07-31T00:00:00.000Z"),
+          participantCount: 8,
+          resultCount: 14
+        },
+        totalImprovementMs: 0
+      }
+    ];
+
+    const root = await HomePage();
+    const texts = collectTextNodes(root).join("\n");
+    const compactText = texts.replace(/\s+/g, "");
+
+    expect(compactText).toContain("みんなで前より1234msタイムダウン");
+    expect(texts).toContain("みんなで前回と変化なし");
   });
 });

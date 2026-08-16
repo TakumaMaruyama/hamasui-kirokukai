@@ -15,9 +15,15 @@ function formatCount(value: number): string {
 
 function renderComparisonCardTitle(card: HomeMeetComparisonCard) {
   if (card.state === "ready") {
-    return card.totalImprovementMs > 0
-      ? `みんなで前より${formatImprovementTotal(card.totalImprovementMs)}タイムアップ`
-      : "今回はまだ前回超えなし";
+    if (card.totalImprovementMs > 0) {
+      return `みんなで前より${formatImprovementTotal(card.totalImprovementMs)}タイムアップ`;
+    }
+
+    if (card.totalImprovementMs < 0) {
+      return `みんなで前より${formatImprovementTotal(Math.abs(card.totalImprovementMs))}タイムダウン`;
+    }
+
+    return "みんなで前回と変化なし";
   }
 
   if (card.state === "not-comparable") {
@@ -34,11 +40,16 @@ function renderComparisonCardTitle(card: HomeMeetComparisonCard) {
 function renderComparisonCardHeader(card: HomeMeetComparisonCard) {
   return (
     <div className="home-progress-header">
-      <p className="home-progress-slot">{card.slotLabel}</p>
       {card.currentMeet ? (
-        <p className="home-progress-summary">
-          {card.currentMeet.title} / {formatCount(card.currentMeet.resultCount)}記録
-        </p>
+        <>
+          <p className="home-progress-slot">対象年月：{card.currentMeet.title}</p>
+          <p className="home-progress-summary">
+            {formatCount(card.currentMeet.resultCount)}記録
+          </p>
+          {card.previousMeet ? (
+            <p className="home-progress-compare">比較対象：{card.previousMeet.title}</p>
+          ) : null}
+        </>
       ) : null}
     </div>
   );

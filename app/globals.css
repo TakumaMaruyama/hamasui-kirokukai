@@ -200,7 +200,8 @@ button.secondary {
   flex-wrap: wrap;
 }
 
-.home-progress-summary {
+.home-progress-summary,
+.home-progress-compare {
   margin: 0;
   color: #55657f;
   font-size: 0.9rem;

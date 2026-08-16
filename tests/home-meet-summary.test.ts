@@ -248,7 +248,7 @@ describe("buildHomeMeetComparisonCards", () => {
     expect(cards?.[0]?.totalImprovementMs).toBe(300);
   });
 
-  it("adds only positive improvements and ignores slower, tied, or missing rows", () => {
+  it("adds signed improvements and ignores tied or missing rows", () => {
     const cards = buildHomeMeetComparisonCards([
       buildMeet({
         id: "march",
@@ -343,7 +343,7 @@ describe("buildHomeMeetComparisonCards", () => {
     ]);
 
     expect(cards?.[0]?.state).toBe("ready");
-    expect(cards?.[0]?.totalImprovementMs).toBe(13_000);
+    expect(cards?.[0]?.totalImprovementMs).toBe(12_600);
   });
 
   it("returns not-comparable when a month pair has no overlapping rows", () => {

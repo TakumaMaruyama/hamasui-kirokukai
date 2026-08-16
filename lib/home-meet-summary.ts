@@ -180,10 +180,6 @@ function buildComparisonCard(input: {
     hasComparableRecord = true;
 
     const improvementMs = previousResult.timeMs - currentResult.timeMs;
-    if (improvementMs <= 0) {
-      continue;
-    }
-
     totalImprovementMs += improvementMs;
   }
 
