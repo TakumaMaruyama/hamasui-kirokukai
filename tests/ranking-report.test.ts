@@ -263,6 +263,88 @@ describe("buildHistoricalFirstChallengeGroups", () => {
     expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["最速選手"]);
   });
 
+  it("uses one canonical event class and fixed display title for free, クロール, and 自由形 variants", () => {
+    const groups = buildHistoricalFirstChallengeGroups(
+      [
+        {
+          timeMs: 18000,
+          timeText: "00:18.00",
+          athlete: { id: "fast", fullName: "最速選手" },
+          event: { title: "１５ｍ　free", distanceM: 15, style: "free", grade: 5, gender: "male" },
+          meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+        },
+        {
+          timeMs: 20000,
+          timeText: "00:20.00",
+          athlete: { id: "slow-crawl", fullName: "クロール表記" },
+          event: { title: "15m クロール", distanceM: 15, style: "クロール", grade: 5, gender: "male" },
+          meet: { heldOn: new Date("2025-08-20T00:00:00.000Z") }
+        },
+        {
+          timeMs: 21000,
+          timeText: "00:21.00",
+          athlete: { id: "slow-free", fullName: "自由形表記" },
+          event: { title: "15M自由形", distanceM: 15, style: "自由形", grade: 5, gender: "male" },
+          meet: { heldOn: new Date("2025-08-30T00:00:00.000Z") }
+        }
+      ],
+      { targetMonthStart: new Date("2025-08-01T00:00:00.000Z"), targetMonthEnd: new Date("2025-09-01T00:00:00.000Z") }
+    );
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.eventTitle).toBe("15mクロール");
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["最速選手"]);
+    expect(groups[0]?.gradeGroups[0]?.maleEntries[0]?.isNewRecordInTargetMonth).toBe(true);
+  });
+
+  it("uses a deterministic winner title for non-fixed canonical event groups", () => {
+    const groups = buildHistoricalFirstChallengeGroups([
+      {
+        timeMs: 18000,
+        timeText: "00:18.00",
+        athlete: { id: "later", fullName: "後の選手" },
+        event: { title: "20m 自由形", distanceM: 20, style: "自由形", grade: 5, gender: "male" },
+        meet: { heldOn: new Date("2025-08-20T00:00:00.000Z") }
+      },
+      {
+        timeMs: 18000,
+        timeText: "00:18.00",
+        athlete: { id: "first", fullName: "先の選手" },
+        event: { title: "２０ｍ free", distanceM: 20, style: "free", grade: 5, gender: "male" },
+        meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+      }
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.eventTitle).toBe("２０ｍ free");
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["後の選手", "先の選手"]);
+  });
+
+  it("uses one non-fixed event table when grade and gender classes use comparable title variants", () => {
+    const groups = buildHistoricalFirstChallengeGroups([
+      {
+        timeMs: 18000,
+        timeText: "00:18.00",
+        athlete: { id: "grade-five", fullName: "5年男子" },
+        event: { title: "20m 自由形", distanceM: 20, style: "自由形", grade: 5, gender: "male" },
+        meet: { heldOn: new Date("2025-08-20T00:00:00.000Z") }
+      },
+      {
+        timeMs: 19000,
+        timeText: "00:19.00",
+        athlete: { id: "grade-six", fullName: "6年女子" },
+        event: { title: "２０ｍ クロール", distanceM: 20, style: "クロール", grade: 6, gender: "female" },
+        meet: { heldOn: new Date("2025-08-10T00:00:00.000Z") }
+      }
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.eventTitle).toBe("２０ｍ クロール");
+    expect(groups[0]?.gradeGroups.map((group) => group.grade)).toEqual([5, 6]);
+    expect(groups[0]?.gradeGroups[0]?.maleEntries.map((entry) => entry.fullName)).toEqual(["5年男子"]);
+    expect(groups[0]?.gradeGroups[1]?.femaleEntries.map((entry) => entry.fullName)).toEqual(["6年女子"]);
+  });
+
   it("does not mark repeated top records in target month when the same swimmer already held the top before month", () => {
     const groups = buildHistoricalFirstChallengeGroups(
       [

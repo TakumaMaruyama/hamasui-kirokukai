@@ -158,7 +158,7 @@ function ensureUniqueFileName(baseName: string, usedNames: Set<string>): string 
 }
 
 export async function POST(request: Request) {
-  if (!isAdminAuthenticated()) {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 

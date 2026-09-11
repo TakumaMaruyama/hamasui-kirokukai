@@ -7,7 +7,13 @@ import {
   type MonthlyFirstPrizeSourceRow
 } from "../lib/first-prize";
 
-function buildRow(partial: Partial<FirstPrizeSourceRow> = {}): FirstPrizeSourceRow {
+type SourceOverrides<T extends { athlete: unknown; event: unknown; meet: unknown }> = Partial<Omit<T, "athlete" | "event" | "meet">> & {
+  athlete?: Partial<T["athlete"]>;
+  event?: Partial<T["event"]>;
+  meet?: Partial<T["meet"]>;
+};
+
+function buildRow(partial: SourceOverrides<FirstPrizeSourceRow> = {}): FirstPrizeSourceRow {
   return {
     athlete: {
       fullName: "徳重 湊仁",
@@ -29,7 +35,7 @@ function buildRow(partial: Partial<FirstPrizeSourceRow> = {}): FirstPrizeSourceR
   };
 }
 
-function buildMonthlyRow(partial: Partial<MonthlyFirstPrizeSourceRow> = {}): MonthlyFirstPrizeSourceRow {
+function buildMonthlyRow(partial: SourceOverrides<MonthlyFirstPrizeSourceRow> = {}): MonthlyFirstPrizeSourceRow {
   const athlete = {
     fullName: "徳重 湊仁",
     fullNameKana: "とくしげ みなと",

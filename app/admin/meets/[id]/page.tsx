@@ -1,3 +1,4 @@
+import { requireAdminSession } from "@/lib/admin-auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Prisma, Program } from "@prisma/client";
@@ -75,6 +76,7 @@ function formatGender(value: "male" | "female" | "other"): string {
 }
 
 export default async function MeetPreviewPage({ params, searchParams }: PageProps) {
+    await requireAdminSession();
     const requestedProgram = toProgramQuery(searchParams?.program) ?? "swimming";
     let meet: MeetPreview | null = null;
     let loadMessage: string | null = null;

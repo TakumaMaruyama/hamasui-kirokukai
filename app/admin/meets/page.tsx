@@ -1,3 +1,4 @@
+import { requireAdminSession } from "@/lib/admin-auth";
 import { Program } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -85,6 +86,7 @@ function formatCount(value: number): string {
 
 async function deleteMeet(formData: FormData) {
     "use server";
+    await requireAdminSession();
     const id = formData.get("id")?.toString();
     if (!id) return;
 
@@ -98,6 +100,7 @@ export default async function MeetsPage({
 }: {
     searchParams?: { program?: string | string[] };
 }) {
+    await requireAdminSession();
     const selectedProgram = toAdminProgram(searchParams?.program);
     const selectedProgramLabel = PROGRAM_OPTIONS.find((option) => option.value === selectedProgram)?.label ?? "スイミング";
 

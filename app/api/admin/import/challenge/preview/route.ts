@@ -34,7 +34,7 @@ function skippedMessage(skippedCount: number): string {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminAuthenticated()) {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 

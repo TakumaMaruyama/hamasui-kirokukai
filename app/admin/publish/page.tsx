@@ -1,9 +1,11 @@
+import { requireAdminSession } from "@/lib/admin-auth";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { formatPublishRange, parsePublishDateInput, toDateInputValue } from "@/lib/publish";
 
 async function updatePublishWindow(formData: FormData) {
   "use server";
+  await requireAdminSession();
 
   const publishFromInput = formData.get("publishFrom")?.toString() ?? "";
   const publishUntilInput = formData.get("publishUntil")?.toString() ?? "";
@@ -36,6 +38,7 @@ async function updatePublishWindow(formData: FormData) {
 }
 
 export default async function PublishPage() {
+  await requireAdminSession();
   try {
     const publishWindow = await prisma.publishWindow.upsert({
       where: { id: "default" },

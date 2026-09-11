@@ -491,3 +491,110 @@ button.secondary {
   outline: 2px solid #1f3d74;
   outline-offset: 2px;
 }
+
+.swimming-docs-actions {
+  display: grid;
+  gap: 22px;
+}
+
+.swimming-docs-period {
+  max-width: 280px;
+}
+
+.swimming-docs-period .notice {
+  margin: 8px 0 0;
+}
+
+.swimming-docs-section {
+  border-top: 1px solid #e1e3ea;
+  padding-top: 20px;
+}
+
+.swimming-docs-section h2 {
+  margin: 0 0 14px;
+  font-size: 1.08rem;
+}
+
+.swimming-docs-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.swimming-docs-filters.single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 420px;
+}
+
+.swimming-docs-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.swimming-docs-preview {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #dbe5ff;
+  border-radius: 10px;
+  background: #f7faff;
+}
+
+.swimming-docs-preview p {
+  margin: 0;
+  font-weight: 700;
+}
+
+.swimming-docs-preview details {
+  margin-top: 8px;
+}
+
+.swimming-docs-preview summary {
+  cursor: pointer;
+  color: #1f3d74;
+  font-weight: 600;
+}
+
+.swimming-docs-preview ul {
+  margin: 8px 0 0;
+  padding-left: 1.4em;
+}
+
+.swimming-docs-preview li + li {
+  margin-top: 4px;
+}
+
+.swimming-docs-message {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: #1f3d74;
+}
+
+.swimming-docs-message.error {
+  background: #fff1f1;
+  color: #9b1c1c;
+}
+
+.swimming-docs-retry {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 480px) {
+  .swimming-docs-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .swimming-docs-buttons {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .swimming-docs-buttons button,
+  .swimming-docs-section > button {
+    width: 100%;
+  }
+}

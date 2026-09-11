@@ -11,7 +11,7 @@ packages = ["gti"]
 [deployment]
 run = ["npm", "run", "start"]
 deploymentTarget = "autoscale"
-build = ["bash", "-c", "npx prisma generate && npx prisma db push --accept-data-loss && npm run build"]
+build = ["npm", "run", "build"]
 
 [[ports]]
 localPort = 3000

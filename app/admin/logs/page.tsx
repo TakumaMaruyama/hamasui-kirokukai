@@ -1,3 +1,4 @@
+import { requireAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { isMissingSearchLogConsentVersionColumnError } from "@/lib/search-log";
 
@@ -26,6 +27,7 @@ function formatLogDateTime(value: Date): string {
 }
 
 export default async function LogsPage() {
+  await requireAdminSession();
   let logs: SearchLogRow[] = [];
   let warning: string | null = null;
 

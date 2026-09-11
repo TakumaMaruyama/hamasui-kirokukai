@@ -13,7 +13,7 @@ import { RANKING_OUTPUT_MAX_GRADE } from "@/lib/grade";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  if (!isAdminAuthenticated()) {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 

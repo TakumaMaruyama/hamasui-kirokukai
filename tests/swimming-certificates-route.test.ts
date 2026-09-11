@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
   findMany: vi.fn(),
   createGeneratedDoc: vi.fn(),
-  renderPdf: vi.fn(async () => Buffer.from("mock-pdf")),
-  saveBuffer: vi.fn(async () => "storage/key")
+  renderPdf: vi.fn(async (..._args: unknown[]) => Buffer.from("mock-pdf")),
+  saveBuffer: vi.fn(async (..._args: unknown[]) => "storage/key")
 }));
 
 vi.mock("@/lib/admin-auth", () => ({
@@ -225,6 +225,9 @@ describe("POST /api/admin/docs/swimming/certificates", () => {
     expect(response.status).toBe(200);
     expect(mockState.findMany).toHaveBeenCalledTimes(1);
     expect(mockState.renderPdf.mock.calls[0]?.[0]).toHaveLength(1);
-    expect(mockState.saveBuffer.mock.calls[0]?.[0]).toContain("指定 太郎");
+    expect(response.headers.get("Content-Disposition")).toContain(encodeURIComponent("指定 太郎"));
+    expect(mockState.saveBuffer).not.toHaveBeenCalled();
+    expect(mockState.createGeneratedDoc).not.toHaveBeenCalled();
+    expect(mockState.findMany.mock.calls[0]?.[0].where).not.toHaveProperty("athlete");
   });
 });

@@ -17,7 +17,12 @@ npm install
 ```
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hamasui
 ADMIN_PASSWORD=changeme
+ADMIN_SESSION_SECRET=<32バイトの暗号学的乱数を64桁hexで設定>
 ```
+
+`ADMIN_SESSION_SECRET` は `openssl rand -hex 32` などで生成し、ローカル環境と本番の Secrets にそれぞれ設定してください。値をリポジトリに保存しないでください。未設定・形式不正の場合は管理者ログインが503となり、管理画面・APIは利用できません。
+
+管理者セッションは署名付きCookieで、ログインから8時間で失効します。導入時の旧Cookieと、秘密鍵変更前のCookieは無効になります。`ADMIN_PASSWORD` を変更するときは `ADMIN_SESSION_SECRET` も同時に更新し、再デプロイして既存セッションを失効させてください。個別セッションのサーバー側失効はありません。本番適用は Secrets を設定してから新コードをデプロイし、再ログインして管理画面とPDF生成を確認してください。
 
 ### 3. PostgreSQL起動
 
@@ -42,6 +47,10 @@ npm run dev
 `samples/` 配下にスイミング・学校委託それぞれのサンプルCSVがあります。
 
 ## PDF生成について
+
+一般コースでは対象年月を一度選択し、記録証・1位賞状・歴代1位記録一覧の「対象を確認」で人数・枚数（歴代記録は掲載件数・種目数）と一覧を確認してから、PDFをダウンロードします。記録証は現在の掲載順で1枚4件までです。
+
+この3種類はダウンロードのみで、新しい保存ファイル・生成履歴は残しません。既存の保存データは保持します。月次ランキング・小学校・チャレンジの出力と保存の仕様は従来どおりです。
 
 `@react-pdf/renderer` を使ってサーバー側でPDFを直接生成します。  
 Playwright / Chromium の追加インストールは不要です。

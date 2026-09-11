@@ -4,7 +4,7 @@ import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { isMissingSearchLogConsentVersionColumnError } from "@/lib/search-log";
 
 export async function GET() {
-  if (!isAdminAuthenticated()) {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 

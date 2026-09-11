@@ -1,4 +1,5 @@
 import { Gender } from "@prisma/client";
+import { toComparableEventBaseKey } from "./event-key";
 
 export type RankingSourceResult = {
   rank: number;
@@ -171,6 +172,10 @@ function normalizeEventTitleForDisplay(value: string): string {
 
 const FIXED_EVENT_ORDER_MAP = new Map<string, number>(
   FIXED_EVENT_ORDER.map((title, index) => [normalizeEventTitleForOrder(title), index])
+);
+
+const FIXED_EVENT_DISPLAY_NAME_BY_COMPARABLE_KEY = new Map<string, string>(
+  FIXED_EVENT_ORDER.map((title) => [toComparableEventBaseKey({ title, distanceM: Number.parseInt(title, 10) }), title])
 );
 
 function compareChallengeEventTitles(left: string, right: string): number {
@@ -406,29 +411,50 @@ export function buildChallengeEventRankingGroups(
     .sort((a, b) => compareChallengeEventTitles(a.eventTitle, b.eventTitle));
 }
 
-function toEventClassKey(result: HistoricalFirstSourceResult): string {
+function toHistoricalEventClassKey(comparableEventBaseKey: string, result: HistoricalFirstSourceResult): string {
   return [
-    normalizeEventTitleForOrder(result.event.title),
-    result.event.distanceM,
-    result.event.style,
+    comparableEventBaseKey,
     result.event.grade,
     result.event.gender
   ].join(":");
 }
 
+function compareHistoricalWinners(left: HistoricalFirstSourceResult, right: HistoricalFirstSourceResult): number {
+  if (left.timeMs !== right.timeMs) {
+    return left.timeMs - right.timeMs;
+  }
+
+  return compareHistoricalDisplayCandidates(left, right);
+}
+
+function compareHistoricalDisplayCandidates(left: HistoricalFirstSourceResult, right: HistoricalFirstSourceResult): number {
+  const dateDiff = left.meet.heldOn.getTime() - right.meet.heldOn.getTime();
+  if (dateDiff !== 0) {
+    return dateDiff;
+  }
+
+  const nameDiff = left.athlete.fullName.localeCompare(right.athlete.fullName, "ja");
+  if (nameDiff !== 0) {
+    return nameDiff;
+  }
+
+  const titleDiff = left.event.title.localeCompare(right.event.title, "ja");
+  if (titleDiff !== 0) {
+    return titleDiff;
+  }
+
+  return toHistoricalAthleteKey(left.athlete).localeCompare(toHistoricalAthleteKey(right.athlete), "ja");
+}
+
+function getHistoricalDisplayTitle(entry: HistoricalFirstSourceResult, comparableEventBaseKey: string): string {
+  return (
+    FIXED_EVENT_DISPLAY_NAME_BY_COMPARABLE_KEY.get(comparableEventBaseKey) ??
+    normalizeEventTitleForDisplay(entry.event.title)
+  );
+}
+
 function sortHistoricalEntries(entries: HistoricalFirstSourceResult[]): HistoricalFirstSourceResult[] {
-  return [...entries].sort((a, b) => {
-    if (a.timeMs !== b.timeMs) {
-      return a.timeMs - b.timeMs;
-    }
-
-    const dateDiff = a.meet.heldOn.getTime() - b.meet.heldOn.getTime();
-    if (dateDiff !== 0) {
-      return dateDiff;
-    }
-
-    return a.athlete.fullName.localeCompare(b.athlete.fullName, "ja");
-  });
+  return [...entries].sort(compareHistoricalWinners);
 }
 
 function toHistoricalAthleteKey(input: HistoricalFirstSourceResult["athlete"]): string {
@@ -444,8 +470,29 @@ function buildHistoricalFirstTopRows(
   results: HistoricalFirstSourceResult[],
   options: Pick<HistoricalFirstChallengeBuildOptions, "targetMonthStart" | "targetMonthEnd"> = {}
 ): RankingSourceResult[] {
-  const byEventClass = new Map<string, HistoricalFirstSourceResult[]>();
+  const fastestTimeByEventClass = new Map<string, number>();
+  const comparableEventBaseKeyByRawEvent = new Map<string, string>();
+  const comparableEventBaseKeyByEventClass = new Map<string, string>();
   const kanaByNameKey = new Map<string, string>();
+
+  const getComparableEventBaseKey = (result: HistoricalFirstSourceResult): string => {
+    const rawEventKey = `${result.event.distanceM}\u0000${result.event.title}`;
+    const cached = comparableEventBaseKeyByRawEvent.get(rawEventKey);
+    if (cached) {
+      return cached;
+    }
+
+    const comparableEventBaseKey = toComparableEventBaseKey(result.event);
+    comparableEventBaseKeyByRawEvent.set(rawEventKey, comparableEventBaseKey);
+    return comparableEventBaseKey;
+  };
+
+  const getEventClassKey = (result: HistoricalFirstSourceResult): string => {
+    const comparableEventBaseKey = getComparableEventBaseKey(result);
+    const eventClassKey = toHistoricalEventClassKey(comparableEventBaseKey, result);
+    comparableEventBaseKeyByEventClass.set(eventClassKey, comparableEventBaseKey);
+    return eventClassKey;
+  };
 
   for (const result of results) {
     const nameKey = normalizeAthleteNameKey(result.athlete.fullName);
@@ -454,45 +501,73 @@ function buildHistoricalFirstTopRows(
       kanaByNameKey.set(nameKey, fullNameKana);
     }
 
-    const key = toEventClassKey(result);
-    if (!byEventClass.has(key)) {
-      byEventClass.set(key, []);
+    const key = getEventClassKey(result);
+    const currentFastest = fastestTimeByEventClass.get(key);
+    if (typeof currentFastest !== "number" || result.timeMs < currentFastest) {
+      fastestTimeByEventClass.set(key, result.timeMs);
     }
-
-    byEventClass.get(key)!.push(result);
   }
 
   const topRows: RankingSourceResult[] = [];
   const targetMonthStart = options.targetMonthStart;
   const targetMonthEnd = options.targetMonthEnd;
+  const hasTargetMonth = Boolean(targetMonthStart && targetMonthEnd);
+  const winnersByEventClass = new Map<string, HistoricalFirstSourceResult[]>();
+  const priorTopAthleteKeysByEventClass = new Map<string, Set<string>>();
 
-  for (const [eventKey, entries] of byEventClass.entries()) {
-    const sorted = sortHistoricalEntries(entries);
-    const firstTime = sorted[0]?.timeMs;
-    if (typeof firstTime !== "number") {
+  for (const result of results) {
+    const eventKey = getEventClassKey(result);
+    const firstTime = fastestTimeByEventClass.get(eventKey);
+    if (result.timeMs !== firstTime) {
       continue;
     }
 
-    for (const entry of sorted) {
-      if (entry.timeMs !== firstTime) {
-        break;
-      }
+    const winners = winnersByEventClass.get(eventKey) ?? [];
+    winners.push(result);
+    winnersByEventClass.set(eventKey, winners);
 
-      const isInTargetMonth =
-        targetMonthStart && targetMonthEnd
-          ? isWithinRange(entry.meet.heldOn, targetMonthStart, targetMonthEnd)
-          : false;
-      const athleteKey = toHistoricalAthleteKey(entry.athlete);
-      const hasPriorTopForAthlete =
-        isInTargetMonth && targetMonthStart
-          ? entries.some(
-              (candidate) =>
-                toHistoricalAthleteKey(candidate.athlete) === athleteKey &&
-                candidate.timeMs === firstTime &&
-                candidate.meet.heldOn.getTime() < targetMonthStart.getTime()
-            )
-          : false;
-      const isNewRecordInTargetMonth = Boolean(isInTargetMonth && !hasPriorTopForAthlete);
+    if (hasTargetMonth && result.meet.heldOn.getTime() < targetMonthStart!.getTime()) {
+      const priorAthleteKeys = priorTopAthleteKeysByEventClass.get(eventKey) ?? new Set<string>();
+      priorAthleteKeys.add(toHistoricalAthleteKey(result.athlete));
+      priorTopAthleteKeysByEventClass.set(eventKey, priorAthleteKeys);
+    }
+  }
+
+  const representativeByComparableEventBaseKey = new Map<string, HistoricalFirstSourceResult>();
+  for (const [eventKey, winners] of winnersByEventClass.entries()) {
+    const comparableEventBaseKey = comparableEventBaseKeyByEventClass.get(eventKey);
+    if (!comparableEventBaseKey) {
+      continue;
+    }
+
+    for (const winner of winners) {
+      const currentRepresentative = representativeByComparableEventBaseKey.get(comparableEventBaseKey);
+      if (!currentRepresentative || compareHistoricalDisplayCandidates(winner, currentRepresentative) < 0) {
+        representativeByComparableEventBaseKey.set(comparableEventBaseKey, winner);
+      }
+    }
+  }
+
+  for (const [eventKey, winners] of winnersByEventClass.entries()) {
+    const sortedWinners = sortHistoricalEntries(winners);
+    const winner = sortedWinners[0];
+    if (!winner) {
+      continue;
+    }
+
+    const comparableEventBaseKey = comparableEventBaseKeyByEventClass.get(eventKey) ?? getComparableEventBaseKey(winner);
+    const representative = representativeByComparableEventBaseKey.get(comparableEventBaseKey) ?? winner;
+
+    const eventTitle = getHistoricalDisplayTitle(representative, comparableEventBaseKey);
+    const priorTopAthleteKeys = priorTopAthleteKeysByEventClass.get(eventKey);
+
+    for (const entry of sortedWinners) {
+      const isInTargetMonth = hasTargetMonth
+        ? isWithinRange(entry.meet.heldOn, targetMonthStart!, targetMonthEnd!)
+        : false;
+      const isNewRecordInTargetMonth = Boolean(
+        isInTargetMonth && !priorTopAthleteKeys?.has(toHistoricalAthleteKey(entry.athlete))
+      );
       const fallbackKana = kanaByNameKey.get(normalizeAthleteNameKey(entry.athlete.fullName)) ?? "";
       const athleteKana = normalizeKana(entry.athlete.fullNameKana) || fallbackKana;
 
@@ -507,7 +582,7 @@ function buildHistoricalFirstTopRows(
         },
         event: {
           id: eventKey,
-          title: entry.event.title,
+          title: eventTitle,
           distanceM: entry.event.distanceM,
           style: entry.event.style,
           grade: entry.event.grade,

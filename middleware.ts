@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === "/admin") {
@@ -9,8 +10,8 @@ export function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/admin")) {
-    const session = request.cookies.get("admin_session");
-    if (!session) {
+    const session = request.cookies.get(ADMIN_SESSION_COOKIE);
+    if (!(await verifyAdminSession(session?.value))) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin";
       return NextResponse.redirect(url);

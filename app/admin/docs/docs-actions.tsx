@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { WEEKDAY_VALUES, type MeetWeekday } from "@/lib/meet-context";
+import { getDownloadFilename } from "@/lib/download-filename";
 
 type Props = {
   title: string;
@@ -72,12 +73,20 @@ export default function DocsAction({
       }
 
       const blob = await response.blob();
+      if (blob.size === 0) {
+        setMessage("PDFの内容を受信できませんでした");
+        return;
+      }
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = filename;
+      link.download = getDownloadFilename(response.headers.get("Content-Disposition"), filename);
+      link.style.display = "none";
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(url);
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "通信に失敗しました");
     } finally {
