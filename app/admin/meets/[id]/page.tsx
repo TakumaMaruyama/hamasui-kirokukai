@@ -7,8 +7,8 @@ import { formatMeetLabel } from "@/lib/meet-context";
 import { isSchoolAbsenceTimeText, toSchoolEventDisplayTitle } from "@/lib/school-attendance";
 
 type PageProps = {
-    params: { id: string };
-    searchParams?: { program?: string | string[] };
+    params: Promise<{ id: string }>;
+    searchParams?: Promise<{ program?: string | string[] }>;
 };
 
 type MeetPreview = Prisma.MeetGetPayload<{
@@ -77,13 +77,15 @@ function formatGender(value: "male" | "female" | "other"): string {
 
 export default async function MeetPreviewPage({ params, searchParams }: PageProps) {
     await requireAdminSession();
-    const requestedProgram = toProgramQuery(searchParams?.program) ?? "swimming";
+    const { id } = await params;
+    const query = await searchParams;
+    const requestedProgram = toProgramQuery(query?.program) ?? "swimming";
     let meet: MeetPreview | null = null;
     let loadMessage: string | null = null;
 
     try {
         meet = await prisma.meet.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 results: {
                     include: {
@@ -143,7 +145,7 @@ export default async function MeetPreviewPage({ params, searchParams }: PageProp
 
     const athleteCount = new Set(meet.results.map((result) => result.athleteId)).size;
     const eventCount = new Set(meet.results.map((result) => result.eventId)).size;
-    const backProgram = toProgramQuery(searchParams?.program) ?? meet.program;
+    const backProgram = toProgramQuery(query?.program) ?? meet.program;
 
     return (
         <main>

@@ -16,11 +16,11 @@
 
 | 項目 | 結果 | 根拠 |
 | --- | --- | --- |
-| 回帰テスト | pass | `npm test`: 38ファイル、225テスト成功（既存185件から40件追加） |
+| 回帰テスト | pass | `npm test`: 39ファイル、231テスト成功（既存185件から46件追加） |
 | 型検査 | pass | `npx tsc --noEmit` 成功 |
 | 本番用ビルド | pass | `npm run build` 成功。接続しない検証用DATABASE_URLを使用。静的生成時のDB接続警告があり、実DB接続の証拠とはしない |
 | 認証 | pass | 正常ログイン、旧Cookie、任意値、改ざん、期限切れ、秘密鍵未設定/不正/更新、非同期呼び出し、未認証時のDB操作抑止をテスト |
-| 独立した認証レビュー | pass | 別担当が実装差分と24件の認証テストを確認。P1/P2指摘なし |
+| 独立した認証レビュー | pass | 別担当が実装差分を確認。Next15移行後も認証・パラメータ・書類APIの40テストを再実行し、P1/P2指摘なし |
 | APIの実通信 | pass | 合成データの隔離Nextアプリで、管理API15経路の旧Cookieを401で拒否。認証後に年月取得・対象確認・3種類のPDF取得を確認 |
 | 賞状 | pass | 氏名指定した2位は対象0人・ダウンロード不可。同タイを含む対象3人・7枚を表示し、実PDFも7枚 |
 | 記録証 | pass | 合成データ4人・4枚。5種目ある子は既存順の4件のみ。曜日順と確認一覧/PDFの一致を確認 |
@@ -61,4 +61,8 @@ UI/HTTP検証は、実装コピーのPrisma部分だけを合成データに置�
 
 ## デプロイ準備で追加した修正
 
-Replitのパッケージ保護機能が既存のVitest 2.0.4とNext.js 14.2.5をCritical CVEのため拒否した。保護機能の設定を維持して、Vitest 3.2.6とNext.js 14.2.35へ更新した。根拠は[Vitestの公式勧告](https://github.com/vitest-dev/vitest/security/advisories/GHSA-5xrq-8626-4rwp)と[Next.jsの14系修正案内](https://nextjs.org/blog/security-update-2025-12-11)。公開ビルドは `npm run build` とし、既存の自動DBスキーマ更新処理を外した。
+Replitのパッケージ保護機能が既存のVitest 2.0.4とNext.js 14系をCritical CVEのため拒否した。保護機能の設定を維持し、Vitest 3.2.6、Next.js 15.5.25、React/React DOM 19.0.8と対応型定義へ更新した。根拠は[Vitestの公式勧告](https://github.com/vitest-dev/vitest/security/advisories/GHSA-5xrq-8626-4rwp)と[Next.jsの2026年8月修正案内](https://nextjs.org/blog/august-2026-security-release)。
+
+Next15の非同期cookies/params/searchParamsに対応し、React19のPDF型注釈を補正した。PDFのデザイン・生成処理は維持する。Replitにある独立した紹介動画プロジェクトはファイルを保持し、記録会アプリの型検査対象から除外した。Replitと同じnpm 10.8.2で固定依存ファイルの解決も確認した。
+
+公開ビルドは `npm run build` とし、既存の自動DBスキーマ更新処理を外した。ADMIN_SESSION_SECRETは本番Secretsに同期し、開発DBを本番DBへコピーする設定は無効のまま保持した。

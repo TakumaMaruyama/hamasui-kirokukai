@@ -103,7 +103,8 @@ function renderRankCell(stat: RankStat | undefined) {
   );
 }
 
-export default async function AthletePage({ params }: { params: { id: string } }) {
+export default async function AthletePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   let publishWindow: { publishFrom: Date | null; publishUntil: Date | null } | null = null;
   try {
     publishWindow = await prisma.publishWindow.findUnique({
@@ -118,7 +119,7 @@ export default async function AthletePage({ params }: { params: { id: string } }
   }
 
   const athlete = await prisma.athlete.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       id: true,
       fullName: true,

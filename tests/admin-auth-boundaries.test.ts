@@ -13,7 +13,7 @@ const state = vi.hoisted(() => ({
   publish: vi.fn()
 }));
 
-vi.mock("next/headers", () => ({ cookies: () => ({ get: () => state.cookie === undefined ? undefined : { value: state.cookie } }) }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => state.cookie === undefined ? undefined : { value: state.cookie } }) }));
 vi.mock("next/navigation", () => ({
   redirect: (url: string) => { throw new Error(`REDIRECT:${url}`); },
   notFound: () => { throw new Error("NOT_FOUND"); }
@@ -106,10 +106,24 @@ describe("admin authorization at request and data boundaries", () => {
 
   it("blocks all four server pages before DB reads or publish initialization", async () => {
     state.cookie = "1";
-    for (const render of [() => LogsPage(), () => MeetsPage({}), () => MeetPreviewPage({ params: { id: "meet-1" } }), () => PublishPage()]) {
+    for (const render of [() => LogsPage(), () => MeetsPage({}), () => MeetPreviewPage({ params: Promise.resolve({ id: "meet-1" }) }), () => PublishPage()]) {
       await expect(render()).rejects.toThrow("REDIRECT:/admin");
     }
     for (const fn of [state.searchLogs, state.count, state.meets, state.meet, state.publish]) expect(fn).not.toHaveBeenCalled();
+  });
+
+  it("uses the resolved program query when loading the authenticated meet list", async () => {
+    state.cookie = await createAdminSession();
+    await MeetsPage({ searchParams: Promise.resolve({ program: "school" }) });
+    expect(state.meets).toHaveBeenCalledWith(expect.objectContaining({ where: { program: "school" } }));
+  });
+
+  it("uses the resolved meet ID and program when rendering an authenticated preview", async () => {
+    state.cookie = await createAdminSession();
+    state.meet.mockResolvedValue({ id: "meet-2", title: "2026年9月", program: "swimming", heldOn: new Date("2026-09-01"), createdAt: new Date("2026-09-01"), results: [] });
+    const page = await MeetPreviewPage({ params: Promise.resolve({ id: "meet-2" }), searchParams: Promise.resolve({ program: "school" }) });
+    expect(state.meet).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "meet-2" } }));
+    expect(JSON.stringify(page)).toContain("/admin/meets?program=school");
   });
 
   it("rechecks a delete action after its rendered session has been invalidated", async () => {

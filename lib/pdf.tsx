@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Gender } from "@prisma/client";
-import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import React, { type ReactElement } from "react";
 import sharp from "sharp";
 import type { ChallengeEventRankingGroup, RankingEntry, RankingGroup } from "./ranking-report";
@@ -941,7 +941,7 @@ function buildChallengeGenderTable({
   );
 }
 
-async function renderPdfDocument(document: ReactElement): Promise<Buffer> {
+async function renderPdfDocument(document: ReactElement<DocumentProps>): Promise<Buffer> {
   ensureFontRegistered();
 
   try {
@@ -965,7 +965,7 @@ function buildReadableRecordDocument({
   athlete: PdfAthlete;
   entries: RecordPdfEntry[];
   issueLabel?: string;
-}): ReactElement {
+}): ReactElement<DocumentProps> {
   return (
     <Document>
       {buildReadableRecordPages({ variant, athlete, entries, issueLabel })}
@@ -1116,7 +1116,7 @@ function buildFirstPrizeTemplateDocument({
   athlete: PdfAthlete;
   entries: CertificatePdfEntry[];
   templateDataUri: string;
-}): ReactElement {
+}): ReactElement<DocumentProps> {
   const visibleEntries = entries.slice(0, 5);
   const eventLines = visibleEntries.map((entry) => entry.eventTitle).join("\n");
   const timeLines = visibleEntries
@@ -1146,7 +1146,7 @@ function buildFirstPrizeFallbackDocument({
 }: {
   athlete: PdfAthlete;
   entries: CertificatePdfEntry[];
-}): ReactElement {
+}): ReactElement<DocumentProps> {
   return (
     <Document>
       <Page size={CERTIFICATE_PAGE_SIZE} style={styles.page} wrap={false}>
@@ -1181,7 +1181,7 @@ function buildFirstPrizeAwardTemplateDocument({
   timeMs,
   issueLabel,
   templateDataUri
-}: FirstPrizeAwardPdfInput & { templateDataUri: string }): ReactElement {
+}: FirstPrizeAwardPdfInput & { templateDataUri: string }): ReactElement<DocumentProps> {
   return (
     <Document>
       {buildFirstPrizeAwardTemplatePage({ athlete, eventTitle, timeText, timeMs, issueLabel, templateDataUri })}
@@ -1224,7 +1224,7 @@ function buildFirstPrizeAwardFallbackDocument({
   timeText,
   timeMs,
   issueLabel
-}: FirstPrizeAwardPdfInput): ReactElement {
+}: FirstPrizeAwardPdfInput): ReactElement<DocumentProps> {
   return (
     <Document>
       {buildFirstPrizeAwardFallbackPage({ athlete, eventTitle, timeText, timeMs, issueLabel })}

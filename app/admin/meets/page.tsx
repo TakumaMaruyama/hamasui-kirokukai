@@ -98,10 +98,11 @@ async function deleteMeet(formData: FormData) {
 export default async function MeetsPage({
     searchParams
 }: {
-    searchParams?: { program?: string | string[] };
+    searchParams?: Promise<{ program?: string | string[] }>;
 }) {
     await requireAdminSession();
-    const selectedProgram = toAdminProgram(searchParams?.program);
+    const query = await searchParams;
+    const selectedProgram = toAdminProgram(query?.program);
     const selectedProgramLabel = PROGRAM_OPTIONS.find((option) => option.value === selectedProgram)?.label ?? "スイミング";
 
     let meets: MeetWithCount[] = [];

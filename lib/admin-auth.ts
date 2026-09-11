@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { ADMIN_SESSION_COOKIE, ADMIN_SESSION_TTL_SECONDS, createAdminSession, verifyAdminSession } from "@/lib/admin-session";
 
 export async function isAdminAuthenticated(): Promise<boolean> {
-  return verifyAdminSession(cookies().get(ADMIN_SESSION_COOKIE)?.value);
+  const cookieStore = await cookies();
+  return verifyAdminSession(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
 }
 
 export async function requireAdminSession(): Promise<void> {

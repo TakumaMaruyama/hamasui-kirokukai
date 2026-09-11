@@ -234,10 +234,11 @@ async function findAthletesByChild(normalizedFullName: string, gender: Gender) {
 export default async function AthleteHistoryPage({
   searchParams
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const rawFullName = toSingleQueryParam(searchParams.fullName);
-  const rawGender = toSingleQueryParam(searchParams.gender);
+  const query = await searchParams;
+  const rawFullName = toSingleQueryParam(query.fullName);
+  const rawGender = toSingleQueryParam(query.gender);
   const gender = parseGender(rawGender);
 
   if (!rawFullName || !gender) {
