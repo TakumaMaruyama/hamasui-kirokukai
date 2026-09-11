@@ -55,6 +55,16 @@ npm run dev
 `@react-pdf/renderer` を使ってサーバー側でPDFを直接生成します。  
 Playwright / Chromium の追加インストールは不要です。
 
+## Replitでの公開
+
+公開時のビルドは `npm run build`、起動は `npm run start` を使用します。DBスキーマ更新や開発DBの本番コピーは含めません。
+
+現在のReplitワークスペースには紹介動画のArtifact登録があり、その本番配信設定がルートの `.replit` より優先されます。`artifacts/hamasui-intro-video/.replit-artifact/artifact.toml` の本番サービスを記録会アプリのビルド・起動に設定しています。動画の開発設定・ソース・編集内容は保持しています。[適用した設定差分](docs/deployment/hamasui-artifact-production.patch)を参照してください。
+
+公開成功表示だけで完了とせず、公開URLの `/admin` がログイン画面になり、未認証の `/api/admin/docs/swimming/months` がJSONの401を返すことを確認してください。その後、再ログインして対象年月・対象一覧・3種類のPDFを確認します。[検証記録](docs/record-creation-verification.md)に結果を残しています。
+
+## PDFテンプレート
+
 記録証はコードレイアウトで直接生成します。背景画像テンプレートは使いません。
 
 1位賞状の台紙デザインを使う場合は、以下の画像を配置してください。

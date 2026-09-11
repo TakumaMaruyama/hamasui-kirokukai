@@ -1,0 +1,22 @@
+--- a/artifacts/hamasui-intro-video/.replit-artifact/artifact.toml
++++ b/artifacts/hamasui-intro-video/.replit-artifact/artifact.toml
+@@ -15,13 +15,13 @@
+ run = "pnpm --filter @workspace/hamasui-intro-video run dev"
+ 
+ [services.production]
+-build = [ "pnpm", "--filter", "@workspace/hamasui-intro-video", "run", "build" ]
+-serve = "static"
+-publicDir = "artifacts/hamasui-intro-video/dist/public"
++build = [ "npm", "run", "build" ]
+ 
+-[[services.production.rewrites]]
+-from = "/*"
+-to = "/index.html"
++[services.production.run]
++args = [ "npm", "run", "start" ]
++
++[services.production.run.env]
++PORT = "18326"
+ 
+ [services.env]
+ PORT = "18326"
