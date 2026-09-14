@@ -28,7 +28,7 @@ export async function generateSwimmingDocumentResponse(request: Request, kind: S
       ? await pdf.renderRecordCertificatesPdf(document.inputs)
       : document.kind === "certificates"
         ? await pdf.renderFirstPrizeAwardsPdf(document.inputs)
-        : await pdf.renderChallengeRankingPdf({ periodLabel: document.periodLabel, groups: document.groups, highlightLegend: "NEW はこの月に新しく歴代1位になった記録", rankRange: { min: 1, max: 1 } });
+        : await pdf.renderChallengeRankingPdf({ periodLabel: document.periodLabel, groups: document.groups, highlightLegend: "NEW はこの月に新しく歴代1位になった記録", rankRange: { min: 1, max: 1 }, layout: "historical" });
     return new NextResponse(buffer, { headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": buildAttachmentContentDisposition(document.filename, `swimming_${kind.replace(/-/g, "_")}.pdf`),

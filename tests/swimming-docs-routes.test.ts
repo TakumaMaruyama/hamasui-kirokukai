@@ -143,6 +143,7 @@ describe("swimming document preparation and downloads", () => {
     expect(pdf.status).toBe(200);
     expect(pdf.headers.get("Content-Type")).toBe("application/pdf");
     expect(await pdf.text()).toBe("%PDF-historical");
+    expect(state.historical).toHaveBeenCalledWith(expect.objectContaining({ layout: "historical", rankRange: { min: 1, max: 1 } }));
     expect(pdf.headers.get("Content-Disposition")).toContain(encodeURIComponent(body.filename));
     expect(state.rows.mock.calls[0][0]).toMatchObject({ where: { meet: { program: "swimming", heldOn: { lt: new Date("2026-10-01Z") } } } });
     expect(state.rows.mock.calls[0][0].select.event).not.toBe(true);

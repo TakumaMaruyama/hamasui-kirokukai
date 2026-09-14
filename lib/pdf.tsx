@@ -348,6 +348,15 @@ const styles = StyleSheet.create({
   challengeGradeSection: {
     marginTop: 8
   },
+  historicalEventSection: {
+    marginTop: 8
+  },
+  historicalGradeSection: {
+    marginTop: 4
+  },
+  historicalCell: {
+    paddingVertical: 2
+  },
   challengeGradeColumns: {
     flexDirection: "row"
   },
@@ -891,23 +900,26 @@ function buildChallengeGenderTable({
   gradeLabel,
   entries,
   keyPrefix,
-  tableStyle
+  tableStyle,
+  compact = false
 }: {
   side: "male" | "female";
   gradeLabel: string;
   entries: ChallengeRankingTableRow[];
   keyPrefix: string;
   tableStyle: any;
+  compact?: boolean;
 }): ReactElement {
   const palette = challengeHeaderPalette(side);
   const hasRecordMonth = entries.some((row) => Boolean(row.entry?.recordMonthLabel));
+  const cellStyle = compact ? { ...styles.challengeCell, ...styles.historicalCell } : styles.challengeCell;
 
   return (
     <View style={[styles.challengeGenderTable, tableStyle]}>
       <View style={[styles.challengeTableRow, { backgroundColor: palette.background }]}>
-        <Text style={[styles.challengeCell, styles.challengeCellRank, styles.challengeHeaderText, { color: palette.text }]}>{gradeLabel}</Text>
-        <Text style={[styles.challengeCell, styles.challengeCellName, styles.challengeHeaderText, { color: palette.text }]}>氏名</Text>
-        <Text style={[styles.challengeCell, styles.challengeCellTime, styles.challengeHeaderText, { color: palette.text }]}>
+        <Text style={[cellStyle, styles.challengeCellRank, styles.challengeHeaderText, { color: palette.text }]}>{gradeLabel}</Text>
+        <Text style={[cellStyle, styles.challengeCellName, styles.challengeHeaderText, { color: palette.text }]}>氏名</Text>
+        <Text style={[cellStyle, styles.challengeCellTime, styles.challengeHeaderText, { color: palette.text }]}>
           {hasRecordMonth ? "タイム・年月" : "タイム"}
         </Text>
       </View>
@@ -920,18 +932,18 @@ function buildChallengeGenderTable({
             ...(entry.entry?.isNewRecordInTargetMonth ? [styles.challengeTableRowNewRecord] : [])
           ]}
         >
-          <Text style={[styles.challengeCell, styles.challengeCellRank]}>{entry.rankLabel}</Text>
+          <Text style={[cellStyle, styles.challengeCellRank]}>{entry.rankLabel}</Text>
           <Text
             style={
               entry.entry?.isNewRecordInTargetMonth
-                ? [styles.challengeCell, styles.challengeCellName, styles.challengeCellNameWithNew]
-                : [styles.challengeCell, styles.challengeCellName]
+                ? [cellStyle, styles.challengeCellName, styles.challengeCellNameWithNew]
+                : [cellStyle, styles.challengeCellName]
             }
           >
             {formatChallengeEntryName(entry.entry)}
             {entry.entry?.isNewRecordInTargetMonth ? <Text style={styles.challengeNewMarker}>{"\n"}NEW</Text> : null}
           </Text>
-          <Text style={hasRecordMonth ? [styles.challengeCell, styles.challengeCellTime, styles.challengeCellTimeWithMonth] : [styles.challengeCell, styles.challengeCellTime]}>
+          <Text style={hasRecordMonth ? [cellStyle, styles.challengeCellTime, styles.challengeCellTimeWithMonth] : [cellStyle, styles.challengeCellTime]}>
             {entry.entry ? formatTimeForDocument({ timeText: entry.entry.timeText }) : ""}
             {entry.entry?.recordMonthLabel ? <Text style={styles.challengeRecordMonthLabel}>{"\n"}{entry.entry.recordMonthLabel}</Text> : null}
           </Text>
@@ -1421,15 +1433,18 @@ export async function renderChallengeRankingPdf({
   periodLabel,
   groups,
   highlightLegend,
-  rankRange
+  rankRange,
+  layout = "default"
 }: {
   periodLabel: string;
   groups: ChallengeEventRankingGroup[];
   highlightLegend?: string;
   rankRange?: { min: number; max: number };
+  layout?: "default" | "historical";
 }): Promise<Buffer> {
   const minRank = Math.max(1, Math.floor(rankRange?.min ?? 1));
   const maxRank = Math.max(minRank, Math.floor(rankRange?.max ?? 3));
+  const compact = layout === "historical";
 
   return renderPdfDocument(
     <Document>
@@ -1446,7 +1461,7 @@ export async function renderChallengeRankingPdf({
               {groups.length > 1 ? ` (${index + 1}/${groups.length})` : ""}
             </Text>
             {highlightLegend ? renderChallengeLegendText(highlightLegend) : null}
-            <View key={eventGroup.eventTitle} style={styles.challengeEventSection}>
+            <View key={eventGroup.eventTitle} style={[styles.challengeEventSection, ...(compact ? [styles.historicalEventSection] : [])]}>
               <Text style={styles.challengeEventTitle}>{eventGroup.eventTitle}</Text>
               {eventGroup.gradeGroups.map((gradeGroup) => {
                 const maleRows = buildChallengeRankingTableRows(gradeGroup.maleEntries, { minRank, maxRank });
@@ -1454,21 +1469,23 @@ export async function renderChallengeRankingPdf({
                 const gradeLabel = buildChallengeGradeLabel(gradeGroup.grade);
 
                 return (
-                  <View key={`${eventGroup.eventTitle}-${gradeGroup.grade}`} style={styles.challengeGradeSection} wrap={false}>
+                  <View key={`${eventGroup.eventTitle}-${gradeGroup.grade}`} style={[styles.challengeGradeSection, ...(compact ? [styles.historicalGradeSection] : [])]} wrap={false}>
                     <View style={styles.challengeGradeColumns}>
                       {buildChallengeGenderTable({
                         side: "male",
                         gradeLabel,
                         entries: maleRows,
                         keyPrefix: `${eventGroup.eventTitle}-${gradeGroup.grade}-male`,
-                        tableStyle: styles.challengeGenderTableLeft
+                        tableStyle: styles.challengeGenderTableLeft,
+                        compact
                       })}
                       {buildChallengeGenderTable({
                         side: "female",
                         gradeLabel,
                         entries: femaleRows,
                         keyPrefix: `${eventGroup.eventTitle}-${gradeGroup.grade}-female`,
-                        tableStyle: styles.challengeGenderTableRight
+                        tableStyle: styles.challengeGenderTableRight,
+                        compact
                       })}
                     </View>
                   </View>
