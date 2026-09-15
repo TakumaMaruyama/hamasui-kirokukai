@@ -1,22 +1,16 @@
-import DocsAction from "../docs-actions";
+import ChallengeDocsActions from "./challenge-docs-actions";
 
 export default function ChallengeDocsPage() {
   return (
     <main>
       <header>
-        <h1>チャレンジコースPDF生成</h1>
+        <h1>チャレンジコースランキング</h1>
         <p className="notice">
-          年・月を指定して、種目ごとに男女左右で1〜3位ランキングを出力します。チャレンジコースのランキングは全学年を対象に、最小学年から最大学年まで欠番なしで表示します。
+          対象年月のチャレンジコース記録を、種目・学年・男女ごとに全員掲載したランキングPDFとして出力します。
         </p>
       </header>
       <div className="card">
-        <DocsAction
-          title="ランキングPDFを生成（月ごと・男女左右1〜3位）"
-          endpoint="/api/admin/docs/challenge/rankings"
-          filename="challenge_rankings.zip"
-          allowFullName={false}
-          allowWeekday={false}
-        />
+        <ChallengeDocsActions />
       </div>
     </main>
   );

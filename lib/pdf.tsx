@@ -895,13 +895,28 @@ function renderChallengeLegendText(legend: string): ReactElement {
   );
 }
 
+function formatChallengeEntryNameForTable(entry: RankingEntry | null, wrapLongNames: boolean): string {
+  const name = formatChallengeEntryName(entry);
+  if (!wrapLongNames || !name) {
+    return name;
+  }
+
+  const characters = Array.from(name);
+  const lines: string[] = [];
+  for (let index = 0; index < characters.length; index += CHALLENGE_NAME_CHARACTERS_PER_LINE) {
+    lines.push(characters.slice(index, index + CHALLENGE_NAME_CHARACTERS_PER_LINE).join(""));
+  }
+  return lines.join("\n");
+}
+
 function buildChallengeGenderTable({
   side,
   gradeLabel,
   entries,
   keyPrefix,
   tableStyle,
-  compact = false
+  compact = false,
+  wrapLongNames = false
 }: {
   side: "male" | "female";
   gradeLabel: string;
@@ -909,6 +924,7 @@ function buildChallengeGenderTable({
   keyPrefix: string;
   tableStyle: any;
   compact?: boolean;
+  wrapLongNames?: boolean;
 }): ReactElement {
   const palette = challengeHeaderPalette(side);
   const hasRecordMonth = entries.some((row) => Boolean(row.entry?.recordMonthLabel));
@@ -940,7 +956,7 @@ function buildChallengeGenderTable({
                 : [cellStyle, styles.challengeCellName]
             }
           >
-            {formatChallengeEntryName(entry.entry)}
+            {formatChallengeEntryNameForTable(entry.entry, wrapLongNames)}
             {entry.entry?.isNewRecordInTargetMonth ? <Text style={styles.challengeNewMarker}>{"\n"}NEW</Text> : null}
           </Text>
           <Text style={hasRecordMonth ? [cellStyle, styles.challengeCellTime, styles.challengeCellTimeWithMonth] : [cellStyle, styles.challengeCellTime]}>
@@ -951,6 +967,53 @@ function buildChallengeGenderTable({
       ))}
     </View>
   );
+}
+
+const CHALLENGE_ALL_ROWS_PER_TABLE = 12;
+const CHALLENGE_ALL_MAX_ESTIMATED_TEXT_LINES = 24;
+const CHALLENGE_NAME_CHARACTERS_PER_LINE = 10;
+
+function estimateChallengeRankingRowTextLines(row: ChallengeRankingTableRow): number {
+  if (!row.entry) {
+    return 1;
+  }
+
+  const nameLineCount = Math.max(
+    1,
+    Math.ceil(formatChallengeEntryName(row.entry).replace(/\s/g, "").length / CHALLENGE_NAME_CHARACTERS_PER_LINE)
+  );
+  const nameLines = nameLineCount + (row.entry.isNewRecordInTargetMonth ? 1 : 0);
+  const timeLines = 1 + (row.entry.recordMonthLabel ? 1 : 0);
+
+  return Math.max(nameLines, timeLines);
+}
+
+function chunkChallengeRankingRows(entries: ChallengeRankingTableRow[]): ChallengeRankingTableRow[][] {
+  if (entries.length === 0) {
+    return [[]];
+  }
+
+  const chunks: ChallengeRankingTableRow[][] = [];
+  let chunk: ChallengeRankingTableRow[] = [];
+  let textLines = 0;
+
+  for (const entry of entries) {
+    const entryTextLines = estimateChallengeRankingRowTextLines(entry);
+    const exceedsRowLimit = chunk.length >= CHALLENGE_ALL_ROWS_PER_TABLE;
+    const exceedsTextLineLimit = chunk.length > 0 && textLines + entryTextLines > CHALLENGE_ALL_MAX_ESTIMATED_TEXT_LINES;
+
+    if (exceedsRowLimit || exceedsTextLineLimit) {
+      chunks.push(chunk);
+      chunk = [];
+      textLines = 0;
+    }
+
+    chunk.push(entry);
+    textLines += entryTextLines;
+  }
+
+  chunks.push(chunk);
+  return chunks;
 }
 
 async function renderPdfDocument(document: ReactElement<DocumentProps>): Promise<Buffer> {
@@ -1439,11 +1502,13 @@ export async function renderChallengeRankingPdf({
   periodLabel: string;
   groups: ChallengeEventRankingGroup[];
   highlightLegend?: string;
-  rankRange?: { min: number; max: number };
+  rankRange?: { min: number; max: number } | "all";
   layout?: "default" | "historical";
 }): Promise<Buffer> {
-  const minRank = Math.max(1, Math.floor(rankRange?.min ?? 1));
-  const maxRank = Math.max(minRank, Math.floor(rankRange?.max ?? 3));
+  const showAllRanks = rankRange === "all";
+  const numericRankRange = typeof rankRange === "object" ? rankRange : undefined;
+  const minRank = Math.max(1, Math.floor(numericRankRange?.min ?? 1));
+  const maxRank = Math.max(minRank, Math.floor(numericRankRange?.max ?? 3));
   const compact = layout === "historical";
 
   return renderPdfDocument(
@@ -1464,31 +1529,56 @@ export async function renderChallengeRankingPdf({
             <View key={eventGroup.eventTitle} style={[styles.challengeEventSection, ...(compact ? [styles.historicalEventSection] : [])]}>
               <Text style={styles.challengeEventTitle}>{eventGroup.eventTitle}</Text>
               {eventGroup.gradeGroups.map((gradeGroup) => {
-                const maleRows = buildChallengeRankingTableRows(gradeGroup.maleEntries, { minRank, maxRank });
-                const femaleRows = buildChallengeRankingTableRows(gradeGroup.femaleEntries, { minRank, maxRank });
+                const maleRows = buildChallengeRankingTableRows(
+                  gradeGroup.maleEntries,
+                  showAllRanks ? { all: true } : { minRank, maxRank }
+                );
+                const femaleRows = buildChallengeRankingTableRows(
+                  gradeGroup.femaleEntries,
+                  showAllRanks ? { all: true } : { minRank, maxRank }
+                );
                 const gradeLabel = buildChallengeGradeLabel(gradeGroup.grade);
+                const maleChunks = showAllRanks ? chunkChallengeRankingRows(maleRows) : [maleRows];
+                const femaleChunks = showAllRanks ? chunkChallengeRankingRows(femaleRows) : [femaleRows];
+                const tableChunks = Array.from(
+                  { length: Math.max(maleChunks.length, femaleChunks.length) },
+                  (_, chunkIndex) => ({
+                    maleRows: maleChunks[chunkIndex] ?? [],
+                    femaleRows: femaleChunks[chunkIndex] ?? []
+                  })
+                );
 
                 return (
-                  <View key={`${eventGroup.eventTitle}-${gradeGroup.grade}`} style={[styles.challengeGradeSection, ...(compact ? [styles.historicalGradeSection] : [])]} wrap={false}>
-                    <View style={styles.challengeGradeColumns}>
-                      {buildChallengeGenderTable({
-                        side: "male",
-                        gradeLabel,
-                        entries: maleRows,
-                        keyPrefix: `${eventGroup.eventTitle}-${gradeGroup.grade}-male`,
-                        tableStyle: styles.challengeGenderTableLeft,
-                        compact
-                      })}
-                      {buildChallengeGenderTable({
-                        side: "female",
-                        gradeLabel,
-                        entries: femaleRows,
-                        keyPrefix: `${eventGroup.eventTitle}-${gradeGroup.grade}-female`,
-                        tableStyle: styles.challengeGenderTableRight,
-                        compact
-                      })}
-                    </View>
-                  </View>
+                  <React.Fragment key={`${eventGroup.eventTitle}-${gradeGroup.grade}`}>
+                    {tableChunks.map((tableChunk, chunkIndex) => (
+                      <View
+                        key={`${eventGroup.eventTitle}-${gradeGroup.grade}-${chunkIndex}`}
+                        style={[styles.challengeGradeSection, ...(compact ? [styles.historicalGradeSection] : [])]}
+                        wrap={false}
+                      >
+                        <View style={styles.challengeGradeColumns}>
+                          {buildChallengeGenderTable({
+                            side: "male",
+                            gradeLabel,
+                            entries: tableChunk.maleRows,
+                            keyPrefix: `${eventGroup.eventTitle}-${gradeGroup.grade}-${chunkIndex}-male`,
+                            tableStyle: styles.challengeGenderTableLeft,
+                            compact,
+                            wrapLongNames: showAllRanks
+                          })}
+                          {buildChallengeGenderTable({
+                            side: "female",
+                            gradeLabel,
+                            entries: tableChunk.femaleRows,
+                            keyPrefix: `${eventGroup.eventTitle}-${gradeGroup.grade}-${chunkIndex}-female`,
+                            tableStyle: styles.challengeGenderTableRight,
+                            compact,
+                            wrapLongNames: showAllRanks
+                          })}
+                        </View>
+                      </View>
+                    ))}
+                  </React.Fragment>
                 );
               })}
             </View>

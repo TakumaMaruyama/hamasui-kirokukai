@@ -116,4 +116,19 @@ describe("buildChallengeRankingTableRows", () => {
     expect(rows.map((row) => row.rankLabel)).toEqual(["1位", "1位"]);
     expect(rows.map((row) => row.entry?.fullName ?? "")).toEqual(["1位A", "1位B"]);
   });
+
+  it("returns every actual entry without inventing empty ranks in all mode", () => {
+    const rows = buildChallengeRankingTableRows(
+      [
+        { rank: 1, fullName: "1位", displayName: "1位", timeText: "18.00" },
+        { rank: 1, fullName: "同率1位", displayName: "同率1位", timeText: "18.00" },
+        { rank: 3, fullName: "3位", displayName: "3位", timeText: "20.00" },
+        { rank: 5, fullName: "5位", displayName: "5位", timeText: "22.00" }
+      ],
+      { all: true }
+    );
+
+    expect(rows.map((row) => row.rankLabel)).toEqual(["1位", "1位", "3位", "5位"]);
+    expect(rows.every((row) => row.entry !== null)).toBe(true);
+  });
 });

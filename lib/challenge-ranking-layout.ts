@@ -8,6 +8,7 @@ export type ChallengeRankingTableRow = {
 export type ChallengeRankingTableRowOptions = {
   minRank?: number;
   maxRank?: number;
+  all?: boolean;
 };
 
 const DEFAULT_MIN_RANK = 1;
@@ -17,6 +18,13 @@ export function buildChallengeRankingTableRows(
   entries: RankingEntry[],
   options: ChallengeRankingTableRowOptions = {}
 ): ChallengeRankingTableRow[] {
+  if (options.all) {
+    return entries.map((entry) => ({
+      rankLabel: `${entry.rank}位`,
+      entry
+    }));
+  }
+
   const minRank = options.minRank ?? DEFAULT_MIN_RANK;
   const maxRank = options.maxRank ?? DEFAULT_MAX_RANK;
   const rows: ChallengeRankingTableRow[] = [];
